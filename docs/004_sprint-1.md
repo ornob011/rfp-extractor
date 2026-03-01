@@ -403,7 +403,7 @@ public class LlmProviderProperties {
 
     @Data
     public static class OllamaProps {
-        private String baseUrl = "http://localhost:11434";
+        private final String baseUrl = "http://localhost:11434";
         private final String model = "llama3.1:8b";
         private final String modelJudge = "llama3.1:70b";
     }
@@ -1104,37 +1104,23 @@ public <T> Optional<T> extractStructured(String systemPrompt,
                                          Class<T> responseType) {
     long startMs = System.currentTimeMillis();
     String model = props.getOpenrouter().getModel(); // or ollama model
-    try {
-        // Apply resilience chain: Retry(CircuitBreaker(RateLimiter(TimeLimiter(call))))
-        Supplier<CompletableFuture<String>> futureSupplier =
-            () -> CompletableFuture.supplyAsync(
-                () -> callLlmRaw(systemPrompt, userContent),
-                Executors.newVirtualThreadPerTaskExecutor()
-            );
+    // Apply resilience chain: Retry(CircuitBreaker(RateLimiter(TimeLimiter(call))))
+    Supplier<CompletableFuture<String>> futureSupplier =
+        () -> CompletableFuture.supplyAsync(
+            () -> callLlmRaw(systemPrompt, userContent),
+            Executors.newVirtualThreadPerTaskExecutor()
+        );
 
-        Supplier<CompletableFuture<String>> rlDecorated =
-            RateLimiter.decorateSupplier(llmRateLimiter, futureSupplier);
-        Supplier<CompletableFuture<String>> cbDecorated =
-            CircuitBreaker.decorateSupplier(llmCircuitBreaker, rlDecorated);
-        Supplier<String> timedSupplier =
-            () -> {
-                try {
-                    return llmTimeLimiter.executeFutureSupplier(cbDecorated);
-                } catch (Exception e) {
-                    throw new LlmUnavailableException("LLM call timed out or failed", e);
-                }
-            };
-        String rawResponse = Retry.decorateSupplier(llmRetry, timedSupplier).get();
-        Optional<T> result = parseResponse(rawResponse, responseType);
-        logLlmCall("extract", model, startMs, true, null);
-        return result;
-    } catch (LlmUnavailableException e) {
-        logLlmCall("extract", model, startMs, false, e.getMessage());
-        throw e;
-    } catch (Exception e) {
-        logLlmCall("extract", model, startMs, false, e.getMessage());
-        throw new LlmUnavailableException("Unexpected LLM error", e);
-    }
+    Supplier<CompletableFuture<String>> rlDecorated =
+        RateLimiter.decorateSupplier(llmRateLimiter, futureSupplier);
+    Supplier<CompletableFuture<String>> cbDecorated =
+        CircuitBreaker.decorateSupplier(llmCircuitBreaker, rlDecorated);
+    Supplier<String> timedSupplier =
+        () -> llmTimeLimiter.executeFutureSupplier(cbDecorated);
+    String rawResponse = Retry.decorateSupplier(llmRetry, timedSupplier).get();
+    Optional<T> result = parseResponse(rawResponse, responseType);
+    logLlmCall("extract", model, startMs, true, null);
+    return result;
 }
 ```
 
@@ -1170,14 +1156,8 @@ private <T> Optional<T> parseResponse(String rawResponse, Class<T> responseType)
         cleaned = cleaned.substring(0, cleaned.length() - 3);
     }
     cleaned = cleaned.strip();
-    try {
-        T result = objectMapper.readValue(cleaned, responseType);
-        return Optional.of(result);
-    } catch (Exception e) {
-        String preview = cleaned.length() > 200 ? cleaned.substring(0, 200) + "..." : cleaned;
-        log.warn("Failed to parse LLM response as {}: preview={}", responseType.getSimpleName(), preview);
-        return Optional.empty();
-    }
+    T result = objectMapper.readValue(cleaned, responseType);
+    return Optional.of(result);
 }
 ```
 
@@ -1506,14 +1486,9 @@ export function UploadPage() {
         if (!file) return;
         setUploading(true);
         setError(null);
-        try {
-            const {jobId} = await submitRfp(file);
-            navigate(`/job/${jobId}`);
-        } catch (err: unknown) {
-            setError('Upload failed. Please try again.');
-        } finally {
-            setUploading(false);
-        }
+        const {jobId} = await submitRfp(file);
+        navigate(`/job/${jobId}`);
+        setUploading(false);
     };
 
     return (
@@ -1755,16 +1730,11 @@ public class HealthService {
     }
 
     private String pingOcrSidecar() {
-        try {
-            restClient.get()
-                      .uri(ocrSidecarUrl + "/health")
-                      .retrieve()
-                      .body(String.class);
-            return "reachable";
-        } catch (Exception e) {
-            log.warn("OCR sidecar unreachable at {}: {}", ocrSidecarUrl, e.getMessage());
-            return "unreachable";
-        }
+        restClient.get()
+                  .uri(ocrSidecarUrl + "/health")
+                  .retrieve()
+                  .body(String.class);
+        return "reachable";
     }
 }
 ```
@@ -1782,7 +1752,8 @@ public RestClient restClient() {
 ```
 
 **Dependencies:** Stories 2.1, 2.4 (LlmAdapter exists).
-**Risks:** RestClient timeout — wrap the OCR ping in a try/catch with a fixed 2s connect timeout. Spring 6 `RestClient`
+**Risks:** RestClient timeout — keep a fixed 2s connect timeout and let failures propagate to `GlobalExceptionHandler`.
+Spring 6 `RestClient`
 supports `.httpClientOptions()` for timeout.
 
 **Test Plan:**

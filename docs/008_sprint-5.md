@@ -833,8 +833,8 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
     - Call `sectionLinker.link(mergedTables, state.sections, state.clauses)` → `linkedTables`.
     - Set `state.tables = linkedTables`.
     - Close `PDDocument` in `finally` block.
-2. Wrap entire body in `try/catch(Exception e)`. On exception:
-   `state.errors.add(new ExtractionError("table_extraction", e.getMessage()))`, `state.tables = List.of()`, log error.
+2. Do not wrap the body in `try/catch(Exception e)`. Let failures propagate and map them via the global exception
+   handler (`@RestControllerAdvice` + typed `@ExceptionHandler` methods).
 3. `state.pageClassifications` is a `Map<Integer, PageClass>` populated by `ClassifyPagesNode` in Sprint 2.
 
 **Dependencies:** `TableExtractor` (C-1), `TableContinuationDetector` (D-1), `TableSectionLinker` (E-1),
@@ -1016,7 +1016,7 @@ export function TableViewer({table}: TableViewerProps): JSX.Element { ...
 - [ ] `TableExtractor` never calls `StreamTableExtractor` when `LatticeTableExtractor` returns non-empty
 - [ ] `TableContinuationDetector` requires ≥ 2 of 3 signals — not just adjacency
 - [ ] Levenshtein distance threshold of 3 is used (not equals-zero)
-- [ ] `ExtractTablesNode` has try/catch; never rethrows; populates `state.errors`
+- [ ] `ExtractTablesNode` does not use `catch (Exception e)` and relies on the global exception handler contract
 - [ ] `PDDocument` closed in `finally` block
 
 ---

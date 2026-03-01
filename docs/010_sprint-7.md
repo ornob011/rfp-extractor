@@ -135,7 +135,7 @@ private int totalRepairIterations = 0;
 private List<RepairLogEntry> repairLog = new ArrayList<>();
 
 @Builder.Default
-private List<String> manualReviewRequired = new ArrayList<>();
+private final List<String> manualReviewRequired = new ArrayList<>();
 
 // Map from componentId -> current confidence score (updated by ScoreConfidenceNode and RepairLoopNode)
 @Builder.Default
@@ -438,7 +438,7 @@ public class LlmSectionSegmentFallback {
     - Parse `parseLlmResponse(llmJson)` → `List<Section> llmSections`.
     - For each `llmSection`: if `!isDuplicate(llmSection, state.sections)` → add to `state.sections`.
     - Log merged count.
-    - Wrap everything in `try/catch(Exception e)` → log error, return without modifying state.
+    - Do not use `try/catch(Exception e)` here. Let failures propagate and map them in the global exception handler.
 
 4. `parseLlmResponse(llmJson)`:
     - `JsonNode root = objectMapper.readTree(llmJson)`.

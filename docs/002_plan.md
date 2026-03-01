@@ -141,19 +141,20 @@ the sprint is closed.
 
 ### 1. Clean Code Rules
 
-| Rule                     | Requirement                                                                                                                                  |
-|--------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| **Service / class size** | No class > 250 lines. If it grows beyond that, split it into focused collaborators.                                                          |
-| **Method size**          | No method > 20 lines. Extract sub-steps into private methods with descriptive names.                                                         |
-| **Method parameters**    | No method with > 3 parameters. Group into a request/config object beyond that.                                                               |
-| **Naming**               | Names must state intent. `extractSubmissionDeadline()` not `process()`. No abbreviations except universally known ones (`id`, `url`, `pdf`). |
-| **Comments**             | Comments explain *why*, not *what*. Self-documenting code is preferred. No commented-out dead code.                                          |
-| **Magic values**         | No inline magic strings or numbers. Use named constants or `application.properties` keys.                                                    |
-| **No God classes**       | A class does one thing. `RfpService.java` that does extraction, rules, artifacts, and auth is forbidden.                                     |
-| **No utility dumps**     | No `Utils.java` / `Helper.java` catch-alls. Group utilities into specific, named classes: `ClauseIdNormalizer`, `BanglaNumericParser`.       |
-| **Return early**         | Use guard clauses at the top of methods. Avoid deep nesting (`if → if → if`). Max nesting depth: 2.                                          |
-| **No null returns**      | Return `Optional<T>` for values that may be absent. Never return `null` from a public method.                                                |
-| **Exceptions**           | Throw specific exceptions (`DocumentEncryptedException`, `OcrUnavailableException`). Never catch `Exception` and swallow it silently.        |
+| Rule                     | Requirement                                                                                                                                                                                                                                                                                   |
+|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Service / class size** | No class > 250 lines. If it grows beyond that, split it into focused collaborators.                                                                                                                                                                                                           |
+| **Method size**          | No method > 20 lines. Extract sub-steps into private methods with descriptive names.                                                                                                                                                                                                          |
+| **Method parameters**    | No method with > 3 parameters. Group into a request/config object beyond that.                                                                                                                                                                                                                |
+| **Naming**               | Names must state intent. `extractSubmissionDeadline()` not `process()`. No abbreviations except universally known ones (`id`, `url`, `pdf`).                                                                                                                                                  |
+| **Comments**             | Comments explain *why*, not *what*. Self-documenting code is preferred. No commented-out dead code.                                                                                                                                                                                           |
+| **Magic values**         | No inline magic strings or numbers. Use named constants or `application.properties` keys.                                                                                                                                                                                                     |
+| **No God classes**       | A class does one thing. `RfpService.java` that does extraction, rules, artifacts, and auth is forbidden.                                                                                                                                                                                      |
+| **No utility dumps**     | No `Utils.java` / `Helper.java` catch-alls. Group utilities into specific, named classes: `ClauseIdNormalizer`, `BanglaNumericParser`.                                                                                                                                                        |
+| **Return early**         | Use guard clauses at the top of methods. Avoid deep nesting (`if → if → if`). Max nesting depth: 2.                                                                                                                                                                                           |
+| **No null returns**      | Return `Optional<T>` for values that may be absent. Never return `null` from a public method.                                                                                                                                                                                                 |
+| **Exceptions**           | Throw specific exceptions (`DocumentEncryptedException`, `OcrUnavailableException`). Do not use `catch (Exception e)` in sample code. Route errors through a global exception handler (for Spring: `@RestControllerAdvice` + typed `@ExceptionHandler` methods) that returns `ProblemDetail`. |
+| **No SneakyThrows**      | `@SneakyThrows` is forbidden. Use explicit `throws` declarations and let typed exceptions propagate to the exception handler.                                                                                                                                                                 |
 
 ---
 
@@ -814,29 +815,29 @@ The schema captures ALL 45 fields from the user's checklist, organized into type
 Each rule is a YAML entry validated against `rule-schema-v1.json`:
 
 ```yaml
--   id           : BD-ICT-001
-    name         : RFP Title Present
-    pack         : bd-govt-ict-v1
-    version      : "1.0.0"
-    severity     : FATAL           # FATAL | HIGH | MEDIUM | LOW | INFO
-    check_type   : structural    # structural (JMESPath) | semantic (LLM)
-    condition    : "doc_meta.title != null && doc_meta.title != ''"
+-   id: BD-ICT-001
+    name: RFP Title Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: FATAL           # FATAL | HIGH | MEDIUM | LOW | INFO
+    check_type: structural    # structural (JMESPath) | semantic (LLM)
+    condition: "doc_meta.title != null && doc_meta.title != ''"
     evidence_path: "doc_meta.title"
-    message      : "RFP Title is missing from the document"
+    message: "RFP Title is missing from the document"
 
--   id           : BD-ICT-056
-    name         : Scope Sufficiently Specific
-    pack         : bd-govt-ict-v1
-    version      : "1.0.0"
-    severity     : HIGH
-    check_type   : semantic
+-   id: BD-ICT-056
+    name: Scope Sufficiently Specific
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
     evidence_path: "entities.evaluation.scope_summary.value"
-    llm_prompt   : |
+    llm_prompt: |
         You are a GOB ICT procurement expert. Evaluate if this scope of work is specific enough
         to price accurately. Reply with JSON: {"finding": true/false, "explanation": "...", "confidence": 0.0-1.0}
         finding=true means there IS a problem (scope is vague).
         Scope text: {{evidence}}
-    message      : "Scope of work may be too vague to price accurately"
+    message: "Scope of work may be too vague to price accurately"
 ```
 
 ---

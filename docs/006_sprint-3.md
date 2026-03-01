@@ -221,14 +221,9 @@ public class BookmarkHeadingStrategy implements HeadingStrategy {
     }
 
     private int resolvePageNumber(PDOutlineItem item) {
-        try {
-            var dest = item.getDestination();
-            // Simplified: return 0 if we cannot resolve. Sprint 3 does not need exact page
-            // numbers from bookmarks since page ranges are computed from section order.
-            return 0;
-        } catch (Exception e) {
-            return 0;
-        }
+        var dest = item.getDestination();
+        // Simplified: return 0 for Sprint 3. Exact bookmark destination mapping is deferred.
+        return 0;
     }
 }
 ```
@@ -1005,7 +1000,7 @@ public class Section {
     private int pageStart;
     private int pageEnd;
     @Builder.Default
-    private List<Section> children = new java.util.ArrayList<>();
+    private final List<Section> children = new java.util.ArrayList<>();
     private SectionConfidence confidence;
 }
 ```
@@ -1381,7 +1376,7 @@ File: `rfp-core/src/main/java/com/dsi/rfp/domain/model/SchemaValidationResult.ja
 public class SchemaValidationResult {
     private boolean valid;
     @Builder.Default
-    private List<String> errors = new java.util.ArrayList<>();
+    private final List<String> errors = new java.util.ArrayList<>();
 
     public static SchemaValidationResult ok() {
         return SchemaValidationResult.builder().valid(true).build();
@@ -1397,7 +1392,6 @@ File: `rfp-service/src/main/java/com/dsi/rfp/adapter/RfpSchemaValidator.java`:
 ```java
 package com.dsi.rfp.adapter;
 
-import com.dsi.rfp.domain.exception.RfpSchemaLoadException;
 import com.dsi.rfp.domain.model.SchemaValidationResult;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
@@ -1410,6 +1404,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1430,17 +1425,12 @@ public class RfpSchemaValidator {
     private JsonSchema jsonSchema;
 
     @PostConstruct
-    void loadSchema() {
-        try {
-            Path path = Path.of(schemaPath);
-            InputStream schemaStream = Files.newInputStream(path);
-            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
-            jsonSchema = factory.getSchema(schemaStream);
-            log.info("RFP JSON Schema loaded successfully from {}", schemaPath);
-        } catch (Exception e) {
-            throw new RfpSchemaLoadException(
-                "Failed to load RFP JSON Schema from " + schemaPath, e);
-        }
+    void loadSchema() throws IOException {
+        Path path = Path.of(schemaPath);
+        InputStream schemaStream = Files.newInputStream(path);
+        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
+        jsonSchema = factory.getSchema(schemaStream);
+        log.info("RFP JSON Schema loaded successfully from {}", schemaPath);
     }
 
     /**
@@ -1449,18 +1439,14 @@ public class RfpSchemaValidator {
      * @param rfpJson the JSON string to validate
      * @return SchemaValidationResult with valid flag and list of error messages
      */
-    public SchemaValidationResult validate(String rfpJson) {
-        try {
-            JsonNode node = objectMapper.readTree(rfpJson);
-            Set<ValidationMessage> messages = jsonSchema.validate(node);
-            if (messages.isEmpty()) return SchemaValidationResult.ok();
-            List<String> errors = messages.stream()
-                .map(ValidationMessage::getMessage)
-                .collect(Collectors.toList());
-            return SchemaValidationResult.fail(errors);
-        } catch (Exception e) {
-            return SchemaValidationResult.fail(List.of("Invalid JSON: " + e.getMessage()));
-        }
+    public SchemaValidationResult validate(String rfpJson) throws IOException {
+        JsonNode node = objectMapper.readTree(rfpJson);
+        Set<ValidationMessage> messages = jsonSchema.validate(node);
+        if (messages.isEmpty()) return SchemaValidationResult.ok();
+        List<String> errors = messages.stream()
+            .map(ValidationMessage::getMessage)
+            .collect(Collectors.toList());
+        return SchemaValidationResult.fail(errors);
     }
 }
 ```
@@ -1979,18 +1965,18 @@ public class GroundTruthLoader {
     public List<GroundTruthAnnotation> loadAll(Path groundTruthDir) throws IOException {
         List<GroundTruthAnnotation> annotations = new ArrayList<>();
         try (var stream = Files.list(groundTruthDir)) {
-            stream
+            for (Path path : stream
                 .filter(p -> p.toString().endsWith(".json"))
                 .filter(p -> !p.getFileName().toString().startsWith("sample-"))
-                .forEach(p -> {
-                    try {
-                        annotations.add(objectMapper.readValue(p.toFile(), GroundTruthAnnotation.class));
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to load annotation: " + p, e);
-                    }
-                });
+                .toList()) {
+                annotations.add(readAnnotation(path));
+            }
         }
         return annotations;
+    }
+
+    private GroundTruthAnnotation readAnnotation(Path path) throws IOException {
+        return objectMapper.readValue(path.toFile(), GroundTruthAnnotation.class);
     }
 }
 ```
@@ -2004,7 +1990,7 @@ public class GroundTruthAnnotation {
     private String docId;
     @JsonProperty("pdf_filename")
     private String pdfFilename;
-    private List<AnnotatedSection> sections = new ArrayList<>();
+    private final List<AnnotatedSection> sections = new ArrayList<>();
     private final Map<String, Object> entities = new HashMap<>();
 }
 

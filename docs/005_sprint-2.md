@@ -213,7 +213,7 @@ public class DocumentValidationService {
     public ValidationResult validateDocument(
         Path filePath,
         long fileSizeBytes,
-        String detectedMimeType) {
+        String detectedMimeType) throws IOException {
 
         ValidationResult sizeCheck = checkFileSize(fileSizeBytes);
         if (!sizeCheck.isValid()) return sizeCheck;
@@ -245,19 +245,12 @@ public class DocumentValidationService {
         return ValidationResult.ok();
     }
 
-    private ValidationResult validatePdf(Path filePath) {
+    private ValidationResult validatePdf(Path filePath) throws IOException {
         try (PDDocument doc = Loader.loadPDF(filePath.toFile())) {
             if (doc.getNumberOfPages() == 0) {
                 return ValidationResult.fail("EMPTY_DOCUMENT", "PDF has zero pages");
             }
             return checkForXfa(doc);
-        } catch (org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException e) {
-            return ValidationResult.fail("ENCRYPTED",
-                "PDF is password-protected and cannot be processed");
-        } catch (IOException e) {
-            log.warn("PDF validation failed - corrupt file at {}: {}", filePath, e.getMessage());
-            return ValidationResult.fail("CORRUPT",
-                "PDF file appears to be corrupt and cannot be opened");
         }
     }
 
@@ -1170,14 +1163,12 @@ package com.dsi.rfp.adapter.persistence;
 import com.dsi.rfp.domain.model.ExtractionJob;
 import com.dsi.rfp.domain.model.JobStatus;
 import com.dsi.rfp.domain.port.JobStatePort;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 import java.time.Duration;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
@@ -1187,33 +1178,19 @@ public class RedisJobStateRepository implements JobStatePort {
     private static final String KEY_PREFIX = "rfp:job:";
     private static final Duration TTL = Duration.ofHours(24);
 
-    private final StringRedisTemplate redisTemplate;
-    private final ObjectMapper objectMapper;
+    private final RedisTemplate<String, ExtractionJob> redisTemplate;
 
     @Override
     public void save(ExtractionJob job) {
         String key = buildKey(job.getJobId());
-        try {
-            String json = objectMapper.writeValueAsString(job);
-            redisTemplate.opsForValue().set(key, json, TTL);
-            log.debug("Saved job {} to Redis with TTL 24h", job.getJobId());
-        } catch (Exception e) {
-            log.error("Failed to save job {} to Redis: {}", job.getJobId(), e.getMessage());
-            throw new RuntimeException("Failed to persist job state", e);
-        }
+        redisTemplate.opsForValue().set(key, job, TTL);
+        log.debug("Saved job {} to Redis with TTL 24h", job.getJobId());
     }
 
     @Override
     public Optional<ExtractionJob> findById(UUID jobId) {
         String key = buildKey(jobId);
-        String json = redisTemplate.opsForValue().get(key);
-        if (json == null) return Optional.empty();
-        try {
-            return Optional.of(objectMapper.readValue(json, ExtractionJob.class));
-        } catch (Exception e) {
-            log.error("Failed to deserialize job {}: {}", jobId, e.getMessage());
-            return Optional.empty();
-        }
+        return Optional.ofNullable(redisTemplate.opsForValue().get(key));
     }
 
     @Override
@@ -1239,20 +1216,9 @@ public class RedisJobStateRepository implements JobStatePort {
     public List<ExtractionJob> findAll() {
         Set<String> keys = redisTemplate.keys(KEY_PREFIX + "*");
         if (keys == null || keys.isEmpty()) return List.of();
-        List<String> values = redisTemplate.opsForValue().multiGet(new ArrayList<>(keys));
+        List<ExtractionJob> values = redisTemplate.opsForValue().multiGet(new ArrayList<>(keys));
         if (values == null) return List.of();
-        return values.stream()
-            .filter(Objects::nonNull)
-            .map(json -> {
-                try {
-                    return objectMapper.readValue(json, ExtractionJob.class);
-                } catch (Exception e) {
-                    log.warn("Could not deserialize job JSON from Redis: {}", e.getMessage());
-                    return null;
-                }
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+        return values.stream().filter(Objects::nonNull).toList();
     }
 
     private String buildKey(UUID jobId) {
@@ -1651,7 +1617,7 @@ public class RfpSubmissionService {
      * @return SubmitResponse with jobId and QUEUED status
      * @throws ResponseStatusException on validation failure (mapped to HTTP error)
      */
-    public SubmitResponse submit(MultipartFile file) {
+    public SubmitResponse submit(MultipartFile file) throws IOException {
         UUID jobId = UUID.randomUUID();
         byte[] fileBytes = readFileBytes(file);
         Path storedPath = storeFile(jobId, fileBytes, file.getOriginalFilename());
@@ -1667,31 +1633,16 @@ public class RfpSubmissionService {
             .build();
     }
 
-    private byte[] readFileBytes(MultipartFile file) {
-        try {
-            return file.getBytes();
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "Cannot read uploaded file: " + e.getMessage());
-        }
+    private byte[] readFileBytes(MultipartFile file) throws IOException {
+        return file.getBytes();
     }
 
-    private Path storeFile(UUID jobId, byte[] bytes, String filename) {
-        try {
-            return fileStorage.store(jobId, bytes, filename);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                "Failed to store file: " + e.getMessage());
-        }
+    private Path storeFile(UUID jobId, byte[] bytes, String filename) throws IOException {
+        return fileStorage.store(jobId, bytes, filename);
     }
 
-    private void validateFile(Path path, long sizeBytes, String originalFilename) {
-        String mime;
-        try {
-            mime = mimeTypeDetector.detect(path);
-        } catch (Exception e) {
-            mime = "application/octet-stream";
-        }
+    private void validateFile(Path path, long sizeBytes, String originalFilename) throws IOException {
+        String mime = mimeTypeDetector.detect(path);
         ValidationResult result = validationService.validateDocument(path, sizeBytes, mime);
         if (!result.isValid()) {
             HttpStatus status = switch (result.getErrorCode()) {
@@ -1791,26 +1742,17 @@ public class ExtractionPipelineService {
     @Async("rfpTaskExecutor")
     public void runAsync(UUID jobId, Path documentPath) {
         log.info("Pipeline starting: jobId={}", jobId);
-        try {
-            jobStatePort.updateStatus(jobId, JobStatus.RUNNING);
-            var classifications = pageClassificationService.classifyAllPages(documentPath, jobId);
-            int pageCount = classifications.size();
-            // Update job with page count
-            jobStatePort.findById(jobId).ifPresent(job -> {
-                job.setPageCount(pageCount);
-                jobStatePort.save(job);
-            });
-            jobStatePort.updateStatus(jobId, JobStatus.COMPLETED);
-            log.info("Pipeline completed (page classification only): jobId={} pages={}",
-                jobId, pageCount);
-        } catch (Exception e) {
-            log.error("Pipeline failed: jobId={} error={}", jobId, e.getMessage(), e);
-            jobStatePort.findById(jobId).ifPresent(job -> {
-                job.setErrorMessage(e.getMessage());
-                jobStatePort.save(job);
-            });
-            jobStatePort.updateStatus(jobId, JobStatus.FAILED);
-        }
+        jobStatePort.updateStatus(jobId, JobStatus.RUNNING);
+        var classifications = pageClassificationService.classifyAllPages(documentPath, jobId);
+        int pageCount = classifications.size();
+        // Update job with page count
+        jobStatePort.findById(jobId).ifPresent(job -> {
+            job.setPageCount(pageCount);
+            jobStatePort.save(job);
+        });
+        jobStatePort.updateStatus(jobId, JobStatus.COMPLETED);
+        log.info("Pipeline completed (page classification only): jobId={} pages={}",
+            jobId, pageCount);
     }
 }
 ```
@@ -1823,24 +1765,25 @@ File: `rfp-service/src/main/java/com/dsi/rfp/adapter/api/GlobalExceptionHandler.
 package com.dsi.rfp.adapter.api;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
-import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<Map<String, String>> handleResponseStatus(ResponseStatusException ex) {
+    public ResponseEntity<ProblemDetail> handleResponseStatus(ResponseStatusException ex) {
         log.warn("Request failed: status={} reason={}", ex.getStatusCode(), ex.getReason());
-        return ResponseEntity.status(ex.getStatusCode())
-            .body(Map.of(
-                "error", ex.getStatusCode().toString(),
-                "message", ex.getReason() != null ? ex.getReason() : "Unknown error"
-            ));
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            ex.getStatusCode(),
+            ex.getReason() != null ? ex.getReason() : "Unknown error"
+        );
+        problem.setTitle("Request Failed");
+        return ResponseEntity.status(ex.getStatusCode()).body(problem);
     }
 }
 ```

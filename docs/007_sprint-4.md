@@ -1081,25 +1081,20 @@ public class EntityExtractor {
 
     public RfpEntities extractAll(List<Section> sections, List<Clause> clauses, ExtractionState state) {
         Map<String, Object> merged = new HashMap<>();
-        runSafe(generalExtractor, sections, clauses, state, merged, "general");
-        runSafe(submissionExtractor, sections, clauses, state, merged, "submission");
-        runSafe(financialExtractor, sections, clauses, state, merged, "financial");
-        runSafe(ictExtractor, sections, clauses, state, merged, "ict");
-        runSafe(staffingExtractor, sections, clauses, state, merged, "staffing");
-        runSafe(supportExtractor, sections, clauses, state, merged, "support");
-        runSafe(evaluationExtractor, sections, clauses, state, merged, "evaluation");
+        runExtractor(generalExtractor, sections, clauses, state, merged, "general");
+        runExtractor(submissionExtractor, sections, clauses, state, merged, "submission");
+        runExtractor(financialExtractor, sections, clauses, state, merged, "financial");
+        runExtractor(ictExtractor, sections, clauses, state, merged, "ict");
+        runExtractor(staffingExtractor, sections, clauses, state, merged, "staffing");
+        runExtractor(supportExtractor, sections, clauses, state, merged, "support");
+        runExtractor(evaluationExtractor, sections, clauses, state, merged, "evaluation");
         return entitiesMapper.fromMap(merged);
     }
 
-    private void runSafe(BaseEntityExtractor extractor, List<Section> sections,
-                         List<Clause> clauses, ExtractionState state,
-                         Map<String, Object> target, String name) {
-        try {
-            target.putAll(extractor.extract(sections, clauses, state));
-        } catch (Exception e) {
-            log.error("entity.extractor.failed extractor={} jobId={} error={}",
-                name, state.getJobId(), e.getMessage(), e);
-        }
+    private void runExtractor(BaseEntityExtractor extractor, List<Section> sections,
+                              List<Clause> clauses, ExtractionState state,
+                              Map<String, Object> target, String name) {
+        target.putAll(extractor.extract(sections, clauses, state));
     }
 }
 ```
@@ -1109,8 +1104,8 @@ public class EntityExtractor {
 1. Create `EntityExtractor` with 7 sub-extractor injections + `RfpEntitiesMapper`. Keep to under 250 lines.
 2. Create `RfpEntitiesMapper.java` in `adapter/entity/` — a `@Component` that maps a raw `Map<String,Object>` to
    `RfpEntities` domain object using safe casts and null defaults.
-3. `runSafe()` isolates each extractor failure: catches `Exception`, logs at ERROR, and continues. The merged map has
-   whatever partial results succeeded.
+3. `runExtractor()` does not catch generic exceptions. Failures propagate and are mapped by the global exception
+   handler.
 4. `extractAll()` method is under 20 lines — loop over a `List<Pair<BaseEntityExtractor, String>>` if needed to keep it
    clean. If inline calls keep the method under 20 lines, use inline form shown above.
 5. Create `ExtractEntitiesNode` in `agent/node/`: inject `EntityExtractor`, call
