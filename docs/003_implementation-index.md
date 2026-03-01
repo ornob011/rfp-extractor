@@ -104,21 +104,21 @@ A sprint is **Done** when ALL of the following are true:
 
 ## File Links
 
-| File                                        | Sprint    | Theme                                      |
-|---------------------------------------------|-----------|--------------------------------------------|
-| [004_sprint-1.md](004_sprint-1.md)          | Sprint 1  | Foundation & LLM Infrastructure            |
-| [005_sprint-2.md](005_sprint-2.md)          | Sprint 2  | Document Ingestion & Page Classification   |
-| [006_sprint-3.md](006_sprint-3.md)          | Sprint 3  | Section Segmentation & Clause IDs          |
-| [007_sprint-4.md](007_sprint-4.md)          | Sprint 4  | LangGraph4J Agent + Full Entity Extraction |
-| [008_sprint-5.md](008_sprint-5.md)          | Sprint 5  | Table Extraction                           |
-| [009_sprint-6.md](009_sprint-6.md)          | Sprint 6  | OCR & Mixed Pages                          |
-| [010_sprint-7.md](010_sprint-7.md)          | Sprint 7  | Repair Loop                                |
-| [011_sprint-8.md](011_sprint-8.md)          | Sprint 8  | Rule Pack Engine & ICT Rules               |
-| [012_sprint-9.md](012_sprint-9.md)          | Sprint 9  | Additional Rule Packs & Hot Reload         |
-| [013_sprint-10.md](013_sprint-10.md)        | Sprint 10 | Bid Clarity Pack Artifacts                 |
-| [014_sprint-11.md](014_sprint-11.md)        | Sprint 11 | Security & RBAC                            |
-| [015_sprint-12.md](015_sprint-12.md)        | Sprint 12 | Operational Hardening                      |
-| [001_wishlist.md](wishlist/001_wishlist.md) | Wishlist  | Benchmark Dataset Wishlist (Non-Blocking)  |
+| File                                           | Sprint    | Theme                                      |
+|------------------------------------------------|-----------|--------------------------------------------|
+| [004_sprint-1.md](004_sprint-1.md)             | Sprint 1  | Foundation & LLM Infrastructure            |
+| [005_sprint-2.md](005_sprint-2.md)             | Sprint 2  | Document Ingestion & Page Classification   |
+| [006_sprint-3.md](006_sprint-3.md)             | Sprint 3  | Section Segmentation & Clause IDs          |
+| [007_sprint-4.md](007_sprint-4.md)             | Sprint 4  | LangGraph4J Agent + Full Entity Extraction |
+| [008_sprint-5.md](008_sprint-5.md)             | Sprint 5  | Table Extraction                           |
+| [009_sprint-6.md](009_sprint-6.md)             | Sprint 6  | OCR & Mixed Pages                          |
+| [010_sprint-7.md](010_sprint-7.md)             | Sprint 7  | Repair Loop                                |
+| [011_sprint-8.md](011_sprint-8.md)             | Sprint 8  | Rule Pack Engine & ICT Rules               |
+| [012_sprint-9.md](012_sprint-9.md)             | Sprint 9  | Additional Rule Packs & Hot Reload         |
+| [013_sprint-10.md](013_sprint-10.md)           | Sprint 10 | Bid Clarity Pack Artifacts                 |
+| [014_sprint-11.md](014_sprint-11.md)           | Sprint 11 | Security & RBAC                            |
+| [015_sprint-12.md](015_sprint-12.md)           | Sprint 12 | Operational Hardening                      |
+| [001_wishlist.md](../wishlist/001_wishlist.md) | Wishlist  | Benchmark Dataset Wishlist (Non-Blocking)  |
 
 ---
 
