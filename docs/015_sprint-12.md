@@ -91,6 +91,7 @@ Then rfp_llm_tokens_used_total is incremented with correct provider and model ta
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -205,6 +206,7 @@ Then "redis": {"status": "DOWN"} is in the response
 **Interfaces / Contracts:**
 
 ```java
+
 @Component("rfpRedis")
 @RequiredArgsConstructor
 public class RedisHealthIndicator implements HealthIndicator {
@@ -244,6 +246,7 @@ Then "ocrSidecar": {"status": "UP"} is in the response
 **Interfaces / Contracts:**
 
 ```java
+
 @Component("ocrSidecar")
 @RequiredArgsConstructor
 public class OcrSidecarHealthIndicator implements HealthIndicator {
@@ -285,6 +288,7 @@ Then "llmProvider": {"status": "DOWN"} is present
 **Interfaces / Contracts:**
 
 ```java
+
 @Component("llmProvider")
 @RequiredArgsConstructor
 public class LlmProviderHealthIndicator implements HealthIndicator {
@@ -373,7 +377,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex);
 }
 
-public record ErrorResponse(String error, String message) {}
+public record ErrorResponse(String error, String message) {
+}
 ```
 
 **Implementation Plan:**
@@ -448,54 +453,54 @@ Update `docker-compose.yml` with `deploy.resources.limits` for each service:
 
 ```yaml
 services:
-  rfp-service:
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 2g
-    environment:
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - STORAGE_ENCRYPTION_KEY=${STORAGE_ENCRYPTION_KEY}
-    env_file: .env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
+    rfp-service   :
+        deploy     :
+            resources:
+                limits:
+                    cpus  : '2.0'
+                    memory: 2g
+        environment:
+            - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+            - STORAGE_ENCRYPTION_KEY=${STORAGE_ENCRYPTION_KEY}
+        env_file   : .env
+        healthcheck:
+            test    : [ "CMD", "curl", "-f", "http://localhost:8080/api/v1/health" ]
+            interval: 30s
+            timeout : 10s
+            retries : 3
+        restart    : unless-stopped
 
-  rfp-python-ocr:
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 4g
-    restart: unless-stopped
+    rfp-python-ocr:
+        deploy :
+            resources:
+                limits:
+                    cpus  : '2.0'
+                    memory: 4g
+        restart: unless-stopped
 
-  redis:
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512m
-    restart: unless-stopped
+    redis         :
+        deploy :
+            resources:
+                limits:
+                    cpus  : '0.5'
+                    memory: 512m
+        restart: unless-stopped
 
-  postgres:
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1g
-    restart: unless-stopped
+    postgres      :
+        deploy :
+            resources:
+                limits:
+                    cpus  : '1.0'
+                    memory: 1g
+        restart: unless-stopped
 
-  rfp-frontend:
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 256m
-    restart: unless-stopped
+    rfp-frontend  :
+        deploy :
+            resources:
+                limits:
+                    cpus  : '0.25'
+                    memory: 256m
+        restart: unless-stopped
 ```
 
 Also add `.env.example` to project root:
@@ -594,13 +599,13 @@ Then data is fetched every 30 seconds automatically via React Query
 ```typescript
 // hooks/useMetrics.ts
 export function useMetrics() {
-  // Uses React Query to poll /actuator/metrics/* every 30s
-  // Returns { queueDepth, completedJobs, failedJobs, avgProcessingTime, isLoading, isError }
+    // Uses React Query to poll /actuator/metrics/* every 30s
+    // Returns { queueDepth, completedJobs, failedJobs, avgProcessingTime, isLoading, isError }
 }
 
 // components/MetricsDashboard.tsx
 interface MetricsDashboardProps {
-  className?: string;
+    className?: string;
 }
 ```
 

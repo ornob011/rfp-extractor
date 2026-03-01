@@ -90,167 +90,167 @@ File: `rfp-extractor/pom.xml`
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" ...>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.dsi</groupId>
-  <artifactId>rfp-extractor</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
-  <packaging>pom</packaging>
+<modelVersion>4.0.0</modelVersion>
+<groupId>com.dsi</groupId>
+<artifactId>rfp-extractor</artifactId>
+<version>1.0.0-SNAPSHOT</version>
+<packaging>pom</packaging>
 
-  <modules>
-    <module>rfp-core</module>
-    <module>rfp-service</module>
-  </modules>
+<modules>
+<module>rfp-core</module>
+<module>rfp-service</module>
+</modules>
 
-  <properties>
-    <java.version>21</java.version>
-    <maven.compiler.source>21</maven.compiler.source>
-    <maven.compiler.target>21</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <spring-boot.version>3.5.11</spring-boot.version>
-    <spring-ai.version>1.0.0</spring-ai.version>
-    <langchain4j.version>0.36.2</langchain4j.version>
-    <langgraph4j.version>1.5.4</langgraph4j.version>
-    <resilience4j.version>2.2.0</resilience4j.version>
-    <lombok.version>1.18.34</lombok.version>
-    <pdfbox.version>3.0.3</pdfbox.version>
-    <poi.version>5.3.0</poi.version>
-    <networknt.version>1.4.1</networknt.version>
-    <jmespath.version>0.6.0</jmespath.version>
-    <freemarker.version>2.3.33</freemarker.version>
-    <commons-text.version>1.12.0</commons-text.version>
-    <jackson.version>2.17.2</jackson.version>
-  </properties>
+<properties>
+<java.version>21</java.version>
+<maven.compiler.source>21</maven.compiler.source>
+<maven.compiler.target>21</maven.compiler.target>
+<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+<spring-boot.version>3.5.11</spring-boot.version>
+<spring-ai.version>1.0.0</spring-ai.version>
+<langchain4j.version>0.36.2</langchain4j.version>
+<langgraph4j.version>1.5.4</langgraph4j.version>
+<resilience4j.version>2.2.0</resilience4j.version>
+<lombok.version>1.18.34</lombok.version>
+<pdfbox.version>3.0.3</pdfbox.version>
+<poi.version>5.3.0</poi.version>
+<networknt.version>1.4.1</networknt.version>
+<jmespath.version>0.6.0</jmespath.version>
+<freemarker.version>2.3.33</freemarker.version>
+<commons-text.version>1.12.0</commons-text.version>
+<jackson.version>2.17.2</jackson.version>
+</properties>
 
-  <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.11</version>
-    <relativePath/>
-  </parent>
+<parent>
+<groupId>org.springframework.boot</groupId>
+<artifactId>spring-boot-starter-parent</artifactId>
+<version>3.5.11</version>
+<relativePath/>
+</parent>
 
-  <dependencyManagement>
-    <dependencies>
-      <!-- Spring AI BOM -->
-      <dependency>
+<dependencyManagement>
+<dependencies>
+    <!-- Spring AI BOM -->
+    <dependency>
         <groupId>org.springframework.ai</groupId>
         <artifactId>spring-ai-bom</artifactId>
         <version>${spring-ai.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <!-- LangChain4J BOM -->
-      <dependency>
+    </dependency>
+    <!-- LangChain4J BOM -->
+    <dependency>
         <groupId>dev.langchain4j</groupId>
         <artifactId>langchain4j-bom</artifactId>
         <version>${langchain4j.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <!-- rfp-core internal -->
-      <dependency>
+    </dependency>
+    <!-- rfp-core internal -->
+    <dependency>
         <groupId>com.dsi</groupId>
         <artifactId>rfp-core</artifactId>
         <version>${project.version}</version>
-      </dependency>
-      <!-- Resilience4j -->
-      <dependency>
+    </dependency>
+    <!-- Resilience4j -->
+    <dependency>
         <groupId>io.github.resilience4j</groupId>
         <artifactId>resilience4j-spring-boot3</artifactId>
         <version>${resilience4j.version}</version>
-      </dependency>
-      <!-- PDFBox -->
-      <dependency>
+    </dependency>
+    <!-- PDFBox -->
+    <dependency>
         <groupId>org.apache.pdfbox</groupId>
         <artifactId>pdfbox</artifactId>
         <version>${pdfbox.version}</version>
-      </dependency>
-      <!-- POI OOXML -->
-      <dependency>
+    </dependency>
+    <!-- POI OOXML -->
+    <dependency>
         <groupId>org.apache.poi</groupId>
         <artifactId>poi-ooxml</artifactId>
         <version>${poi.version}</version>
-      </dependency>
-      <!-- Networknt JSON Schema Validator -->
-      <dependency>
+    </dependency>
+    <!-- Networknt JSON Schema Validator -->
+    <dependency>
         <groupId>com.networknt</groupId>
         <artifactId>json-schema-validator</artifactId>
         <version>${networknt.version}</version>
-      </dependency>
-      <!-- JMESPath -->
-      <dependency>
+    </dependency>
+    <!-- JMESPath -->
+    <dependency>
         <groupId>io.burt</groupId>
         <artifactId>jmespath-jackson</artifactId>
         <version>${jmespath.version}</version>
-      </dependency>
-      <!-- Freemarker -->
-      <dependency>
+    </dependency>
+    <!-- Freemarker -->
+    <dependency>
         <groupId>org.freemarker</groupId>
         <artifactId>freemarker</artifactId>
         <version>${freemarker.version}</version>
-      </dependency>
-      <!-- Commons Text -->
-      <dependency>
+    </dependency>
+    <!-- Commons Text -->
+    <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-text</artifactId>
         <version>${commons-text.version}</version>
-      </dependency>
-      <!-- LangGraph4J -->
-      <dependency>
+    </dependency>
+    <!-- LangGraph4J -->
+    <dependency>
         <groupId>org.bsc.langgraph4j</groupId>
         <artifactId>langgraph4j-core</artifactId>
         <version>${langgraph4j.version}</version>
-      </dependency>
-      <!-- Lombok -->
-      <dependency>
+    </dependency>
+    <!-- Lombok -->
+    <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
         <version>${lombok.version}</version>
         <scope>provided</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
+    </dependency>
+</dependencies>
+</dependencyManagement>
 
-  <build>
-    <pluginManagement>
-      <plugins>
+<build>
+<pluginManagement>
+    <plugins>
         <plugin>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-maven-plugin</artifactId>
-          <version>${spring-boot.version}</version>
-          <configuration>
-            <excludes>
-              <exclude>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-              </exclude>
-            </excludes>
-          </configuration>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <version>${spring-boot.version}</version>
+            <configuration>
+                <excludes>
+                    <exclude>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                    </exclude>
+                </excludes>
+            </configuration>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.13.0</version>
-          <configuration>
-            <source>21</source>
-            <target>21</target>
-            <annotationProcessorPaths>
-              <path>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>${lombok.version}</version>
-              </path>
-            </annotationProcessorPaths>
-          </configuration>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.13.0</version>
+            <configuration>
+                <source>21</source>
+                <target>21</target>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                        <version>${lombok.version}</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.3.1</version>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.3.1</version>
         </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
-</project>
+    </plugins>
+</pluginManagement>
+</build>
+    </project>
 ```
 
 File: `rfp-extractor/rfp-core/pom.xml`
@@ -404,7 +404,7 @@ public class LlmProviderProperties {
     @Data
     public static class OllamaProps {
         private String baseUrl = "http://localhost:11434";
-        private String model = "llama3.1:8b";
+        private final String model = "llama3.1:8b";
         private final String modelJudge = "llama3.1:70b";
     }
 }
@@ -576,6 +576,7 @@ import org.springframework.util.StringUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import java.time.Duration;
 
 @Slf4j
@@ -592,25 +593,25 @@ public class LlmProviderConfig {
 
     @Bean
     @ConditionalOnProperty(name = "app.llm.provider", havingValue = "openrouter", matchIfMissing = true)
-    public ChatClient openRouterChatClient() { ... }
+    public ChatClient openRouterChatClient() { ...}
 
     @Bean
     @ConditionalOnProperty(name = "app.llm.provider", havingValue = "ollama")
-    public ChatClient ollamaChatClient() { ... }
+    public ChatClient ollamaChatClient() { ...}
 
     @Bean
     @ConditionalOnProperty(name = "app.llm.provider", havingValue = "openrouter", matchIfMissing = true)
-    public ChatLanguageModel openRouterChatLanguageModel() { ... }
+    public ChatLanguageModel openRouterChatLanguageModel() { ...}
 
     @Bean
     @ConditionalOnProperty(name = "app.llm.provider", havingValue = "ollama")
-    public ChatLanguageModel ollamaChatLanguageModel() { ... }
+    public ChatLanguageModel ollamaChatLanguageModel() { ...}
 
     private void validateOpenRouterConfig() {
         if (!StringUtils.hasText(props.getOpenrouter().getApiKey())) {
             throw new IllegalStateException(
                 "OpenRouter API key must not be blank when provider=openrouter. " +
-                "Set app.llm.openrouter.api-key or OPENROUTER_API_KEY env var.");
+                    "Set app.llm.openrouter.api-key or OPENROUTER_API_KEY env var.");
         }
     }
 }
@@ -645,6 +646,7 @@ public class LlmProviderConfig {
 `validateConfiguration()` implementation:
 
 ```java
+
 @PostConstruct
 void validateConfiguration() {
     log.info("LLM provider configured: provider={}, model={}",
@@ -751,6 +753,7 @@ import io.github.resilience4j.timelimiter.TimeLimiterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 import java.time.Duration;
 
 @Configuration
@@ -765,16 +768,16 @@ public class LlmResilienceConfig {
     private final LlmProviderProperties props;
 
     @Bean
-    public Retry llmRetry(RetryRegistry retryRegistry) { ... }
+    public Retry llmRetry(RetryRegistry retryRegistry) { ...}
 
     @Bean
-    public CircuitBreaker llmCircuitBreaker(CircuitBreakerRegistry cbRegistry) { ... }
+    public CircuitBreaker llmCircuitBreaker(CircuitBreakerRegistry cbRegistry) { ...}
 
     @Bean
-    public RateLimiter llmRateLimiter(RateLimiterRegistry rlRegistry) { ... }
+    public RateLimiter llmRateLimiter(RateLimiterRegistry rlRegistry) { ...}
 
     @Bean
-    public TimeLimiter llmTimeLimiter(TimeLimiterRegistry tlRegistry) { ... }
+    public TimeLimiter llmTimeLimiter(TimeLimiterRegistry tlRegistry) { ...}
 }
 ```
 
@@ -784,15 +787,17 @@ public class LlmResilienceConfig {
 
 ```java
 RetryConfig config = RetryConfig.custom()
-    .maxAttempts(3)
-    .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(
-        Duration.ofSeconds(1),   // initial interval
-        2.0,                     // multiplier
-        0.3                      // randomization factor (jitter)
-    ))
-    .retryOnException(e -> !(e instanceof LlmResponseParseException))
-    .build();
-return retryRegistry.retry(LLM_RETRY, config);
+                                .maxAttempts(3)
+                                .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(
+                                    Duration.ofSeconds(1),   // initial interval
+                                    2.0,                     // multiplier
+                                    0.3                      // randomization factor (jitter)
+                                ))
+                                .retryOnException(e -> !(e instanceof LlmResponseParseException))
+                                .build();
+return retryRegistry.
+
+retry(LLM_RETRY, config);
 ```
 
 Note: `LlmResponseParseException` should NOT trigger a retry — it means the LLM responded but the response was
@@ -802,36 +807,42 @@ unparseable. Only `LlmUnavailableException` and transient IO errors should retry
 
 ```java
 CircuitBreakerConfig config = CircuitBreakerConfig.custom()
-    .failureRateThreshold(50.0f)
-    .slidingWindowType(SlidingWindowType.COUNT_BASED)
-    .slidingWindowSize(10)
-    .waitDurationInOpenState(Duration.ofSeconds(30))
-    .permittedNumberOfCallsInHalfOpenState(3)
-    .recordExceptions(LlmUnavailableException.class, java.io.IOException.class,
-                      java.util.concurrent.TimeoutException.class)
-    .build();
-return cbRegistry.circuitBreaker(LLM_CB, config);
+                                                  .failureRateThreshold(50.0f)
+                                                  .slidingWindowType(SlidingWindowType.COUNT_BASED)
+                                                  .slidingWindowSize(10)
+                                                  .waitDurationInOpenState(Duration.ofSeconds(30))
+                                                  .permittedNumberOfCallsInHalfOpenState(3)
+                                                  .recordExceptions(LlmUnavailableException.class, java.io.IOException.class,
+                                                      java.util.concurrent.TimeoutException.class)
+                                                  .build();
+return cbRegistry.
+
+circuitBreaker(LLM_CB, config);
 ```
 
 `llmRateLimiter()`:
 
 ```java
 RateLimiterConfig config = RateLimiterConfig.custom()
-    .limitForPeriod(props.getRateLimitPerMinute())
-    .limitRefreshPeriod(Duration.ofMinutes(1))
-    .timeoutDuration(Duration.ofSeconds(10))
-    .build();
-return rlRegistry.rateLimiter(LLM_RL, config);
+                                            .limitForPeriod(props.getRateLimitPerMinute())
+                                            .limitRefreshPeriod(Duration.ofMinutes(1))
+                                            .timeoutDuration(Duration.ofSeconds(10))
+                                            .build();
+return rlRegistry.
+
+rateLimiter(LLM_RL, config);
 ```
 
 `llmTimeLimiter()`:
 
 ```java
 TimeLimiterConfig config = TimeLimiterConfig.custom()
-    .timeoutDuration(Duration.ofSeconds(props.getTimeoutSeconds()))
-    .cancelRunningFuture(true)
-    .build();
-return tlRegistry.timeLimiter(LLM_TIMEOUT, config);
+                                            .timeoutDuration(Duration.ofSeconds(props.getTimeoutSeconds()))
+                                            .cancelRunningFuture(true)
+                                            .build();
+return tlRegistry.
+
+timeLimiter(LLM_TIMEOUT, config);
 ```
 
 Also add to `rfp-service/src/main/java/com/dsi/rfp/config/` package:
@@ -839,6 +850,7 @@ Also add to `rfp-service/src/main/java/com/dsi/rfp/config/` package:
 File: `AsyncConfig.java`:
 
 ```java
+
 @Configuration
 @EnableAsync
 public class AsyncConfig implements AsyncConfigurer {
@@ -945,6 +957,7 @@ public class LlmUnavailableException extends RuntimeException {
     public LlmUnavailableException(String message) {
         super(message);
     }
+
     public LlmUnavailableException(String message, Throwable cause) {
         super(message, cause);
     }
@@ -1028,6 +1041,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Component;
+
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -1056,9 +1070,9 @@ public class LlmAdapter {
      * @return Optional.of(parsed result) or Optional.empty() if parse fails
      */
     public <T> Optional<T> extractStructured(
-            String systemPrompt,
-            String userContent,
-            Class<T> responseType) { ... }
+        String systemPrompt,
+        String userContent,
+        Class<T> responseType) { ...}
 
     /**
      * Calls the judge model (e.g. gemini-2.5-pro-preview-06-05) for quality assessment.
@@ -1067,16 +1081,16 @@ public class LlmAdapter {
      * @param snippet the text being judged
      * @return Optional.of(judgment response) or Optional.empty() on failure
      */
-    public Optional<String> judgeSnippet(String prompt, String snippet) { ... }
+    public Optional<String> judgeSnippet(String prompt, String snippet) { ...}
 
-    private String callLlmRaw(String systemPrompt, String userContent) { ... }
+    private String callLlmRaw(String systemPrompt, String userContent) { ...}
 
-    private String callJudgeLlmRaw(String fullPrompt) { ... }
+    private String callJudgeLlmRaw(String fullPrompt) { ...}
 
-    private <T> Optional<T> parseResponse(String rawResponse, Class<T> responseType) { ... }
+    private <T> Optional<T> parseResponse(String rawResponse, Class<T> responseType) { ...}
 
     private void logLlmCall(String operation, String model, long startMs,
-                             boolean success, String failReason) { ... }
+                            boolean success, String failReason) { ...}
 }
 ```
 
@@ -1086,8 +1100,8 @@ public class LlmAdapter {
 
 ```java
 public <T> Optional<T> extractStructured(String systemPrompt,
-                                          String userContent,
-                                          Class<T> responseType) {
+                                         String userContent,
+                                         Class<T> responseType) {
     long startMs = System.currentTimeMillis();
     String model = props.getOpenrouter().getModel(); // or ollama model
     try {
@@ -1129,10 +1143,10 @@ public <T> Optional<T> extractStructured(String systemPrompt,
 ```java
 private String callLlmRaw(String systemPrompt, String userContent) {
     return chatClient.prompt()
-        .system(systemPrompt)
-        .user(userContent)
-        .call()
-        .content();
+                     .system(systemPrompt)
+                     .user(userContent)
+                     .call()
+                     .content();
 }
 ```
 
@@ -1171,7 +1185,7 @@ private <T> Optional<T> parseResponse(String rawResponse, Class<T> responseType)
 
 ```java
 private void logLlmCall(String operation, String model,
-                          long startMs, boolean success, String failReason) {
+                        long startMs, boolean success, String failReason) {
     long latencyMs = System.currentTimeMillis() - startMs;
     if (success) {
         log.info("LLM_CALL op={} model={} provider={} latencyMs={} status=SUCCESS",
@@ -1200,33 +1214,38 @@ Mock: `ChatClient`, `ChatClient.ChatClientRequest`, `ChatClient.CallResponseSpec
 classes.
 
 ```java
+
 @ExtendWith(MockitoExtension.class)
 class LlmAdapterTest {
-    @Mock ChatClient chatClient;
-    @Mock ChatClient.ChatClientRequest requestSpec;
-    @Mock ChatClient.CallResponseSpec callSpec;
-    @InjectMocks LlmAdapter llmAdapter; // inject via constructor, not field
+    @Mock
+    ChatClient chatClient;
+    @Mock
+    ChatClient.ChatClientRequest requestSpec;
+    @Mock
+    ChatClient.CallResponseSpec callSpec;
+    @InjectMocks
+    LlmAdapter llmAdapter; // inject via constructor, not field
 
     @Test
-    void shouldReturnParsedDtoWhenLlmReturnsValidJson() { ... }
+    void shouldReturnParsedDtoWhenLlmReturnsValidJson() { ...}
 
     @Test
-    void shouldReturnEmptyWhenLlmReturnsInvalidJson() { ... }
+    void shouldReturnEmptyWhenLlmReturnsInvalidJson() { ...}
 
     @Test
-    void shouldReturnEmptyWhenLlmReturnsBlankResponse() { ... }
+    void shouldReturnEmptyWhenLlmReturnsBlankResponse() { ...}
 
     @Test
-    void shouldStripMarkdownCodeFencesBeforeParsing() { ... }
+    void shouldStripMarkdownCodeFencesBeforeParsing() { ...}
 
     @Test
-    void shouldThrowLlmUnavailableExceptionWhenChatClientThrows() { ... }
+    void shouldThrowLlmUnavailableExceptionWhenChatClientThrows() { ...}
 
     @Test
-    void shouldLogSuccessWhenExtractionSucceeds() { ... }
+    void shouldLogSuccessWhenExtractionSucceeds() { ...}
 
     @Test
-    void shouldLogFailureWhenExtractionFails() { ... }
+    void shouldLogFailureWhenExtractionFails() { ...}
 }
 ```
 
@@ -1234,6 +1253,7 @@ Since Resilience4j wrappers require real registry objects, construct them in `@B
 tests:
 
 ```java
+
 @BeforeEach
 void setUp() {
     Retry retry = RetryRegistry.ofDefaults().retry("test");
@@ -1397,14 +1417,16 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
 export const rfpClient = axios.create({
     baseURL: BASE_URL,
     timeout: 30_000,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {'Content-Type': 'application/json'},
 });
 
-export async function submitRfp(file: File): Promise<{ jobId: string; status: string }> {
+export type JobStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'PARTIAL';
+
+export async function submitRfp(file: File): Promise<{ jobId: string; status: JobStatus }> {
     const formData = new FormData();
     formData.append('file', file);
     const response = await rfpClient.post('/api/v1/rfp/submit', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {'Content-Type': 'multipart/form-data'},
     });
     return response.data;
 }
@@ -1448,7 +1470,7 @@ export interface Section {
 
 export interface JobStatusResponse {
     jobId: string;
-    status: 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'PARTIAL';
+    status: JobStatus;
     progress: number;
     submittedAt: string;
     completedAt?: string;
@@ -1465,9 +1487,9 @@ export interface RfpResultResponse {
 File: `rfp-frontend/src/pages/UploadPage.tsx`:
 
 ```tsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { submitRfp } from '../api/rfpClient';
+import React, {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {submitRfp} from '../api/rfpClient';
 
 export function UploadPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -1485,7 +1507,7 @@ export function UploadPage() {
         setUploading(true);
         setError(null);
         try {
-            const { jobId } = await submitRfp(file);
+            const {jobId} = await submitRfp(file);
             navigate(`/job/${jobId}`);
         } catch (err: unknown) {
             setError('Upload failed. Please try again.');
@@ -1523,18 +1545,18 @@ export function UploadPage() {
 File: `rfp-frontend/src/App.tsx`:
 
 ```tsx
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { UploadPage } from './pages/UploadPage';
-import { JobStatusPage } from './pages/JobStatusPage';
-import { ResultPage } from './pages/ResultPage';
+import {BrowserRouter, Routes, Route} from 'react-router-dom';
+import {UploadPage} from './pages/UploadPage';
+import {JobStatusPage} from './pages/JobStatusPage';
+import {ResultPage} from './pages/ResultPage';
 
 export function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<UploadPage />} />
-                <Route path="/job/:jobId" element={<JobStatusPage />} />
-                <Route path="/result/:jobId" element={<ResultPage />} />
+                <Route path="/" element={<UploadPage/>}/>
+                <Route path="/job/:jobId" element={<JobStatusPage/>}/>
+                <Route path="/result/:jobId" element={<ResultPage/>}/>
             </Routes>
         </BrowserRouter>
     );
@@ -1544,10 +1566,10 @@ export function App() {
 File: `rfp-frontend/src/pages/JobStatusPage.tsx` — stub:
 
 ```tsx
-import { useParams } from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 
 export function JobStatusPage() {
-    const { jobId } = useParams<{ jobId: string }>();
+    const {jobId} = useParams<{ jobId: string }>();
     return (
         <div className="p-8">
             <h1 className="text-xl font-bold">Job: {jobId}</h1>
@@ -1560,10 +1582,10 @@ export function JobStatusPage() {
 File: `rfp-frontend/src/pages/ResultPage.tsx` — stub:
 
 ```tsx
-import { useParams } from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 
 export function ResultPage() {
-    const { jobId } = useParams<{ jobId: string }>();
+    const {jobId} = useParams<{ jobId: string }>();
     return (
         <div className="p-8">
             <h1 className="text-xl font-bold">Result: {jobId}</h1>
@@ -1582,7 +1604,7 @@ VITE_API_BASE_URL=http://localhost:8080
 File: `rfp-frontend/vite.config.ts`:
 
 ```typescript
-import { defineConfig } from 'vite';
+import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -1703,6 +1725,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+
 import java.time.Duration;
 
 @Slf4j
@@ -1724,19 +1747,19 @@ public class HealthService {
             ? props.getOpenrouter().getModel()
             : props.getOllama().getModel();
         return HealthResponse.builder()
-            .status(overallStatus)
-            .provider(props.getProvider())
-            .model(model)
-            .ocrSidecar(ocrStatus)
-            .build();
+                             .status(overallStatus)
+                             .provider(props.getProvider())
+                             .model(model)
+                             .ocrSidecar(ocrStatus)
+                             .build();
     }
 
     private String pingOcrSidecar() {
         try {
             restClient.get()
-                .uri(ocrSidecarUrl + "/health")
-                .retrieve()
-                .body(String.class);
+                      .uri(ocrSidecarUrl + "/health")
+                      .retrieve()
+                      .body(String.class);
             return "reachable";
         } catch (Exception e) {
             log.warn("OCR sidecar unreachable at {}: {}", ocrSidecarUrl, e.getMessage());
@@ -1749,11 +1772,12 @@ public class HealthService {
 Add a `RestClient` bean to a simple `WebClientConfig.java` or inline in `LlmProviderConfig.java`:
 
 ```java
+
 @Bean
 public RestClient restClient() {
     return RestClient.builder()
-        .defaultHeader("Accept", "application/json")
-        .build();
+                     .defaultHeader("Accept", "application/json")
+                     .build();
 }
 ```
 
@@ -1765,23 +1789,26 @@ supports `.httpClientOptions()` for timeout.
 Class: `HealthServiceTest`
 
 ```java
+
 @ExtendWith(MockitoExtension.class)
 class HealthServiceTest {
-    @Mock LlmAdapter llmAdapter;
-    @Mock RestClient restClient;
+    @Mock
+    LlmAdapter llmAdapter;
+    @Mock
+    RestClient restClient;
     // ... mock the RestClient chain
 
     @Test
-    void shouldReturnReachableWhenOcrSidecarResponds() { ... }
+    void shouldReturnReachableWhenOcrSidecarResponds() { ...}
 
     @Test
-    void shouldReturnUnreachableWhenOcrSidecarThrows() { ... }
+    void shouldReturnUnreachableWhenOcrSidecarThrows() { ...}
 
     @Test
-    void shouldReturnProviderNameFromProperties() { ... }
+    void shouldReturnProviderNameFromProperties() { ...}
 
     @Test
-    void shouldReturnExtractionModelName() { ... }
+    void shouldReturnExtractionModelName() { ...}
 }
 ```
 
@@ -1823,98 +1850,98 @@ Then it depends_on: [postgres, redis, rfp-python-ocr] with condition: service_he
 File: `rfp-extractor/docker-compose.yml`:
 
 ```yaml
-version: '3.9'
+version : '3.9'
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-rfpdb}
-      POSTGRES_USER: ${POSTGRES_USER:-rfpuser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rfppass}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rfpuser} -d ${POSTGRES_DB:-rfpdb}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+    postgres      :
+        image      : postgres:16-alpine
+        environment:
+            POSTGRES_DB      : ${POSTGRES_DB:-rfpdb}
+            POSTGRES_USER    : ${POSTGRES_USER:-rfpuser}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rfppass}
+        ports      :
+            - "5432:5432"
+        volumes    :
+            - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test        : [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rfpuser} -d ${POSTGRES_DB:-rfpdb}" ]
+            interval    : 10s
+            timeout     : 5s
+            retries     : 5
+            start_period: 20s
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
+    redis         :
+        image      : redis:7-alpine
+        ports      :
+            - "6379:6379"
+        healthcheck:
+            test    : [ "CMD", "redis-cli", "ping" ]
+            interval: 10s
+            timeout : 3s
+            retries : 3
 
-  rfp-python-ocr:
-    build:
-      context: ./rfp-python-ocr
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      PYTHONUNBUFFERED: "1"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+    rfp-python-ocr:
+        build      :
+            context   : ./rfp-python-ocr
+            dockerfile: Dockerfile
+        ports      :
+            - "8000:8000"
+        environment:
+            PYTHONUNBUFFERED: "1"
+        healthcheck:
+            test        : [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+            interval    : 15s
+            timeout     : 5s
+            retries     : 3
+            start_period: 10s
 
-  rfp-service:
-    build:
-      context: .
-      dockerfile: rfp-service/Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-      POSTGRES_USER: ${POSTGRES_USER:-rfpuser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rfppass}
-      POSTGRES_DB: ${POSTGRES_DB:-rfpdb}
-      REDIS_URL: redis://redis:6379
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rfp-python-ocr:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    volumes:
-      - rfp_storage:/app/rfp-storage
+    rfp-service   :
+        build      :
+            context   : .
+            dockerfile: rfp-service/Dockerfile
+        ports      :
+            - "8080:8080"
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            OPENROUTER_API_KEY    : ${OPENROUTER_API_KEY}
+            POSTGRES_USER         : ${POSTGRES_USER:-rfpuser}
+            POSTGRES_PASSWORD     : ${POSTGRES_PASSWORD:-rfppass}
+            POSTGRES_DB           : ${POSTGRES_DB:-rfpdb}
+            REDIS_URL             : redis://redis:6379
+        depends_on :
+            postgres      :
+                condition: service_healthy
+            redis         :
+                condition: service_healthy
+            rfp-python-ocr:
+                condition: service_healthy
+        healthcheck:
+            test        : [ "CMD", "curl", "-f", "http://localhost:8080/api/v1/health" ]
+            interval    : 30s
+            timeout     : 10s
+            retries     : 3
+            start_period: 60s
+        volumes    :
+            - rfp_storage:/app/rfp-storage
 
-  rfp-frontend:
-    build:
-      context: ./rfp-frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:80"
-    depends_on:
-      rfp-service:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+    rfp-frontend  :
+        build      :
+            context   : ./rfp-frontend
+            dockerfile: Dockerfile
+        ports      :
+            - "3000:80"
+        depends_on :
+            rfp-service:
+                condition: service_healthy
+        healthcheck:
+            test    : [ "CMD", "curl", "-f", "http://localhost:80" ]
+            interval: 30s
+            timeout : 5s
+            retries : 3
 
-volumes:
-  postgres_data:
-  rfp_storage:
+volumes :
+    postgres_data:
+    rfp_storage  :
 ```
 
 Also create `rfp-service/Dockerfile`:
@@ -2017,10 +2044,12 @@ temperature: 0.0
 
 # System Prompt
 
-You are an expert procurement document analyst. Extract general procurement metadata from the following RFP section text.
+You are an expert procurement document analyst. Extract general procurement metadata from the following RFP section
+text.
 Return ONLY valid JSON — no markdown, no explanation, no code fences.
 
 ## Required JSON fields:
+
 - client_name (string | null)
 - submission_deadline (ISO 8601 datetime string | null — append "BST assumed" note if no timezone)
 - issue_date (ISO 8601 date string | null)
@@ -2031,6 +2060,7 @@ Return ONLY valid JSON — no markdown, no explanation, no code fences.
 - contact (object | null — {name: string, email: string, phone: string, address: string})
 
 ## Rules:
+
 - If a field is not found, set it to null. Do NOT omit fields.
 - For dates: parse Bangla numeral dates (e.g. ০১/০৩/২০২৫) to Gregorian.
 - For deadlines: if only a date is given, assume 17:00 BST.
@@ -2055,6 +2085,7 @@ All prompt files follow this convention:
 ## Filename: {name}-v{version}.md
 
 ## YAML Frontmatter (required):
+
 - id: unique identifier matching the filename base
 - version: integer version number
 - model: the LLM model this prompt is tuned for
@@ -2062,15 +2093,18 @@ All prompt files follow this convention:
 - temperature: LLM temperature (0.0 = deterministic)
 
 ## Body sections:
+
 1. # System Prompt — the system message sent to the LLM
 2. # User Template — the user message with {{variable}} placeholders
 
 ## Variables:
+
 - {{doc_context}} — "DOCUMENT: {title} | REF: {procurementRef} | TYPE: {rfpType}"
 - {{section_text}} — the chunked section text
 - {{additional_context}} — optional supplementary text
 
 ## Versioning:
+
 - Bump version when prompt content changes materially.
 - Keep old versions for reproducibility.
 - Track which extraction was produced by which version via extraction_model field in RFP JSON.
@@ -2181,10 +2215,10 @@ Expected output:
 
 ```json
 {
-  "status": "UP",
-  "provider": "openrouter",
-  "model": "google/gemini-2.0-flash-001",
-  "ocrSidecar": "reachable"
+    "status": "UP",
+    "provider": "openrouter",
+    "model": "google/gemini-2.0-flash-001",
+    "ocrSidecar": "reachable"
 }
 ```
 
@@ -2198,8 +2232,8 @@ Expected output:
 
 ```json
 {
-  "status": "ok",
-  "version": "1.0.0"
+    "status": "ok",
+    "version": "1.0.0"
 }
 ```
 

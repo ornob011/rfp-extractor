@@ -186,6 +186,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -210,9 +211,9 @@ public class DocumentValidationService {
      * @return ValidationResult with valid=true or error details
      */
     public ValidationResult validateDocument(
-            Path filePath,
-            long fileSizeBytes,
-            String detectedMimeType) {
+        Path filePath,
+        long fileSizeBytes,
+        String detectedMimeType) {
 
         ValidationResult sizeCheck = checkFileSize(fileSizeBytes);
         if (!sizeCheck.isValid()) return sizeCheck;
@@ -265,7 +266,7 @@ public class DocumentValidationService {
         if (acroForm != null && acroForm.getXFA() != null) {
             return ValidationResult.fail("XFA_FORM",
                 "PDF contains XFA form which cannot be processed. " +
-                "Please export as a standard PDF.");
+                    "Please export as a standard PDF.");
         }
         return ValidationResult.ok();
     }
@@ -280,6 +281,7 @@ package com.dsi.rfp.adapter.extraction;
 
 import org.apache.tika.Tika;
 import org.springframework.stereotype.Component;
+
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -296,6 +298,7 @@ public class MimeTypeDetector {
 Add Apache Tika to `rfp-service/pom.xml`:
 
 ```xml
+
 <dependency>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-core</artifactId>
@@ -414,7 +417,9 @@ Then IOException is thrown (not swallowed)
 File: `rfp-core/src/main/java/com/dsi/rfp/domain/model/TextBlock.java`:
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class TextBlock {
     private float x;
     private float y;
@@ -444,7 +449,9 @@ public class EmbeddedImageInfo {
 File: `rfp-core/src/main/java/com/dsi/rfp/domain/model/FontInfo.java`:
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class FontInfo {
     private String fontName;
     private float minFontSize;
@@ -471,6 +478,7 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
 import org.springframework.stereotype.Component;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -487,7 +495,7 @@ public class PdfDocumentLoader {
      * @return full document text
      * @throws IOException if the file cannot be read
      */
-    public String loadFullText(Path pdfPath) throws IOException { ... }
+    public String loadFullText(Path pdfPath) throws IOException { ...}
 
     /**
      * Extracts text from a specific 0-indexed page.
@@ -497,7 +505,7 @@ public class PdfDocumentLoader {
      * @return text content of the page (may be empty for scanned pages)
      * @throws IOException if the file cannot be read
      */
-    public String loadPageText(Path pdfPath, int pageIndex) throws IOException { ... }
+    public String loadPageText(Path pdfPath, int pageIndex) throws IOException { ...}
 
     /**
      * Extracts TextBlock bounding boxes for all text on a specific page.
@@ -507,7 +515,7 @@ public class PdfDocumentLoader {
      * @return list of TextBlock objects with position and font data
      * @throws IOException if the file cannot be read
      */
-    public List<TextBlock> loadPageBoundingBoxes(Path pdfPath, int pageIndex) throws IOException { ... }
+    public List<TextBlock> loadPageBoundingBoxes(Path pdfPath, int pageIndex) throws IOException { ...}
 
     /**
      * Extracts embedded image bounding boxes for a specific page.
@@ -517,7 +525,7 @@ public class PdfDocumentLoader {
      * @return list of EmbeddedImageInfo with position and size
      * @throws IOException if the file cannot be read
      */
-    public List<EmbeddedImageInfo> loadPageImages(Path pdfPath, int pageIndex) throws IOException { ... }
+    public List<EmbeddedImageInfo> loadPageImages(Path pdfPath, int pageIndex) throws IOException { ...}
 
     /**
      * Extracts font metadata aggregated across the entire document.
@@ -526,7 +534,7 @@ public class PdfDocumentLoader {
      * @return map of fontName to FontInfo (min/max/avg font size, occurrence count)
      * @throws IOException if the file cannot be read
      */
-    public Map<String, FontInfo> loadFontMetadata(Path pdfPath) throws IOException { ... }
+    public Map<String, FontInfo> loadFontMetadata(Path pdfPath) throws IOException { ...}
 
     /**
      * Returns the page count without loading the full document content.
@@ -535,7 +543,7 @@ public class PdfDocumentLoader {
      * @return number of pages
      * @throws IOException if the file cannot be read
      */
-    public int getPageCount(Path pdfPath) throws IOException { ... }
+    public int getPageCount(Path pdfPath) throws IOException { ...}
 }
 ```
 
@@ -726,7 +734,9 @@ public enum PageClassification {
 File: `rfp-core/src/main/java/com/dsi/rfp/domain/model/PageClassificationResult.java`:
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class PageClassificationResult {
     private int pageNumber;             // 0-based
     private PageClassification classification;
@@ -1572,7 +1582,9 @@ public class RfpController {
 File: `rfp-service/src/main/java/com/dsi/rfp/adapter/api/SubmitResponse.java`:
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class SubmitResponse {
     private String jobId;
     private String status;
@@ -1583,7 +1595,9 @@ public class SubmitResponse {
 File: `rfp-service/src/main/java/com/dsi/rfp/adapter/api/JobStatusResponse.java`:
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class JobStatusResponse {
     private String jobId;
     private String status;
@@ -1865,10 +1879,13 @@ class RfpSubmissionServiceTest {
 Class: `RfpJobServiceTest`:
 
 ```java
+
 @Test
 void shouldReturnEmptyWhenJobNotFound()
+
 @Test
 void shouldMapExtractionJobToJobStatusResponse()
+
 @Test
 void shouldReturnAllJobsFromPort()
 ```

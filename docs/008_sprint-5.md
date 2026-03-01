@@ -77,13 +77,16 @@ Scenario: Build a TableExtractionResult
 
 ```java
 // rfp-core/.../domain/model/TableCell.java
-@Data @Builder
+@Data
+@Builder
 public class TableCell {
     private int row;
     private int col;
     private String value;
-    @Builder.Default private int rowspan = 1;
-    @Builder.Default private final int colspan = 1;
+    @Builder.Default
+    private final int rowspan = 1;
+    @Builder.Default
+    private final int colspan = 1;
     private boolean isHeader;
 }
 
@@ -93,14 +96,16 @@ public enum TableType {
 }
 
 // rfp-core/.../domain/model/ExtractionConfidence.java
-@Data @Builder
+@Data
+@Builder
 public class ExtractionConfidence {
     private double score;         // 0.0 – 1.0
     private String method;        // "lattice" | "stream" | "ocr_llm_reconstruct"
 }
 
 // rfp-core/.../domain/model/TableExtractionResult.java
-@Data @Builder
+@Data
+@Builder
 public class TableExtractionResult {
     private UUID tableId;
     private UUID sectionId;       // set by TableSectionLinker; null until linked
@@ -189,26 +194,35 @@ public class LatticeTableExtractor {
     private final PdfDocumentLoader loader;
 
     // Constructor injection
-    public LatticeTableExtractor(PdfDocumentLoader loader) { ... }
+    public LatticeTableExtractor(PdfDocumentLoader loader) { ...}
 
     /**
      * Extract all lattice-style tables from a single page.
      * Returns empty list when < 4 grid lines are detected (signals: not a lattice table).
      */
-    public List<TableExtractionResult> extractFromPage(PDDocument doc, int pageNum) { ... }
+    public List<TableExtractionResult> extractFromPage(PDDocument doc, int pageNum) { ...}
 
     // --- private helpers ---
-    private List<Float> detectHorizontalLines(PDPage page) { ... }
-    private List<Float> detectVerticalLines(PDPage page) { ... }
-    private List<CellBounds> buildCellBounds(List<Float> hLines, List<Float> vLines) { ... }
-    private String extractCellText(CellBounds bounds, List<TextBlock> pageBlocks) { ... }
-    private int computeColspan(int colIdx, int rowIdx, List<Float> vLines, Set<LineSegment> presentVLines) { ... }
-    private int computeRowspan(int rowIdx, int colIdx, List<Float> hLines, Set<LineSegment> presentHLines) { ... }
-    private double computeConfidence(int detectedLines, int expectedLines) { ... }
+    private List<Float> detectHorizontalLines(PDPage page) { ...}
+
+    private List<Float> detectVerticalLines(PDPage page) { ...}
+
+    private List<CellBounds> buildCellBounds(List<Float> hLines, List<Float> vLines) { ...}
+
+    private String extractCellText(CellBounds bounds, List<TextBlock> pageBlocks) { ...}
+
+    private int computeColspan(int colIdx, int rowIdx, List<Float> vLines, Set<LineSegment> presentVLines) { ...}
+
+    private int computeRowspan(int rowIdx, int colIdx, List<Float> hLines, Set<LineSegment> presentHLines) { ...}
+
+    private double computeConfidence(int detectedLines, int expectedLines) { ...}
 
     // Private inner records — stay within 250-line class budget
-    private record CellBounds(float x0, float y0, float x1, float y1) {}
-    private record LineSegment(float x0, float y0, float x1, float y1) {}
+    private record CellBounds(float x0, float y0, float x1, float y1) {
+    }
+
+    private record LineSegment(float x0, float y0, float x1, float y1) {
+    }
 }
 ```
 
@@ -274,8 +288,14 @@ programmatically (PDFBox API) with known line coordinates drawn via `PDPageConte
 
 ```java
 log.debug("[LatticeTableExtractor] Page={} hLines={} vLines={} cells={}",
-    pageNum, hLines.size(), vLines.size(), grid.size());
-log.warn("[LatticeTableExtractor] Page={} cell cap exceeded; truncated to 200", pageNum);
+          pageNum, hLines.size(),vLines.
+
+size(),grid.
+
+size());
+    log.
+
+warn("[LatticeTableExtractor] Page={} cell cap exceeded; truncated to 200",pageNum);
 ```
 
 **Story Points:** 13
@@ -313,18 +333,21 @@ public class StreamTableExtractor {
 
     private final PdfDocumentLoader loader;
 
-    public StreamTableExtractor(PdfDocumentLoader loader) { ... }
+    public StreamTableExtractor(PdfDocumentLoader loader) { ...}
 
     /**
      * Returns empty list when no column gap is detected (page is not tabular).
      * Confidence is always 0.6 — stream mode is approximate.
      */
-    public List<TableExtractionResult> extractFromPage(PDDocument doc, int pageNum) { ... }
+    public List<TableExtractionResult> extractFromPage(PDDocument doc, int pageNum) { ...}
 
-    private List<Float> detectColumnBoundaries(List<TextBlock> blocks, float pageWidth) { ... }
-    private int assignColumnIndex(float x, List<Float> boundaries) { ... }
-    private List<List<TextBlock>> groupIntoRows(List<TextBlock> blocks, float yTolerancePts) { ... }
-    private List<TableCell> buildGrid(List<List<TextBlock>> rows, int colCount) { ... }
+    private List<Float> detectColumnBoundaries(List<TextBlock> blocks, float pageWidth) { ...}
+
+    private int assignColumnIndex(float x, List<Float> boundaries) { ...}
+
+    private List<List<TextBlock>> groupIntoRows(List<TextBlock> blocks, float yTolerancePts) { ...}
+
+    private List<TableCell> buildGrid(List<List<TextBlock>> rows, int colCount) { ...}
 }
 ```
 
@@ -367,7 +390,11 @@ Mock `loader.loadPageBoundingBoxes` to return hand-crafted `TextBlock` lists wit
 
 ```java
 log.debug("[StreamTableExtractor] Page={} columnBoundaries={} rows={} cells={}",
-    pageNum, boundaries.size(), rows.size(), grid.size());
+          pageNum, boundaries.size(),rows.
+
+size(),grid.
+
+size());
 ```
 
 **Story Points:** 8
@@ -412,9 +439,9 @@ public class TableTypeClassifier {
      * @param caption table caption string (may be null or blank)
      * @return TableType — never null, defaults to OTHER
      */
-    public TableType classify(List<String> headers, String caption) { ... }
+    public TableType classify(List<String> headers, String caption) { ...}
 
-    private int score(String combined, List<String> keywords) { ... }
+    private int score(String combined, List<String> keywords) { ...}
 }
 ```
 
@@ -488,7 +515,7 @@ public class TableExtractor {
     private final StreamTableExtractor streamExtractor;
 
     public TableExtractor(LatticeTableExtractor latticeExtractor,
-                          StreamTableExtractor streamExtractor) { ... }
+                          StreamTableExtractor streamExtractor) { ...}
 
     /**
      * @param doc open PDDocument
@@ -496,10 +523,10 @@ public class TableExtractor {
      * @return all tables found across all non-SCANNED pages; never null, may be empty
      */
     public List<TableExtractionResult> extractFromDocument(
-            PDDocument doc,
-            Map<Integer, PageClass> pageClassifications) { ... }
+        PDDocument doc,
+        Map<Integer, PageClass> pageClassifications) { ...}
 
-    private List<TableExtractionResult> extractFromPage(PDDocument doc, int pageNum) { ... }
+    private List<TableExtractionResult> extractFromPage(PDDocument doc, int pageNum) { ...}
 }
 ```
 
@@ -536,7 +563,7 @@ Mock both sub-extractors. Verify interaction counts.
 
 ```java
 log.info("[TableExtractor] JobId={} totalPages={} digitalPages={} tablesFound={}",
-    jobId, totalPages, digitalCount, tables.size());
+         jobId, totalPages, digitalCount, tables.size());
 ```
 
 **Story Points:** 5
@@ -590,13 +617,17 @@ public class TableContinuationDetector {
      * @param tables sorted by pageStart ascending (caller's responsibility)
      * @return new list with multi-page fragments merged; input list is not mutated
      */
-    public List<TableExtractionResult> detect(List<TableExtractionResult> tables) { ... }
+    public List<TableExtractionResult> detect(List<TableExtractionResult> tables) { ...}
 
-    private boolean isContinuation(TableExtractionResult prev, TableExtractionResult next) { ... }
-    private TableExtractionResult merge(TableExtractionResult prev, TableExtractionResult next) { ... }
-    private boolean hasFooterRow(TableExtractionResult table) { ... }
-    private int headerSimilarityScore(List<String> headersA, List<String> headersB) { ... }
-    private List<TableCell> reindexRows(List<TableCell> cells, int rowOffset) { ... }
+    private boolean isContinuation(TableExtractionResult prev, TableExtractionResult next) { ...}
+
+    private TableExtractionResult merge(TableExtractionResult prev, TableExtractionResult next) { ...}
+
+    private boolean hasFooterRow(TableExtractionResult table) { ...}
+
+    private int headerSimilarityScore(List<String> headersA, List<String> headersB) { ...}
+
+    private List<TableCell> reindexRows(List<TableCell> cells, int rowOffset) { ...}
 }
 ```
 
@@ -645,7 +676,9 @@ Build `TableExtractionResult` objects with known grids. Do not mock Levenshtein 
 
 ```java
 log.info("[TableContinuationDetector] Merged tables: pageStart={} pageEnd={} signals=[adjacent={}, noFooter={}, sameHeaders={}]",
-    prev.getPageStart(), next.getPageEnd(), signal1, signal2, signal3);
+         prev.getPageStart(),next.
+
+getPageEnd(),signal1,signal2,signal3);
 ```
 
 **Story Points:** 8
@@ -697,12 +730,13 @@ public class TableSectionLinker {
      * Returns the same list (for chaining convenience).
      */
     public List<TableExtractionResult> link(
-            List<TableExtractionResult> tables,
-            List<Section> sections,
-            List<Clause> clauses) { ... }
+        List<TableExtractionResult> tables,
+        List<Section> sections,
+        List<Clause> clauses) { ...}
 
-    private Optional<UUID> findSectionId(int tablePage, List<Section> sections) { ... }
-    private Optional<UUID> findPrecedingClauseId(int tablePage, List<Clause> clauses) { ... }
+    private Optional<UUID> findSectionId(int tablePage, List<Section> sections) { ...}
+
+    private Optional<UUID> findPrecedingClauseId(int tablePage, List<Clause> clauses) { ...}
 }
 ```
 
@@ -783,10 +817,10 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
 
     public ExtractTablesNode(TableExtractor tableExtractor,
                              TableContinuationDetector continuationDetector,
-                             TableSectionLinker sectionLinker) { ... }
+                             TableSectionLinker sectionLinker) { ...}
 
     @Override
-    public ExtractionState execute(ExtractionState state) { ... }
+    public ExtractionState execute(ExtractionState state) { ...}
 }
 ```
 
@@ -821,7 +855,9 @@ Mock all three collaborators. Assert `state.tables` and `state.errors` contents.
 
 ```java
 log.info("[ExtractTablesNode] JobId={} rawTables={} afterMerge={} withSectionLinks={}",
-    state.jobId, rawTables.size(), mergedTables.size(), linkedWithSections);
+         state.jobId, rawTables.size(),mergedTables.
+
+size(),linkedWithSections);
 ```
 
 **Story Points:** 5
@@ -866,37 +902,39 @@ Scenario: ResultPage Tables tab shows count
 ```typescript
 // rfp-frontend/src/types/table.ts
 export interface TableCell {
-  row: number;
-  col: number;
-  value: string;
-  rowspan: number;
-  colspan: number;
-  isHeader: boolean;
+    row: number;
+    col: number;
+    value: string;
+    rowspan: number;
+    colspan: number;
+    isHeader: boolean;
 }
 
 export interface ExtractionConfidence {
-  score: number;
-  method: 'lattice' | 'stream' | 'ocr_llm_reconstruct';
+    score: number;
+    method: 'lattice' | 'stream' | 'ocr_llm_reconstruct';
 }
 
 export interface TableExtractionResult {
-  tableId: string;
-  sectionId: string | null;
-  clauseId: string | null;
-  pageStart: number;
-  pageEnd: number;
-  caption: string | null;
-  type: 'DELIVERABLES' | 'EVALUATION' | 'PAYMENT' | 'STAFFING' | 'SCHEDULE' | 'OTHER';
-  headers: string[];
-  grid: TableCell[];
-  confidence: ExtractionConfidence;
+    tableId: string;
+    sectionId: string | null;
+    clauseId: string | null;
+    pageStart: number;
+    pageEnd: number;
+    caption: string | null;
+    type: 'DELIVERABLES' | 'EVALUATION' | 'PAYMENT' | 'STAFFING' | 'SCHEDULE' | 'OTHER';
+    headers: string[];
+    grid: TableCell[];
+    confidence: ExtractionConfidence;
 }
 
 // rfp-frontend/src/components/TableViewer.tsx
 interface TableViewerProps {
-  table: TableExtractionResult;
+    table: TableExtractionResult;
 }
-export function TableViewer({ table }: TableViewerProps): JSX.Element { ... }
+
+export function TableViewer({table}: TableViewerProps): JSX.Element { ...
+}
 ```
 
 **Implementation Plan (TableViewer.tsx):**
@@ -1081,18 +1119,18 @@ Open browser at `http://localhost:5173`. Navigate to the job result. Click "Tabl
 
 ## 6) Exit Criteria (NON-NEGOTIABLE)
 
-| #     | Criterion                                                                                                                                           | Measure                                                                               |
-|-------|-----------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
-| EC-01 | All 14 unit test classes pass with `mvn test`                                                                                                       | 0 test failures                                                                       |
-| EC-02 | `LatticeTableExtractor` extracts correct cell count from a programmatic PDF with a 3×4 grid                                                         | Asserted in `LatticeTableExtractorTest.shouldExtractThreeByFourGridCorrectly`         |
-| EC-03 | `TableContinuationDetector` merges two-page-spanning table fragments in 3 of 3 annotated ground-truth documents that have known continuation tables | Manual verification against `testdata/ground-truth/`                                  |
-| EC-04 | Every `TableExtractionResult` in the API response has a non-null `sectionId` when a section covers its page                                         | Verified via `jq '[.tables[]                                                          | select(.sectionId == null)] | length'` == 0 on 10 test docs |
-| EC-05 | `ExtractTablesNode` does not throw exceptions; all errors captured in `state.errors`                                                                | Integration verified by running full graph on a corrupt-table PDF                     |
-| EC-06 | `TableViewer.tsx` renders merged cells using CSS grid `gridColumn: span N`                                                                          | Code review + visual browser inspection                                               |
-| EC-07 | `TableType` classification: EVALUATION correctly identified on 8 of 10 annotated tables                                                             | Manual check against ground truth                                                     |
-| EC-08 | No class exceeds 250 lines; no method exceeds 20 lines                                                                                              | `mvn checkstyle:check` or manual audit                                                |
-| EC-09 | `rfp-core` has zero Spring framework imports in domain model classes                                                                                | `grep -r "springframework" rfp-core/src/main/java/com/dsi/rfp/domain` returns 0 lines |
-| EC-10 | Sprint 4 `ExtractionGraph` still passes all Sprint 4 entity extraction tests after `ExtractTablesNode` replacement                                  | `mvn test` green on entity extractor tests                                            |
+| #     | Criterion                                                                                                                                     | Measure                                                                               |
+|-------|-----------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| EC-01 | All 14 unit test classes pass with `mvn test`                                                                                                 | 0 test failures                                                                       |
+| EC-02 | `LatticeTableExtractor` extracts correct cell count from a programmatic PDF with a 3×4 grid                                                   | Asserted in `LatticeTableExtractorTest.shouldExtractThreeByFourGridCorrectly`         |
+| EC-03 | `TableContinuationDetector` merges two-page-spanning table fragments in 3 of 3 deterministic fixture documents with known continuation tables | Manual verification against `testdata/fixtures/`                                      |
+| EC-04 | Every `TableExtractionResult` in the API response has a non-null `sectionId` when a section covers its page                                   | Verified via `jq '[.tables[]                                                          | select(.sectionId == null)] | length'` == 0 on 10 test docs |
+| EC-05 | `ExtractTablesNode` does not throw exceptions; all errors captured in `state.errors`                                                          | Integration verified by running full graph on a corrupt-table PDF                     |
+| EC-06 | `TableViewer.tsx` renders merged cells using CSS grid `gridColumn: span N`                                                                    | Code review + visual browser inspection                                               |
+| EC-07 | `TableType` classification: EVALUATION correctly identified on 8 of 10 fixture tables                                                         | Manual check against fixture expectations                                             |
+| EC-08 | No class exceeds 250 lines; no method exceeds 20 lines                                                                                        | `mvn checkstyle:check` or manual audit                                                |
+| EC-09 | `rfp-core` has zero Spring framework imports in domain model classes                                                                          | `grep -r "springframework" rfp-core/src/main/java/com/dsi/rfp/domain` returns 0 lines |
+| EC-10 | Sprint 4 `ExtractionGraph` still passes all Sprint 4 entity extraction tests after `ExtractTablesNode` replacement                            | `mvn test` green on entity extractor tests                                            |
 
 ---
 

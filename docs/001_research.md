@@ -281,46 +281,46 @@ the system (it's the "quality gate") and it is the least specified. Rule packs n
 
 ```json
 {
-  "doc_meta": {
-    "title",
-    "issuing_authority",
-    "date",
-    "procurement_ref"
-  },
-  "sections": [
-    {
-      "id",
-      "title",
-      "page_range"
+    "doc_meta": {
+        "title",
+        "issuing_authority",
+        "date",
+        "procurement_ref"
+    },
+    "sections": [
+        {
+            "id",
+            "title",
+            "page_range"
+        }
+    ],
+    "clauses": [
+        {
+            "clause_id",
+            "page",
+            "text",
+            "tags"
+        }
+    ],
+    "tables": [
+        {
+            "page",
+            "caption",
+            "type",
+            "grid"
+        }
+    ],
+    "entities": {
+        "deadlines",
+        "amounts",
+        "validity_period",
+        "penalties",
+        "slas",
+        "contact_info"
+    },
+    "confidence": {
+        "per section/table/clause"
     }
-  ],
-  "clauses": [
-    {
-      "clause_id",
-      "page",
-      "text",
-      "tags"
-    }
-  ],
-  "tables": [
-    {
-      "page",
-      "caption",
-      "type",
-      "grid"
-    }
-  ],
-  "entities": {
-    "deadlines",
-    "amounts",
-    "validity_period",
-    "penalties",
-    "slas",
-    "contact_info"
-  },
-  "confidence": {
-    "per section/table/clause"
-  }
 }
 ```
 
@@ -393,11 +393,11 @@ A rule pack is only maintainable if rules are declarative, not code. The proposa
 structure is undefined. A rule might be:
 
 ```yaml
-- id      : BD-001
-  name    : Submission Deadline Required
-  check   : entities.deadlines.submission IS NOT NULL
-  severity: FATAL
-  message : "No submission deadline found"
+-   id      : BD-001
+    name    : Submission Deadline Required
+    check   : entities.deadlines.submission IS NOT NULL
+    severity: FATAL
+    message : "No submission deadline found"
 ```
 
 But without a formal grammar for checks, rules will be written inconsistently and become unmaintainable.
@@ -906,99 +906,99 @@ Define the JSON schema completely before any extraction code:
 
 ```json
 {
-  "doc_meta": {
-    "title",
-    "issuer",
-    "procurement_ref",
-    "issue_date",
-    "source_language"
-  },
-  "sections": [
-    {
-      "id": "S.1",
-      "title": "",
-      "page_start": 1,
-      "page_end": 3,
-      "subsections": [
-        "S.1.1",
-        "S.1.2"
-      ],
-      "confidence": {
-        "score": 0.92,
-        "method": "layout"
-      }
-    }
-  ],
-  "clauses": [
-    {
-      "id": "C.1.2.3",
-      "section_id": "S.1.2",
-      "page_start": 4,
-      "page_end": 5,
-      "text": "",
-      "text_language": "en",
-      "tags": [
-        "eligibility",
-        "financial"
-      ],
-      "references": [
-        "C.2.1",
-        "C.3.4"
-      ],
-      "confidence": {
-        "score": 0.88,
-        "method": "text_layer",
-        "ocr_confidence": null
-      }
-    }
-  ],
-  "tables": [
-    {
-      "id": "T.1",
-      "clause_id": "C.3.2",
-      "section_id": "S.3",
-      "page_start": 12,
-      "page_end": 13,
-      "type": "deliverables",
-      "caption": "",
-      "headers": [
-        "Item",
-        "Description",
-        "Due Date",
-        "Payment"
-      ],
-      "rows": [
-        [
-          "1",
-          "Inception Report",
-          "2025-06-01",
-          "10%"
-        ]
-      ],
-      "merged_cells": [],
-      "confidence": {
-        "score": 0.75,
-        "method": "lattice"
-      }
-    }
-  ],
-  "entities": {
-    "deadlines": [
-      {
-        "type": "submission",
-        "value": "2025-03-15T17:00:00+06:00",
-        "clause_id": "C.2.1"
-      }
+    "doc_meta": {
+        "title",
+        "issuer",
+        "procurement_ref",
+        "issue_date",
+        "source_language"
+    },
+    "sections": [
+        {
+            "id": "S.1",
+            "title": "",
+            "page_start": 1,
+            "page_end": 3,
+            "subsections": [
+                "S.1.1",
+                "S.1.2"
+            ],
+            "confidence": {
+                "score": 0.92,
+                "method": "layout"
+            }
+        }
     ],
-    "amounts": [
-      {
-        "type": "contract_value",
-        "value": 5000000,
-        "currency": "BDT",
-        "clause_id": "C.4.1"
-      }
-    ]
-  }
+    "clauses": [
+        {
+            "id": "C.1.2.3",
+            "section_id": "S.1.2",
+            "page_start": 4,
+            "page_end": 5,
+            "text": "",
+            "text_language": "en",
+            "tags": [
+                "eligibility",
+                "financial"
+            ],
+            "references": [
+                "C.2.1",
+                "C.3.4"
+            ],
+            "confidence": {
+                "score": 0.88,
+                "method": "text_layer",
+                "ocr_confidence": null
+            }
+        }
+    ],
+    "tables": [
+        {
+            "id": "T.1",
+            "clause_id": "C.3.2",
+            "section_id": "S.3",
+            "page_start": 12,
+            "page_end": 13,
+            "type": "deliverables",
+            "caption": "",
+            "headers": [
+                "Item",
+                "Description",
+                "Due Date",
+                "Payment"
+            ],
+            "rows": [
+                [
+                    "1",
+                    "Inception Report",
+                    "2025-06-01",
+                    "10%"
+                ]
+            ],
+            "merged_cells": [],
+            "confidence": {
+                "score": 0.75,
+                "method": "lattice"
+            }
+        }
+    ],
+    "entities": {
+        "deadlines": [
+            {
+                "type": "submission",
+                "value": "2025-03-15T17:00:00+06:00",
+                "clause_id": "C.2.1"
+            }
+        ],
+        "amounts": [
+            {
+                "type": "contract_value",
+                "value": 5000000,
+                "currency": "BDT",
+                "clause_id": "C.4.1"
+            }
+        ]
+    }
 }
 ```
 

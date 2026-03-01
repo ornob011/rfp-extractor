@@ -84,18 +84,21 @@ Then checkType equals SEMANTIC and llmPrompt is non-null
 
 ```java
 // rfp-core/domain/model/RuleSeverity.java
-public enum RuleSeverity { FATAL, HIGH, MEDIUM, LOW, INFO }
+public enum RuleSeverity {FATAL, HIGH, MEDIUM, LOW, INFO}
 
 // rfp-core/domain/model/CheckType.java
-public enum CheckType { STRUCTURAL, SEMANTIC }
+public enum CheckType {STRUCTURAL, SEMANTIC}
 
 // rfp-core/domain/model/RfpType.java
-public enum RfpType { ICT, WORKS, CONSULTANCY, GOODS, UNKNOWN }
+public enum RfpType {ICT, WORKS, CONSULTANCY, GOODS, UNKNOWN}
 
 // rfp-core/domain/model/RuleStatus.java
-public enum RuleStatus { PASS, FAIL, SKIPPED }
+public enum RuleStatus {PASS, FAIL, SKIPPED}
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RuleDefinition {
     private String id;
     private String name;
@@ -109,7 +112,10 @@ public class RuleDefinition {
     private String message;
 }
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RulePackDefinition {
     private String packId;
     private String packVersion;
@@ -118,7 +124,10 @@ public class RulePackDefinition {
     private Instant loadedAt;
 }
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RuleFinding {
     private String ruleId;
     private RuleSeverity severity;
@@ -128,7 +137,10 @@ public class RuleFinding {
     private Instant checkedAt;
 }
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RulePackResults {
     private String packId;
     private String packVersion;
@@ -140,7 +152,9 @@ public class RulePackResults {
 // rfp-core/domain/port/RulePackPort.java
 public interface RulePackPort {
     Optional<RulePackDefinition> loadPack(String packId);
+
     List<RulePackDefinition> listPacks();
+
     RulePackResults runPack(RulePackDefinition pack, String rfpJson);
 }
 ```
@@ -184,6 +198,7 @@ Then a RulePackLoadException is thrown with the validation errors listed
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -193,7 +208,9 @@ public class RulePackLoader {
     // Caches in ConcurrentHashMap<String, RulePackDefinition>
 
     public Map<String, RulePackDefinition> loadAll();
+
     public Optional<RulePackDefinition> load(String packId);
+
     public void reload(String packId);    // re-reads single file from disk, updates cache
 }
 ```
@@ -246,6 +263,7 @@ Then false is returned and a WARN log is emitted (rule SKIPPED)
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Slf4j
 public class JmesPathEvaluator {
@@ -307,7 +325,9 @@ Then RuleStatus.SKIPPED is recorded and a WARN is logged (no exception propagate
 **Interfaces / Contracts:**
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class LlmJudgmentResult {
     private boolean finding;       // true = problem detected (rule FAILS)
     private String explanation;
@@ -375,6 +395,7 @@ Then the finding has status=SKIPPED (not evaluated against LLM)
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -384,7 +405,9 @@ public class RulePackRunner {
     public RulePackResults run(RulePackDefinition pack, String rfpJson);
 
     private RuleFinding evaluateStructural(RuleDefinition rule, String rfpJson);
+
     private RuleFinding evaluateSemantic(RuleDefinition rule, String rfpJson);
+
     private Map<RuleSeverity, Integer> buildSummary(List<RuleFinding> findings);
 }
 ```
@@ -440,6 +463,7 @@ Then RfpType.UNKNOWN is returned
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Slf4j
 public class RfpTypeClassifier {
@@ -494,6 +518,7 @@ Then all available packs are run and findings are merged (deduped by ruleId)
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -503,6 +528,7 @@ public class RunRulePackNode implements NodeAction<ExtractionState> {
     public Map<String, Object> apply(ExtractionState state, RunnableConfig config);
 
     private RulePackResults runAllPacks(String rfpJson);
+
     private RulePackResults mergeResults(List<RulePackResults> results);
 }
 ```
@@ -547,56 +573,114 @@ Then BD-ICT-001 finding has status=FAIL and severity=FATAL
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Rule Definition Schema",
-  "type": "object",
-  "required": ["id", "name", "pack", "version", "severity", "check_type", "evidence_path", "message"],
-  "properties": {
-    "id":            { "type": "string", "pattern": "^BD-[A-Z]+-[0-9]+$" },
-    "name":          { "type": "string", "minLength": 3 },
-    "pack":          { "type": "string" },
-    "version":       { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
-    "severity":      { "type": "string", "enum": ["FATAL", "HIGH", "MEDIUM", "LOW", "INFO"] },
-    "check_type":    { "type": "string", "enum": ["structural", "semantic"] },
-    "condition":     { "type": "string" },
-    "evidence_path": { "type": "string" },
-    "llm_prompt":    { "type": "string" },
-    "message":       { "type": "string", "minLength": 5 }
-  },
-  "if": { "properties": { "check_type": { "const": "structural" } } },
-  "then": { "required": ["condition"] },
-  "else": { "required": ["llm_prompt"] }
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Rule Definition Schema",
+    "type": "object",
+    "required": [
+        "id",
+        "name",
+        "pack",
+        "version",
+        "severity",
+        "check_type",
+        "evidence_path",
+        "message"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "pattern": "^BD-[A-Z]+-[0-9]+$"
+        },
+        "name": {
+            "type": "string",
+            "minLength": 3
+        },
+        "pack": {
+            "type": "string"
+        },
+        "version": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "severity": {
+            "type": "string",
+            "enum": [
+                "FATAL",
+                "HIGH",
+                "MEDIUM",
+                "LOW",
+                "INFO"
+            ]
+        },
+        "check_type": {
+            "type": "string",
+            "enum": [
+                "structural",
+                "semantic"
+            ]
+        },
+        "condition": {
+            "type": "string"
+        },
+        "evidence_path": {
+            "type": "string"
+        },
+        "llm_prompt": {
+            "type": "string"
+        },
+        "message": {
+            "type": "string",
+            "minLength": 5
+        }
+    },
+    "if": {
+        "properties": {
+            "check_type": {
+                "const": "structural"
+            }
+        }
+    },
+    "then": {
+        "required": [
+            "condition"
+        ]
+    },
+    "else": {
+        "required": [
+            "llm_prompt"
+        ]
+    }
 }
 ```
 
 **Sample rules for bd-govt-ict-v1.yaml (write all 64 in actual file):**
 
 ```yaml
-pack_id: bd-govt-ict-v1
+pack_id     : bd-govt-ict-v1
 pack_version: "1.0.0"
-rfp_type: ICT
-rules:
-  - id: BD-ICT-001
-    name: RFP Title Present
-    pack: bd-govt-ict-v1
-    version: "1.0.0"
-    severity: FATAL
-    check_type: structural
-    condition: "doc_meta.title != null && doc_meta.title != ''"
-    evidence_path: "doc_meta.title"
-    message: "RFP Title is missing from the document"
+rfp_type    : ICT
+rules       :
+    -   id           : BD-ICT-001
+        name         : RFP Title Present
+        pack         : bd-govt-ict-v1
+        version      : "1.0.0"
+        severity     : FATAL
+        check_type   : structural
+        condition    : "doc_meta.title != null && doc_meta.title != ''"
+        evidence_path: "doc_meta.title"
+        message      : "RFP Title is missing from the document"
 
-  - id: BD-ICT-002
-    name: RFP Identification Number Present
-    pack: bd-govt-ict-v1
-    version: "1.0.0"
-    severity: FATAL
-    check_type: structural
-    condition: "doc_meta.procurement_ref != null && doc_meta.procurement_ref != ''"
-    evidence_path: "doc_meta.procurement_ref"
-    message: "RFP Identification Number (procurement reference) is missing"
+    -   id           : BD-ICT-002
+        name         : RFP Identification Number Present
+        pack         : bd-govt-ict-v1
+        version      : "1.0.0"
+        severity     : FATAL
+        check_type   : structural
+        condition    : "doc_meta.procurement_ref != null && doc_meta.procurement_ref != ''"
+        evidence_path: "doc_meta.procurement_ref"
+        message      : "RFP Identification Number (procurement reference) is missing"
 
-  # ... (all 64 rules follow this pattern)
+    # ... (all 64 rules follow this pattern)
 ```
 
 **Implementation Plan:**
@@ -752,23 +836,23 @@ And FAIL findings show a red badge, PASS show green, SKIPPED show grey
 ```typescript
 // types/rulepack.ts
 export interface RuleFinding {
-  ruleId: string;
-  severity: 'FATAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO';
-  status: 'PASS' | 'FAIL' | 'SKIPPED';
-  message: string;
-  evidence?: string;
+    ruleId: string;
+    severity: 'FATAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO';
+    status: 'PASS' | 'FAIL' | 'SKIPPED';
+    message: string;
+    evidence?: string;
 }
 
 export interface RulePackResults {
-  packId: string;
-  packVersion: string;
-  runTimestamp: string;
-  summary: Record<string, number>;
-  findings: RuleFinding[];
+    packId: string;
+    packVersion: string;
+    runTimestamp: string;
+    summary: Record<string, number>;
+    findings: RuleFinding[];
 }
 
 interface RulePackResultsProps {
-  results: RulePackResults;
+    results: RulePackResults;
 }
 ```
 

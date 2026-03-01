@@ -97,7 +97,8 @@ public enum RepairStrategy {
 }
 
 // rfp-core/.../domain/model/RepairLogEntry.java
-@Data @Builder
+@Data
+@Builder
 public class RepairLogEntry {
     private String componentId;       // matches an entity field path, sectionId, or tableId
     private String componentType;     // "section" | "table" | "entity"
@@ -110,7 +111,8 @@ public class RepairLogEntry {
 }
 
 // rfp-core/.../domain/model/RepairableComponent.java
-@Data @Builder
+@Data
+@Builder
 public class RepairableComponent {
     private String componentId;
     private String componentType;     // "section" | "table" | "entity"
@@ -137,7 +139,7 @@ private List<String> manualReviewRequired = new ArrayList<>();
 
 // Map from componentId -> current confidence score (updated by ScoreConfidenceNode and RepairLoopNode)
 @Builder.Default
-private Map<String, Double> confidenceMap = new HashMap<>();
+private final Map<String, Double> confidenceMap = new HashMap<>();
 
 // Map from componentId -> RepairableComponent (set by ScoreConfidenceNode)
 @Builder.Default
@@ -590,7 +592,7 @@ private final double docCompletenessScore = 0.0;
         - `score = entityScore(entityValue, llmConfidence)`.
         - `state.confidenceMap.put(path, score)`.
         -
-        `state.repairableComponents.put(path, RepairableComponent.builder().componentId(path).componentType("entity").confidenceSource("llm").currentConfidence(score).build())`.
+      `state.repairableComponents.put(path, RepairableComponent.builder().componentId(path).componentType("entity").confidenceSource("llm").currentConfidence(score).build())`.
         - Call `enqueue(path, "entity", "llm", score, state)`.
 
 2. `entityScore(entityValue, llmConfidence)`:
@@ -1374,7 +1376,7 @@ curl http://localhost:8080/api/v1/rfp/result/$JOB_ID \
 |-------|---------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
 | EC-01 | `RepairLoopNode` never exceeds 20 total iterations on any document                                            | `state.totalRepairIterations <= 20` asserted in `RepairLoopNodeTest.shouldReturnStateUnchangedAndWarnWhenHardStopReached` AND in end-to-end test |
 | EC-02 | `RepairDecisionTable` test covers all 8 decision paths                                                        | `RepairDecisionTableTest` has exactly 8 test methods, all passing                                                                                |
-| EC-03 | `ScoreConfidenceNode` correctly identifies low-confidence entities on 3 annotated ground-truth documents      | Manual check: `confidenceMap` values match expected scores for known entities                                                                    |
+| EC-03 | `ScoreConfidenceNode` correctly identifies low-confidence entities on 3 deterministic fixture documents       | Manual check: `confidenceMap` values match expected scores for known entities                                                                    |
 | EC-04 | `ExtractionState` survives serialize → deserialize round-trip through Redis with no field loss                | `ExtractionStateRedisSerializerTest.shouldSaveAndLoadExtractionState` passes with all fields asserted                                            |
 | EC-05 | Redis state TTL is exactly 2 hours                                                                            | `ExtractionStateRedisSerializerTest.shouldExpireAfterTwoHours` passes                                                                            |
 | EC-06 | `LlmSectionSegmentFallback` deduplicates by Levenshtein < 3 (not exact match)                                 | `LlmSectionSegmentFallbackTest.shouldMergeLlmSectionsDeduplicatingByLevenshtein` passes                                                          |

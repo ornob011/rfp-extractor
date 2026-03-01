@@ -38,34 +38,36 @@
 
 ## 2) Deliverables
 
-| #    | Deliverable                          | Type                | Location                                                 |
-|------|--------------------------------------|---------------------|----------------------------------------------------------|
-| D-01 | `ClarificationQuestion` domain model | Java class          | `rfp-core/.../domain/model/ClarificationQuestion.java`   |
-| D-02 | `QuestionType` enum                  | Java enum           | `rfp-core/.../domain/model/QuestionType.java`            |
-| D-03 | `AmbiguityItem` domain model         | Java class          | `rfp-core/.../domain/model/AmbiguityItem.java`           |
-| D-04 | `ComplianceItem` domain model        | Java class          | `rfp-core/.../domain/model/ComplianceItem.java`          |
-| D-05 | `RiskItem` domain model              | Java class          | `rfp-core/.../domain/model/RiskItem.java`                |
-| D-06 | `BidClarityPack` domain model        | Java class          | `rfp-core/.../domain/model/BidClarityPack.java`          |
-| D-07 | `ArtifactMetadata` value object      | Java class          | `rfp-core/.../domain/model/ArtifactMetadata.java`        |
-| D-08 | `ArtifactPort` (updated)             | Java interface      | `rfp-core/.../domain/port/ArtifactPort.java`             |
-| D-09 | `ClarificationTrigger` value object  | Java class          | `rfp-core/.../domain/model/ClarificationTrigger.java`    |
-| D-10 | `ClarificationQuestionTrigger`       | Spring component    | `adapter/artifact/ClarificationQuestionTrigger.java`     |
-| D-11 | `ClarificationQuestionsGenerator`    | Spring component    | `adapter/artifact/ClarificationQuestionsGenerator.java`  |
-| D-12 | `ClarificationQuestionsDocxWriter`   | Spring component    | `adapter/artifact/ClarificationQuestionsDocxWriter.java` |
-| D-13 | `AmbiguityRegisterXlsxWriter`        | Spring component    | `adapter/artifact/AmbiguityRegisterXlsxWriter.java`      |
-| D-14 | `ComplianceChecklistXlsxWriter`      | Spring component    | `adapter/artifact/ComplianceChecklistXlsxWriter.java`    |
-| D-15 | `RiskLogXlsxWriter`                  | Spring component    | `adapter/artifact/RiskLogXlsxWriter.java`                |
-| D-16 | `AuditReportGenerator`               | Spring component    | `adapter/artifact/AuditReportGenerator.java`             |
-| D-17 | `LocalArtifactStorageAdapter`        | Spring component    | `adapter/persistence/LocalArtifactStorageAdapter.java`   |
-| D-18 | `ArtifactApplicationService`         | Application service | `application/service/ArtifactApplicationService.java`    |
-| D-19 | `FinalizeNode` (updated)             | LangGraph4J node    | `agent/node/FinalizeNode.java`                           |
-| D-20 | `clarification-question-gen-v1.md`   | Prompt file         | `prompts/clarification-question-gen-v1.md`               |
-| D-21 | `risk-mitigation-suggestion-v1.md`   | Prompt file         | `prompts/risk-mitigation-suggestion-v1.md`               |
-| D-22 | `clarification-questions.ftl`        | Freemarker template | `resources/templates/clarification-questions.ftl`        |
-| D-23 | `audit-report.ftl`                   | Freemarker template | `resources/templates/audit-report.ftl`                   |
-| D-24 | Artifact download REST endpoints     | Controller update   | `adapter/api/RfpController.java`                         |
-| D-25 | `ArtifactDownload.tsx`               | React component     | `rfp-frontend/src/components/ArtifactDownload.tsx`       |
-| D-26 | `AuditReportViewer.tsx`              | React component     | `rfp-frontend/src/components/AuditReportViewer.tsx`      |
+| #     | Deliverable                          | Type                | Location                                                 |
+|-------|--------------------------------------|---------------------|----------------------------------------------------------|
+| D-01  | `ClarificationQuestion` domain model | Java class          | `rfp-core/.../domain/model/ClarificationQuestion.java`   |
+| D-02  | `QuestionType` enum                  | Java enum           | `rfp-core/.../domain/model/QuestionType.java`            |
+| D-02a | `RiskImpact` enum                    | Java enum           | `rfp-core/.../domain/model/RiskImpact.java`              |
+| D-02b | `ArtifactFileType` enum              | Java enum           | `rfp-core/.../domain/model/ArtifactFileType.java`        |
+| D-03  | `AmbiguityItem` domain model         | Java class          | `rfp-core/.../domain/model/AmbiguityItem.java`           |
+| D-04  | `ComplianceItem` domain model        | Java class          | `rfp-core/.../domain/model/ComplianceItem.java`          |
+| D-05  | `RiskItem` domain model              | Java class          | `rfp-core/.../domain/model/RiskItem.java`                |
+| D-06  | `BidClarityPack` domain model        | Java class          | `rfp-core/.../domain/model/BidClarityPack.java`          |
+| D-07  | `ArtifactMetadata` value object      | Java class          | `rfp-core/.../domain/model/ArtifactMetadata.java`        |
+| D-08  | `ArtifactPort` (updated)             | Java interface      | `rfp-core/.../domain/port/ArtifactPort.java`             |
+| D-09  | `ClarificationTrigger` value object  | Java class          | `rfp-core/.../domain/model/ClarificationTrigger.java`    |
+| D-10  | `ClarificationQuestionTrigger`       | Spring component    | `adapter/artifact/ClarificationQuestionTrigger.java`     |
+| D-11  | `ClarificationQuestionsGenerator`    | Spring component    | `adapter/artifact/ClarificationQuestionsGenerator.java`  |
+| D-12  | `ClarificationQuestionsDocxWriter`   | Spring component    | `adapter/artifact/ClarificationQuestionsDocxWriter.java` |
+| D-13  | `AmbiguityRegisterXlsxWriter`        | Spring component    | `adapter/artifact/AmbiguityRegisterXlsxWriter.java`      |
+| D-14  | `ComplianceChecklistXlsxWriter`      | Spring component    | `adapter/artifact/ComplianceChecklistXlsxWriter.java`    |
+| D-15  | `RiskLogXlsxWriter`                  | Spring component    | `adapter/artifact/RiskLogXlsxWriter.java`                |
+| D-16  | `AuditReportGenerator`               | Spring component    | `adapter/artifact/AuditReportGenerator.java`             |
+| D-17  | `LocalArtifactStorageAdapter`        | Spring component    | `adapter/persistence/LocalArtifactStorageAdapter.java`   |
+| D-18  | `ArtifactApplicationService`         | Application service | `application/service/ArtifactApplicationService.java`    |
+| D-19  | `FinalizeNode` (updated)             | LangGraph4J node    | `agent/node/FinalizeNode.java`                           |
+| D-20  | `clarification-question-gen-v1.md`   | Prompt file         | `prompts/clarification-question-gen-v1.md`               |
+| D-21  | `risk-mitigation-suggestion-v1.md`   | Prompt file         | `prompts/risk-mitigation-suggestion-v1.md`               |
+| D-22  | `clarification-questions.ftl`        | Freemarker template | `resources/templates/clarification-questions.ftl`        |
+| D-23  | `audit-report.ftl`                   | Freemarker template | `resources/templates/audit-report.ftl`                   |
+| D-24  | Artifact download REST endpoints     | Controller update   | `adapter/api/RfpController.java`                         |
+| D-25  | `ArtifactDownload.tsx`               | React component     | `rfp-frontend/src/components/ArtifactDownload.tsx`       |
+| D-26  | `AuditReportViewer.tsx`              | React component     | `rfp-frontend/src/components/AuditReportViewer.tsx`      |
 
 ---
 
@@ -93,6 +95,14 @@ Then it is accessible via getClarificationQuestions()
 // QuestionType.java
 public enum QuestionType {
     MANDATORY_CLARIFICATION, CONFIRMATION, AMBIGUITY, CONTRADICTION_RESOLUTION
+}
+
+public enum RiskImpact {
+    HIGH, MEDIUM, LOW
+}
+
+public enum ArtifactFileType {
+    DOCX, XLSX, HTML
 }
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
@@ -131,7 +141,7 @@ public class RiskItem {
     private String id;
     private String riskDescription;
     private String source;
-    private String impact;         // "High" / "Medium" / "Low"
+    private RiskImpact impact;
     private String mitigationSuggestion;
     private String owner;          // default: "Bid Team"
 }
@@ -150,7 +160,7 @@ public class BidClarityPack {
 public class ArtifactMetadata {
     private UUID jobId;
     private String filename;
-    private String fileType;       // "DOCX", "XLSX", "HTML"
+    private ArtifactFileType fileType;
     private long sizeBytes;
     private Instant generatedAt;
     private String downloadUrl;
@@ -489,7 +499,8 @@ public class RiskLogXlsxWriter {
 
 1. For each `RiskItem`: call `LlmAdapter.judgeSnippet()` with prompt from `/prompts/risk-mitigation-suggestion-v1.md` +
    item description.
-2. Parse response: `{"mitigation": "...", "impact": "High|Medium|Low"}`. On failure: use `"Manual assessment required"`.
+2. Parse response: `{"mitigation": "...", "impact": "HIGH|MEDIUM|LOW"}`. On failure: use
+   `"Manual assessment required"` and default impact to `MEDIUM`.
 3. Create `XSSFWorkbook`, sheet "Risk & Assumptions Log".
 4. Header: # | Risk/Assumption | Source | Impact | Mitigation Suggestion | Owner.
 5. Add one row per item.
@@ -778,21 +789,23 @@ Then the browser downloads the file
 ```typescript
 // components/ArtifactDownload.tsx
 interface ArtifactMetadata {
-  jobId: string;
-  filename: string;
-  fileType: 'DOCX' | 'XLSX' | 'HTML';
-  sizeBytes: number;
-  generatedAt: string;
-  downloadUrl: string;
+    jobId: string;
+    filename: string;
+    fileType: ArtifactFileType;
+    sizeBytes: number;
+    generatedAt: string;
+    downloadUrl: string;
 }
 
+type ArtifactFileType = 'DOCX' | 'XLSX' | 'HTML';
+
 interface ArtifactDownloadProps {
-  jobId: string;
+    jobId: string;
 }
 
 // components/AuditReportViewer.tsx
 interface AuditReportViewerProps {
-  jobId: string;
+    jobId: string;
 }
 ```
 

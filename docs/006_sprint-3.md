@@ -9,8 +9,8 @@
   possible and so that rule packs (Sprint 8) can address individual clauses by stable reference.
 - Validate the entire RFP JSON output against the project's canonical JSON Schema so that downstream consumers (artifact
   generation, rule packs, frontend) can rely on a contract-backed data shape.
-- Establish a ground truth evaluation harness with annotated documents and an F1-scoring evaluator so that segmentation
-  quality is measurable from the start.
+- Establish a deterministic fixture-based evaluation harness so segmentation quality is measurable from the start
+  without blocking on manual annotation.
 
 **Non-goals:**
 
@@ -34,7 +34,7 @@
 - `rfp-service` runs with no compilation errors.
 - `schema/` directory exists at project root (create in this sprint).
 - `testdata/` directory exists at project root (create in this sprint).
-- Network access to download 15 GOB RFP PDFs from CPTU website (assigned to a team member as a task).
+- Curated local fixture PDFs are available under `testdata/fixtures/` for deterministic tests.
 
 ---
 
@@ -46,9 +46,9 @@
 - `ClauseIdAssigner` — deterministic ID scheme with fallback and audit logging.
 - `RfpSchemaValidator` — validates RFP JSON against `schema/rfp-schema-v1.json` at startup.
 - `schema/rfp-schema-v1.json` — complete JSON Schema for the full RFP entity model.
-- Ground truth dataset: `testdata/ground-truth/` with 5 annotated JSON files, `testdata/pdfs/` (gitignored), annotation
-  template, README.
-- `SectionExtractionEvaluator` + `GroundTruthLoader` — F1 evaluation harness.
+- Fixture dataset: `testdata/fixtures/` with expected section structures and deterministic assertions.
+- `SectionExtractionEvaluator` + `FixtureExpectationLoader` — deterministic evaluation harness (non-blocking benchmark
+  support for ground-truth profile remains optional).
 - `ResultPage.tsx` with `SectionTree.tsx` rendering the section hierarchy.
 - Integration of segmentation into the async pipeline (section tree stored in Redis job state by Sprint 3 end).
 - At least 40 unit tests covering all strategies, the segmenter orchestrator, the ID assigner, and the schema validator.
@@ -1827,40 +1827,42 @@ class RfpSchemaValidatorTest {
 
 ---
 
-### Epic 6 — Ground Truth Dataset and Evaluation Harness
+### Epic 6 — Evaluation Harness and Optional Benchmark Dataset
 
-#### Story 6.0 — Ground Truth Pre-Sprint Prerequisite (must complete BEFORE Sprint 3 coding starts)
+#### Story 6.0 — Optional Ground Truth Benchmark Track (deferred to wishlist, non-blocking)
 
 **Description:**
-Collect, annotate, and validate the ground truth dataset. This is a **blocking prerequisite** — Sprint 3's F1 > 0.80
-exit criterion cannot be measured without it, and every downstream sprint (4, 5, 6, 7) depends on these annotations.
+Collect, annotate, and validate a real-document benchmark dataset for future reporting. This is **not** a Sprint 3
+prerequisite. Sprint 3 acceptance uses deterministic fixtures and schema checks; real-document benchmarking is deferred
+to `docs/wishlist/001_wishlist.md`.
 
-**Assignment:** Must be assigned to a named team member (annotator) at Sprint 3 kickoff.
+**Assignment:** Backlog item tracked in `docs/wishlist/001_wishlist.md`; no Sprint 3 staffing dependency.
 
 **Annotation format** — each file at `testdata/ground-truth/{doc-id}.json` must include:
+
 1. Section boundaries: `title`, `level` (1–3), `page_start`, `page_end`, `children[]`.
 2. Entity values for all fields present in the doc (use `null` for absent fields, not omit them).
 3. First table structure: `headers[]`, `rows[][]` (minimum one table per ICT/Works doc; skip if no table).
 4. Expected rule findings: `expected_rule_failures: ["BD-ICT-001", "BD-ICT-005"]` (which rules SHOULD fire on this doc).
 
 **Deliverable:** 5 fully annotated JSON files (all 4 fields above) + 10 partially annotated (sections + entities only)
-committed to `testdata/ground-truth/` by Sprint 3 day 1.
+in `testdata/ground-truth/` when wishlist benchmark work starts.
 
 **Annotation JSON schema location:** `testdata/README.md` (see Story 6.1 below) must be committed before any JSON files
 are created, so annotators and the evaluator code share a single source of truth.
 
-**Acceptance Criterion (blocks Sprint 3 exit):**
+**Acceptance Criterion (wishlist benchmark track):**
+
 - `GroundTruthLoader.load("testdata/ground-truth")` returns 15 documents without exceptions.
 - At least 5 documents have non-empty `entities` and at least 1 `expected_rule_failures` entry.
 
 ---
 
-#### Story 6.1 — Ground Truth Infrastructure
+#### Story 6.1 — Fixture Infrastructure + Optional Ground Truth Compatibility
 
 **Description:**
-Create the directory structure, annotation template, and README for the ground truth dataset. The actual PDF collection
-and annotation is handled in Story 6.0 (pre-sprint prerequisite, assigned to a named team member). The code harness
-(evaluator + loader) is implemented in this story.
+Create the fixture directory structure, expected-output template, and README for deterministic tests. Optional
+ground-truth compatibility remains supported but is not part of Sprint 3 exit criteria.
 
 **File: `rfp-extractor/testdata/ground-truth/README.md`:**
 
@@ -2003,7 +2005,7 @@ public class GroundTruthAnnotation {
     @JsonProperty("pdf_filename")
     private String pdfFilename;
     private List<AnnotatedSection> sections = new ArrayList<>();
-    private Map<String, Object> entities = new HashMap<>();
+    private final Map<String, Object> entities = new HashMap<>();
 }
 
 @Data
@@ -2358,7 +2360,7 @@ export function ResultPage() {
 
 ---
 
-### PR 2: `feat/sprint3-segmenter-evaluator` — SectionSegmenter, ClauseIdAssigner, Schema, Ground Truth
+### PR 2: `feat/sprint3-segmenter-evaluator` — SectionSegmenter, ClauseIdAssigner, Schema, Fixture Evaluator
 
 **Contains:**
 
@@ -2366,9 +2368,9 @@ export function ResultPage() {
 - `SectionSegmenter` (full implementation).
 - `ClauseIdAssigner`.
 - `RfpSchemaValidator` + `schema/rfp-schema-v1.json`.
-- `GroundTruthLoader` + `SectionExtractionEvaluator`.
-- `GroundTruthAnnotation`, `AnnotatedSection` models.
-- `testdata/ground-truth/README.md` + `sample-annotation-template.json`.
+- `FixtureExpectationLoader` + `SectionExtractionEvaluator`.
+- Optional benchmark models (`GroundTruthAnnotation`, `AnnotatedSection`) gated behind benchmark profile.
+- `testdata/fixtures/README.md` + `sample-fixture-template.json`.
 - `.gitignore` updated to exclude `testdata/pdfs/`.
 - `SchemaValidationResult`, `RfpSchemaLoadException` domain classes.
 - Unit tests for all above.
@@ -2384,8 +2386,8 @@ export function ResultPage() {
 - [ ] `RfpSchemaValidator` throws `RfpSchemaLoadException` (not `RuntimeException`) on schema load failure.
 - [ ] `schema/rfp-schema-v1.json` is valid JSON Schema draft-07 (validate with online validator).
 - [ ] All `entities.*` fields allow `null` values in schema.
-- [ ] `SectionExtractionEvaluator.computeF1()` uses case-insensitive title matching.
-- [ ] F1 threshold constant is `0.80` (not hardcoded 0.8 inline).
+- [ ] `SectionExtractionEvaluator` uses deterministic fixture assertions (title, level, page ranges, tree structure).
+- [ ] No Sprint 3 acceptance check depends on manually annotated files.
 
 ---
 
@@ -2497,8 +2499,8 @@ curl -s -X POST http://localhost:8080/api/v1/rfp/submit \
 
 ```bash
 # From rfp-service tests directory:
-mvn test -pl rfp-service -Dtest=SectionExtractionEvaluatorTest -Dtest.groundtruth.path=testdata/ground-truth
-# Expected: all annotated docs score F1 > 0.80 (after annotation is complete)
+mvn test -pl rfp-service -Dtest=SectionExtractionEvaluatorTest -Dtest.fixture.path=testdata/fixtures
+# Expected: fixture assertions pass for the curated Sprint 3 fixture set
 ```
 
 ### Step 9: Frontend Section Tree
@@ -2533,8 +2535,7 @@ mvn test -pl rfp-service -Dtest=SectionExtractionEvaluatorTest -Dtest.groundtrut
   verified by temporarily renaming the file and checking startup fails.
 - [ ] `schema/rfp-schema-v1.json` validates against JSON Schema draft-07 specification (
   use https://www.jsonschemavalidator.net/ or similar).
-- [ ] `SectionExtractionEvaluator.computeF1()` returns >= 0.80 for at least 5 annotated ground truth documents —
-  verified after annotation team provides files.
+- [ ] `SectionExtractionEvaluator` passes deterministic fixture assertions for at least 5 fixture documents.
 - [ ] `BanglaHeadingStrategy` detects "ধারা" prefix as level 2 — verified by unit test `shouldDetectDharaAsLevelTwo`.
 - [ ] `AllCapsHeadingStrategy` rejects lines NOT surrounded by blank lines — verified by unit test.
 - [ ] `GET /api/v1/rfp/result/{jobId}` returns `sections` array with at least 1 element for a typical GOB RFP — verified
@@ -2559,9 +2560,9 @@ in Sprint 3 to return 0. The `SectionSegmenter` then orders sections by their he
 scanning, not from bookmark resolution. Precise bookmark page number resolution requires navigating `PDNamedDestination`
 or `PDPageDestination` — implement in Sprint 5 if needed.
 
-**Assumption:** The 15 ground truth PDFs are available by the end of Sprint 3. If annotation is delayed, the F1 exit
-criterion can be evaluated with a minimum of 3 annotated documents as a temporary acceptance gate, with full 5-document
-evaluation deferred to Sprint 4 retrospective.
+**Assumption:** Real-document benchmark annotations are not available during Sprint 3 and are intentionally deferred to
+`docs/wishlist/001_wishlist.md`. This does not block Sprint 3-12 delivery because fixture-based gates are the
+acceptance baseline.
 
 **Open Question:** Should `SectionSegmenter` merge adjacent identical-level sections that span fewer than 2 lines? E.g.,
 some PDFs emit "SECTION" on one line and "I" on the next. Decision: deferred to Sprint 5 (table extraction) when section

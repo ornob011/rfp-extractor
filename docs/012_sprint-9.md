@@ -90,20 +90,20 @@ Then all 33 parameterized tests pass with exit code 0
 Rule pack YAML header contract (matches rule-schema-v1.json):
 
 ```yaml
-id: bd-govt-works-v1
-name: "BD Government Works Contracts"
-version: "1.0.0"
-rfpType: WORKS
+id         : bd-govt-works-v1
+name       : "BD Government Works Contracts"
+version    : "1.0.0"
+rfpType    : WORKS
 description: "Rules for civil/construction works contracts under PPR 2008"
-rules:
-  - id: BD-W-001
-    name: "RFP Title Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "metadata.title"
-    condition: NOT_NULL_OR_EMPTY
-    message: "RFP title (metadata.title) is missing or empty."
-    category: "MANDATORY_FIELDS"
+rules      :
+    -   id       : BD-W-001
+        name     : "RFP Title Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "metadata.title"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "RFP title (metadata.title) is missing or empty."
+        category : "MANDATORY_FIELDS"
 ```
 
 `RulePackRunner.run(RfpDocument doc, String packId)` returns `RulePackResult` — unchanged from Sprint 8.
@@ -115,320 +115,320 @@ File: `rfp-extractor/rules/bd-govt-works-v1.yaml`
 Complete rule list:
 
 ```yaml
-id: bd-govt-works-v1
-name: "BD Government Works Contracts"
-version: "1.0.0"
-rfpType: WORKS
+id         : bd-govt-works-v1
+name       : "BD Government Works Contracts"
+version    : "1.0.0"
+rfpType    : WORKS
 description: "Structural and semantic rules for GOB civil/construction works contracts under PPR 2008 and standard CPTU SBD-Works templates."
-rules:
+rules      :
 
-  # ── MANDATORY FIELDS ────────────────────────────────────────────────────────
+    # ── MANDATORY FIELDS ────────────────────────────────────────────────────────
 
-  - id: BD-W-001
-    name: "RFP Title Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "metadata.title"
-    condition: NOT_NULL_OR_EMPTY
-    message: "RFP title (metadata.title) is missing or empty."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-W-001
+        name     : "RFP Title Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "metadata.title"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "RFP title (metadata.title) is missing or empty."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-W-002
-    name: "Procurement Reference Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "metadata.procurement_ref"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Procurement reference number (metadata.procurement_ref) is missing."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-W-002
+        name     : "Procurement Reference Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "metadata.procurement_ref"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Procurement reference number (metadata.procurement_ref) is missing."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-W-003
-    name: "Client / Employer Name Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "metadata.client_name"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Client/employer name (metadata.client_name) is missing."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-W-003
+        name     : "Client / Employer Name Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "metadata.client_name"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Client/employer name (metadata.client_name) is missing."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-W-004
-    name: "Submission Deadline Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.submission_deadline"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Submission deadline (entities.submission_deadline) is missing. This is a PPR 2008 mandatory field."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-W-004
+        name     : "Submission Deadline Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.submission_deadline"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Submission deadline (entities.submission_deadline) is missing. This is a PPR 2008 mandatory field."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-W-005
-    name: "Contractor Eligibility / Experience Requirement Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.eligibility_summary"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Eligibility/experience requirements for the contractor (entities.eligibility_summary) are absent. Contractor qualification criteria (minimum years of experience, annual turnover) must be stated."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-W-005
+        name     : "Contractor Eligibility / Experience Requirement Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.eligibility_summary"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Eligibility/experience requirements for the contractor (entities.eligibility_summary) are absent. Contractor qualification criteria (minimum years of experience, annual turnover) must be stated."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-W-006
-    name: "Scope of Work / Bill of Quantities Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "sections[?contains(heading, 'scope') || contains(heading, 'bill of quantities') || contains(heading, 'work schedule') || contains(heading, 'boq')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "No section heading matching scope of work, bill of quantities, or work schedule was found. A BOQ or detailed work schedule is mandatory for works contracts."
-    category: "SCOPE"
+    -   id       : BD-W-006
+        name     : "Scope of Work / Bill of Quantities Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "sections[?contains(heading, 'scope') || contains(heading, 'bill of quantities') || contains(heading, 'work schedule') || contains(heading, 'boq')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "No section heading matching scope of work, bill of quantities, or work schedule was found. A BOQ or detailed work schedule is mandatory for works contracts."
+        category : "SCOPE"
 
-  - id: BD-W-007
-    name: "Evaluation Criteria Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.evaluation_criteria"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Evaluation criteria (entities.evaluation_criteria) are missing. PPR 2008 requires explicit evaluation criteria for works contracts."
-    category: "EVALUATION"
+    -   id       : BD-W-007
+        name     : "Evaluation Criteria Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.evaluation_criteria"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Evaluation criteria (entities.evaluation_criteria) are missing. PPR 2008 requires explicit evaluation criteria for works contracts."
+        category : "EVALUATION"
 
-  - id: BD-W-009
-    name: "Technical-Financial Split Specified"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.technical_financial_split"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Technical-financial split ratio (entities.technical_financial_split) is not specified. Works contracts must state whether evaluation is single-stage or two-envelope."
-    category: "EVALUATION"
+    -   id       : BD-W-009
+        name     : "Technical-Financial Split Specified"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.technical_financial_split"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Technical-financial split ratio (entities.technical_financial_split) is not specified. Works contracts must state whether evaluation is single-stage or two-envelope."
+        category : "EVALUATION"
 
-  - id: BD-W-027
-    name: "Method of Selection Specified"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.method_of_selection"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Method of selection (entities.method_of_selection) is not stated (e.g., LCB, ICB, NCB, Direct Contracting)."
-    category: "PROCUREMENT_METHOD"
+    -   id       : BD-W-027
+        name     : "Method of Selection Specified"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.method_of_selection"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Method of selection (entities.method_of_selection) is not stated (e.g., LCB, ICB, NCB, Direct Contracting)."
+        category : "PROCUREMENT_METHOD"
 
-  - id: BD-W-028
-    name: "Procurement Method Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.procurement_method"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Procurement method (entities.procurement_method) is missing (e.g., Open Tendering, Limited Tendering)."
-    category: "PROCUREMENT_METHOD"
+    -   id       : BD-W-028
+        name     : "Procurement Method Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.procurement_method"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Procurement method (entities.procurement_method) is missing (e.g., Open Tendering, Limited Tendering)."
+        category : "PROCUREMENT_METHOD"
 
-  # ── HIGH SEVERITY ────────────────────────────────────────────────────────────
+    # ── HIGH SEVERITY ────────────────────────────────────────────────────────────
 
-  - id: BD-W-008
-    name: "Evaluation Criteria Weights Sum ~100"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.evaluation_criteria_total_weight"
-    condition: BETWEEN_95_AND_105
-    message: "Evaluation criteria weights do not sum to approximately 100 (entities.evaluation_criteria_total_weight = {value}). Weights must sum to 100 ± 5."
-    category: "EVALUATION"
+    -   id       : BD-W-008
+        name     : "Evaluation Criteria Weights Sum ~100"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.evaluation_criteria_total_weight"
+        condition: BETWEEN_95_AND_105
+        message  : "Evaluation criteria weights do not sum to approximately 100 (entities.evaluation_criteria_total_weight = {value}). Weights must sum to 100 ± 5."
+        category : "EVALUATION"
 
-  - id: BD-W-010
-    name: "Performance Security Percentage Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.performance_security_pct"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Performance security percentage (entities.performance_security_pct) is missing. Standard GOB works contracts require 10% of contract price."
-    category: "FINANCIAL_SECURITY"
+    -   id       : BD-W-010
+        name     : "Performance Security Percentage Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.performance_security_pct"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Performance security percentage (entities.performance_security_pct) is missing. Standard GOB works contracts require 10% of contract price."
+        category : "FINANCIAL_SECURITY"
 
-  - id: BD-W-011
-    name: "Bank Guarantee Mentioned"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.pricing_factors[?contains(@, 'bank guarantee') || contains(@, 'bank guaranty')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "No mention of bank guarantee in pricing_factors. Works contracts typically require a bank guarantee as performance security."
-    category: "FINANCIAL_SECURITY"
+    -   id       : BD-W-011
+        name     : "Bank Guarantee Mentioned"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.pricing_factors[?contains(@, 'bank guarantee') || contains(@, 'bank guaranty')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "No mention of bank guarantee in pricing_factors. Works contracts typically require a bank guarantee as performance security."
+        category : "FINANCIAL_SECURITY"
 
-  - id: BD-W-012
-    name: "Payment Terms Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.payment_terms"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Payment terms (entities.payment_terms) are absent. Payment milestones and schedule must be defined for works contracts."
-    category: "FINANCIAL"
+    -   id       : BD-W-012
+        name     : "Payment Terms Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.payment_terms"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Payment terms (entities.payment_terms) are absent. Payment milestones and schedule must be defined for works contracts."
+        category : "FINANCIAL"
 
-  - id: BD-W-013
-    name: "Project Duration / Completion Period Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.project_duration"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Project duration/completion period (entities.project_duration) is not specified."
-    category: "SCHEDULE"
+    -   id       : BD-W-013
+        name     : "Project Duration / Completion Period Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.project_duration"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Project duration/completion period (entities.project_duration) is not specified."
+        category : "SCHEDULE"
 
-  - id: BD-W-014
-    name: "Submission Address / Contact Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.submission_address"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Submission address or contact information (entities.submission_address) is missing."
-    category: "SUBMISSION"
+    -   id       : BD-W-014
+        name     : "Submission Address / Contact Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.submission_address"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Submission address or contact information (entities.submission_address) is missing."
+        category : "SUBMISSION"
 
-  - id: BD-W-015
-    name: "Bid Validity Period Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.bid_validity_days"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Bid validity period (entities.bid_validity_days) is not stated."
-    category: "SUBMISSION"
+    -   id       : BD-W-015
+        name     : "Bid Validity Period Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.bid_validity_days"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Bid validity period (entities.bid_validity_days) is not stated."
+        category : "SUBMISSION"
 
-  - id: BD-W-016
-    name: "Liquidated Damages Clause Present"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.pricing_factors[?contains(@, 'liquidated') || contains(@, 'ld clause') || contains(@, 'penalty')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "No liquidated damages clause found in pricing_factors. Works contracts must specify LD rates for delay."
-    category: "CONTRACT_CONDITIONS"
+    -   id       : BD-W-016
+        name     : "Liquidated Damages Clause Present"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.pricing_factors[?contains(@, 'liquidated') || contains(@, 'ld clause') || contains(@, 'penalty')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "No liquidated damages clause found in pricing_factors. Works contracts must specify LD rates for delay."
+        category : "CONTRACT_CONDITIONS"
 
-  - id: BD-W-017
-    name: "Retention Money Clause Present"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.pricing_factors[?contains(@, 'retention')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "No retention money clause found in pricing_factors. Standard GOB works contracts retain 10% (5% released at completion, 5% at defects liability end)."
-    category: "FINANCIAL"
+    -   id       : BD-W-017
+        name     : "Retention Money Clause Present"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.pricing_factors[?contains(@, 'retention')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "No retention money clause found in pricing_factors. Standard GOB works contracts retain 10% (5% released at completion, 5% at defects liability end)."
+        category : "FINANCIAL"
 
-  - id: BD-W-018
-    name: "Defects Liability Period Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.support_maintenance_period"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Defects liability period (entities.support_maintenance_period or pricing_factors) is not stated."
-    category: "CONTRACT_CONDITIONS"
+    -   id       : BD-W-018
+        name     : "Defects Liability Period Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.support_maintenance_period"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Defects liability period (entities.support_maintenance_period or pricing_factors) is not stated."
+        category : "CONTRACT_CONDITIONS"
 
-  - id: BD-W-022
-    name: "Key Personnel / Staff Months Requirement Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.key_personnel"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Key personnel or staff months requirement (entities.key_personnel) is not specified."
-    category: "PERSONNEL"
+    -   id       : BD-W-022
+        name     : "Key Personnel / Staff Months Requirement Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.key_personnel"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Key personnel or staff months requirement (entities.key_personnel) is not specified."
+        category : "PERSONNEL"
 
-  # ── MEDIUM SEVERITY ───────────────────────────────────────────────────────────
+    # ── MEDIUM SEVERITY ───────────────────────────────────────────────────────────
 
-  - id: BD-W-019
-    name: "Site Inspection / Visit Requirement Stated"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.other_info[?contains(@, 'site') || contains(@, 'site visit') || contains(@, 'site inspection')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "Site inspection/visit requirement not found in other_info or pricing_factors."
-    category: "SUBMISSION"
+    -   id       : BD-W-019
+        name     : "Site Inspection / Visit Requirement Stated"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.other_info[?contains(@, 'site') || contains(@, 'site visit') || contains(@, 'site inspection')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "Site inspection/visit requirement not found in other_info or pricing_factors."
+        category : "SUBMISSION"
 
-  - id: BD-W-020
-    name: "Pre-Bid Meeting Information Present"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.pre_bid_meeting"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Pre-bid meeting details (entities.pre_bid_meeting) are missing."
-    category: "SUBMISSION"
+    -   id       : BD-W-020
+        name     : "Pre-Bid Meeting Information Present"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.pre_bid_meeting"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Pre-bid meeting details (entities.pre_bid_meeting) are missing."
+        category : "SUBMISSION"
 
-  - id: BD-W-021
-    name: "Number of Bid Copies Stated"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.number_of_copies"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Number of bid copies required (entities.number_of_copies) is not stated."
-    category: "SUBMISSION"
+    -   id       : BD-W-021
+        name     : "Number of Bid Copies Stated"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.number_of_copies"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Number of bid copies required (entities.number_of_copies) is not stated."
+        category : "SUBMISSION"
 
-  - id: BD-W-023
-    name: "Reimbursable Expenses Policy Stated"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.reimbursable_expenses"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Reimbursable expenses policy (entities.reimbursable_expenses) is not defined."
-    category: "FINANCIAL"
+    -   id       : BD-W-023
+        name     : "Reimbursable Expenses Policy Stated"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.reimbursable_expenses"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Reimbursable expenses policy (entities.reimbursable_expenses) is not defined."
+        category : "FINANCIAL"
 
-  - id: BD-W-024
-    name: "Extension of Time Clause Present"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.pricing_factors[?contains(@, 'extension of time') || contains(@, 'eot')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "No extension of time (EOT) clause found in pricing_factors or other_info."
-    category: "CONTRACT_CONDITIONS"
+    -   id       : BD-W-024
+        name     : "Extension of Time Clause Present"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.pricing_factors[?contains(@, 'extension of time') || contains(@, 'eot')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "No extension of time (EOT) clause found in pricing_factors or other_info."
+        category : "CONTRACT_CONDITIONS"
 
-  - id: BD-W-025
-    name: "Mobilization Advance Mentioned"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.pricing_factors[?contains(@, 'mobilization') || contains(@, 'advance payment')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "Mobilization advance/advance payment clause not found in pricing_factors."
-    category: "FINANCIAL"
+    -   id       : BD-W-025
+        name     : "Mobilization Advance Mentioned"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.pricing_factors[?contains(@, 'mobilization') || contains(@, 'advance payment')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "Mobilization advance/advance payment clause not found in pricing_factors."
+        category : "FINANCIAL"
 
-  - id: BD-W-026
-    name: "Insurance Requirements Stated"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.pricing_factors[?contains(@, 'insurance')] || entities.other_info[?contains(@, 'insurance')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "Insurance requirements are not specified in pricing_factors or other_info."
-    category: "CONTRACT_CONDITIONS"
+    -   id       : BD-W-026
+        name     : "Insurance Requirements Stated"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.pricing_factors[?contains(@, 'insurance')] || entities.other_info[?contains(@, 'insurance')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "Insurance requirements are not specified in pricing_factors or other_info."
+        category : "CONTRACT_CONDITIONS"
 
-  - id: BD-W-029
-    name: "Programme of Work / Gantt Chart Required"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.other_info[?contains(@, 'programme') || contains(@, 'gantt') || contains(@, 'work schedule')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "No requirement for programme of work or Gantt chart found in other_info."
-    category: "SCHEDULE"
+    -   id       : BD-W-029
+        name     : "Programme of Work / Gantt Chart Required"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.other_info[?contains(@, 'programme') || contains(@, 'gantt') || contains(@, 'work schedule')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "No requirement for programme of work or Gantt chart found in other_info."
+        category : "SCHEDULE"
 
-  - id: BD-W-030
-    name: "On-Site Resource Requirements Stated"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.onsite_resources"
-    condition: NOT_NULL_OR_EMPTY
-    message: "On-site resource requirements (entities.onsite_resources) are not specified."
-    category: "PERSONNEL"
+    -   id       : BD-W-030
+        name     : "On-Site Resource Requirements Stated"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.onsite_resources"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "On-site resource requirements (entities.onsite_resources) are not specified."
+        category : "PERSONNEL"
 
-  # ── SEMANTIC RULES (LLM) ─────────────────────────────────────────────────────
+    # ── SEMANTIC RULES (LLM) ─────────────────────────────────────────────────────
 
-  - id: BD-W-031
-    name: "Scope of Works Is Sufficiently Specific to Estimate"
-    severity: HIGH
-    type: SEMANTIC
-    evidenceJmesPath: "entities.scope_of_work"
-    promptKey: "rule-judgment-v1"
-    judgmentInstruction: "Assess whether the scope of works described is sufficiently specific for a contractor to accurately prepare a cost estimate and bill of quantities. It must define work types, approximate quantities, site conditions, and materials. Vague language like 'miscellaneous civil works' without elaboration is insufficient. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
-    message: "Scope of works is insufficiently specific for cost estimation. A contractor cannot reliably price the BOQ without more detail."
-    category: "SEMANTIC_SCOPE"
+    -   id                 : BD-W-031
+        name               : "Scope of Works Is Sufficiently Specific to Estimate"
+        severity           : HIGH
+        type               : SEMANTIC
+        evidenceJmesPath   : "entities.scope_of_work"
+        promptKey          : "rule-judgment-v1"
+        judgmentInstruction: "Assess whether the scope of works described is sufficiently specific for a contractor to accurately prepare a cost estimate and bill of quantities. It must define work types, approximate quantities, site conditions, and materials. Vague language like 'miscellaneous civil works' without elaboration is insufficient. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
+        message            : "Scope of works is insufficiently specific for cost estimation. A contractor cannot reliably price the BOQ without more detail."
+        category           : "SEMANTIC_SCOPE"
 
-  - id: BD-W-032
-    name: "Payment Terms Tied to Measurable Milestones"
-    severity: MEDIUM
-    type: SEMANTIC
-    evidenceJmesPath: "entities.payment_terms"
-    promptKey: "rule-judgment-v1"
-    judgmentInstruction: "Determine whether the payment terms are clearly tied to measurable, objective milestones (e.g., completion of foundation work, structural work, finishing, commissioning) rather than vague time periods or discretionary events. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
-    message: "Payment terms are not clearly tied to measurable milestones, creating dispute risk."
-    category: "SEMANTIC_FINANCIAL"
+    -   id                 : BD-W-032
+        name               : "Payment Terms Tied to Measurable Milestones"
+        severity           : MEDIUM
+        type               : SEMANTIC
+        evidenceJmesPath   : "entities.payment_terms"
+        promptKey          : "rule-judgment-v1"
+        judgmentInstruction: "Determine whether the payment terms are clearly tied to measurable, objective milestones (e.g., completion of foundation work, structural work, finishing, commissioning) rather than vague time periods or discretionary events. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
+        message            : "Payment terms are not clearly tied to measurable milestones, creating dispute risk."
+        category           : "SEMANTIC_FINANCIAL"
 
-  - id: BD-W-033
-    name: "Liquidated Damages Rate Is Proportional"
-    severity: MEDIUM
-    type: SEMANTIC
-    evidenceJmesPath: "entities.pricing_factors[?contains(@, 'liquidated')]"
-    promptKey: "rule-judgment-v1"
-    judgmentInstruction: "Evaluate whether the liquidated damages (LD) rate per day is proportional and commercially reasonable (typically 0.05%–0.15% of contract value per day, up to a cap of 5%–10%). An LD rate exceeding 0.5% per day without a cap, or an uncapped LD clause, is excessive and constitutes a red flag. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
-    message: "Liquidated damages rate appears disproportionate (too high or uncapped). Seek clarification before bidding."
-    category: "SEMANTIC_FINANCIAL"
+    -   id                 : BD-W-033
+        name               : "Liquidated Damages Rate Is Proportional"
+        severity           : MEDIUM
+        type               : SEMANTIC
+        evidenceJmesPath   : "entities.pricing_factors[?contains(@, 'liquidated')]"
+        promptKey          : "rule-judgment-v1"
+        judgmentInstruction: "Evaluate whether the liquidated damages (LD) rate per day is proportional and commercially reasonable (typically 0.05%–0.15% of contract value per day, up to a cap of 5%–10%). An LD rate exceeding 0.5% per day without a cap, or an uncapped LD clause, is excessive and constitutes a red flag. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
+        message            : "Liquidated damages rate appears disproportionate (too high or uncapped). Seek clarification before bidding."
+        category           : "SEMANTIC_FINANCIAL"
 ```
 
 **Dependencies:** Sprint 8 `RulePackLoader`, `RulePackRunner`, `RuleFinding`, `rule-schema-v1.json`.
@@ -446,6 +446,7 @@ rules:
 Class: `rfp-service/src/test/java/com/dsi/rfp/adapter/rulepack/RulePackWorksTest.java`
 
 ```java
+
 @ParameterizedTest
 @MethodSource("worksRuleTestCases")
 void testWorksRule(String ruleId, RfpDocument doc, RuleFindingStatus expectedStatus) {
@@ -472,7 +473,13 @@ correctness verified manually in demo script.
 **Observability:**
 
 ```java
-log.info("[RulePackLoader] Loaded pack: id={}, version={}, rules={}", pack.getId(), pack.getVersion(), pack.getRules().size());
+log.info("[RulePackLoader] Loaded pack: id={}, version={}, rules={}",pack.getId(),pack.
+
+getVersion(),pack.
+
+getRules().
+
+size());
 ```
 
 **Story Points:** 8
@@ -509,320 +516,320 @@ Then all 33 tests pass
 File: `rfp-extractor/rules/bd-govt-consultancy-v1.yaml`
 
 ```yaml
-id: bd-govt-consultancy-v1
-name: "BD Government Consultancy / ToR Contracts"
-version: "1.0.0"
-rfpType: CONSULTANCY
+id         : bd-govt-consultancy-v1
+name       : "BD Government Consultancy / ToR Contracts"
+version    : "1.0.0"
+rfpType    : CONSULTANCY
 description: "Rules for GOB consultancy contracts and Terms of Reference (ToR) under PPR 2008, CPTU SBDS-Consulting."
-rules:
+rules      :
 
-  # ── MANDATORY FIELDS ────────────────────────────────────────────────────────
+    # ── MANDATORY FIELDS ────────────────────────────────────────────────────────
 
-  - id: BD-C-001
-    name: "RFP Title Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "metadata.title"
-    condition: NOT_NULL_OR_EMPTY
-    message: "RFP title is missing (metadata.title)."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-C-001
+        name     : "RFP Title Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "metadata.title"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "RFP title is missing (metadata.title)."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-C-002
-    name: "Procurement Reference Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "metadata.procurement_ref"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Procurement reference number (metadata.procurement_ref) is missing."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-C-002
+        name     : "Procurement Reference Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "metadata.procurement_ref"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Procurement reference number (metadata.procurement_ref) is missing."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-C-003
-    name: "Client Name Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "metadata.client_name"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Client/agency name (metadata.client_name) is missing."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-C-003
+        name     : "Client Name Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "metadata.client_name"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Client/agency name (metadata.client_name) is missing."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-C-004
-    name: "Submission Deadline Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.submission_deadline"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Submission deadline (entities.submission_deadline) is missing."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-C-004
+        name     : "Submission Deadline Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.submission_deadline"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Submission deadline (entities.submission_deadline) is missing."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-C-005
-    name: "Method of Selection Specified"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.method_of_selection"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Method of selection (QCBS, QBS, LCS, CQS, SSS) is not specified (entities.method_of_selection)."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-C-005
+        name     : "Method of Selection Specified"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.method_of_selection"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Method of selection (QCBS, QBS, LCS, CQS, SSS) is not specified (entities.method_of_selection)."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-C-006
-    name: "Staff Months Requirement Stated"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.staff_months"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Total staff months or person-days required (entities.staff_months) are not stated."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-C-006
+        name     : "Staff Months Requirement Stated"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.staff_months"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Total staff months or person-days required (entities.staff_months) are not stated."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-C-007
-    name: "Team Composition / Key Expert Roles Specified"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.key_personnel"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Key expert roles and team composition (entities.key_personnel) are not specified in the ToR."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-C-007
+        name     : "Team Composition / Key Expert Roles Specified"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.key_personnel"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Key expert roles and team composition (entities.key_personnel) are not specified in the ToR."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-C-008
-    name: "Methodology / Approach Requirement Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "sections[?contains(heading, 'methodology') || contains(heading, 'approach') || contains(heading, 'technical approach')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "No section requiring a methodology or technical approach was found. QCBS evaluations require firms to submit a technical approach."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-C-008
+        name     : "Methodology / Approach Requirement Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "sections[?contains(heading, 'methodology') || contains(heading, 'approach') || contains(heading, 'technical approach')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "No section requiring a methodology or technical approach was found. QCBS evaluations require firms to submit a technical approach."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-C-009
-    name: "Reporting Requirements Specified"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.reporting_requirements"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Reporting requirements (inception report, progress reports, draft/final reports) are not specified (entities.reporting_requirements)."
-    category: "DELIVERABLES"
+    -   id       : BD-C-009
+        name     : "Reporting Requirements Specified"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.reporting_requirements"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Reporting requirements (inception report, progress reports, draft/final reports) are not specified (entities.reporting_requirements)."
+        category : "DELIVERABLES"
 
-  - id: BD-C-010
-    name: "Eligibility Criteria Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.eligibility_summary"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Firm eligibility criteria (entities.eligibility_summary) are missing. Must include firm registration, similar project experience requirements."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-C-010
+        name     : "Eligibility Criteria Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.eligibility_summary"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Firm eligibility criteria (entities.eligibility_summary) are missing. Must include firm registration, similar project experience requirements."
+        category : "MANDATORY_FIELDS"
 
-  # ── HIGH SEVERITY ────────────────────────────────────────────────────────────
+    # ── HIGH SEVERITY ────────────────────────────────────────────────────────────
 
-  - id: BD-C-011
-    name: "Key Expert CV Requirements Stated (Years Experience)"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.cv_requirements"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Key expert CV requirements including minimum years of experience and qualification level (entities.cv_requirements) are not stated."
-    category: "PERSONNEL"
+    -   id       : BD-C-011
+        name     : "Key Expert CV Requirements Stated (Years Experience)"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.cv_requirements"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Key expert CV requirements including minimum years of experience and qualification level (entities.cv_requirements) are not stated."
+        category : "PERSONNEL"
 
-  - id: BD-C-012
-    name: "Work Plan / Schedule Required"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.work_plan_required"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Requirement for a work plan/schedule from the firm is not mentioned (entities.work_plan_required)."
-    category: "SCHEDULE"
+    -   id       : BD-C-012
+        name     : "Work Plan / Schedule Required"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.work_plan_required"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Requirement for a work plan/schedule from the firm is not mentioned (entities.work_plan_required)."
+        category : "SCHEDULE"
 
-  - id: BD-C-013
-    name: "Inception Report Delivery Date or Period Specified"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.reporting_requirements[?contains(@, 'inception')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "Inception report delivery requirements not found in entities.reporting_requirements."
-    category: "DELIVERABLES"
+    -   id       : BD-C-013
+        name     : "Inception Report Delivery Date or Period Specified"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.reporting_requirements[?contains(@, 'inception')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "Inception report delivery requirements not found in entities.reporting_requirements."
+        category : "DELIVERABLES"
 
-  - id: BD-C-014
-    name: "Final Report Delivery Requirement Specified"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.reporting_requirements[?contains(@, 'final report') || contains(@, 'final')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "Final report delivery requirement not found in entities.reporting_requirements."
-    category: "DELIVERABLES"
+    -   id       : BD-C-014
+        name     : "Final Report Delivery Requirement Specified"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.reporting_requirements[?contains(@, 'final report') || contains(@, 'final')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "Final report delivery requirement not found in entities.reporting_requirements."
+        category : "DELIVERABLES"
 
-  - id: BD-C-015
-    name: "Payment Terms (Milestone-Based) Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.payment_terms"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Payment terms (entities.payment_terms) are absent. Consultancy payments should be milestone-linked."
-    category: "FINANCIAL"
+    -   id       : BD-C-015
+        name     : "Payment Terms (Milestone-Based) Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.payment_terms"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Payment terms (entities.payment_terms) are absent. Consultancy payments should be milestone-linked."
+        category : "FINANCIAL"
 
-  - id: BD-C-016
-    name: "Performance Security Requirement Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.performance_security_pct"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Performance security requirement (entities.performance_security_pct) is not stated."
-    category: "FINANCIAL_SECURITY"
+    -   id       : BD-C-016
+        name     : "Performance Security Requirement Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.performance_security_pct"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Performance security requirement (entities.performance_security_pct) is not stated."
+        category : "FINANCIAL_SECURITY"
 
-  - id: BD-C-017
-    name: "Bank Guarantee Requirement Mentioned"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.pricing_factors[?contains(@, 'bank guarantee')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "Bank guarantee requirement not found in pricing_factors."
-    category: "FINANCIAL_SECURITY"
+    -   id       : BD-C-017
+        name     : "Bank Guarantee Requirement Mentioned"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.pricing_factors[?contains(@, 'bank guarantee')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "Bank guarantee requirement not found in pricing_factors."
+        category : "FINANCIAL_SECURITY"
 
-  - id: BD-C-018
-    name: "Bid Validity Period Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.bid_validity_days"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Bid/proposal validity period (entities.bid_validity_days) is not stated."
-    category: "SUBMISSION"
+    -   id       : BD-C-018
+        name     : "Bid Validity Period Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.bid_validity_days"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Bid/proposal validity period (entities.bid_validity_days) is not stated."
+        category : "SUBMISSION"
 
-  - id: BD-C-019
-    name: "Evaluation Criteria (Technical/Financial Split) Specified"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.technical_financial_split"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Technical/financial evaluation split (entities.technical_financial_split) is not specified (e.g., 80/20 for QCBS)."
-    category: "EVALUATION"
+    -   id       : BD-C-019
+        name     : "Evaluation Criteria (Technical/Financial Split) Specified"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.technical_financial_split"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Technical/financial evaluation split (entities.technical_financial_split) is not specified (e.g., 80/20 for QCBS)."
+        category : "EVALUATION"
 
-  - id: BD-C-020
-    name: "Counterpart Support / Client Inputs Described"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.counterpart_support"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Client counterpart support and inputs to be provided (entities.counterpart_support) are not described."
-    category: "SCOPE"
+    -   id       : BD-C-020
+        name     : "Counterpart Support / Client Inputs Described"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.counterpart_support"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Client counterpart support and inputs to be provided (entities.counterpart_support) are not described."
+        category : "SCOPE"
 
-  - id: BD-C-021
-    name: "Intellectual Property / Data Rights Clause Present"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.other_info[?contains(@, 'intellectual property') || contains(@, 'ip rights') || contains(@, 'data rights')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "Intellectual property and data rights clause not found in other_info."
-    category: "CONTRACT_CONDITIONS"
+    -   id       : BD-C-021
+        name     : "Intellectual Property / Data Rights Clause Present"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.other_info[?contains(@, 'intellectual property') || contains(@, 'ip rights') || contains(@, 'data rights')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "Intellectual property and data rights clause not found in other_info."
+        category : "CONTRACT_CONDITIONS"
 
-  - id: BD-C-022
-    name: "Conflict of Interest Clause Present"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.other_info[?contains(@, 'conflict of interest') || contains(@, 'coi')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "Conflict of interest declaration requirement not found."
-    category: "COMPLIANCE"
+    -   id       : BD-C-022
+        name     : "Conflict of Interest Clause Present"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.other_info[?contains(@, 'conflict of interest') || contains(@, 'coi')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "Conflict of interest declaration requirement not found."
+        category : "COMPLIANCE"
 
-  # ── MEDIUM SEVERITY ───────────────────────────────────────────────────────────
+    # ── MEDIUM SEVERITY ───────────────────────────────────────────────────────────
 
-  - id: BD-C-023
-    name: "Data Collection Methods Described"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.data_collection_methods"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Data collection methods (entities.data_collection_methods) are not described in the ToR."
-    category: "METHODOLOGY"
+    -   id       : BD-C-023
+        name     : "Data Collection Methods Described"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.data_collection_methods"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Data collection methods (entities.data_collection_methods) are not described in the ToR."
+        category : "METHODOLOGY"
 
-  - id: BD-C-024
-    name: "Submission Copies Requirement Stated"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.number_of_copies"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Number of proposal copies required (entities.number_of_copies) is not stated."
-    category: "SUBMISSION"
+    -   id       : BD-C-024
+        name     : "Submission Copies Requirement Stated"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.number_of_copies"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Number of proposal copies required (entities.number_of_copies) is not stated."
+        category : "SUBMISSION"
 
-  - id: BD-C-025
-    name: "Pre-Bid Meeting Details Present"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.pre_bid_meeting"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Pre-bid/pre-proposal meeting details (entities.pre_bid_meeting) are not specified."
-    category: "SUBMISSION"
+    -   id       : BD-C-025
+        name     : "Pre-Bid Meeting Details Present"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.pre_bid_meeting"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Pre-bid/pre-proposal meeting details (entities.pre_bid_meeting) are not specified."
+        category : "SUBMISSION"
 
-  - id: BD-C-026
-    name: "Similar Project Experience Requirement Quantified"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.similar_project_experience"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Similar project experience requirement (entities.similar_project_experience) is not quantified (e.g., minimum 3 similar projects in past 10 years)."
-    category: "ELIGIBILITY"
+    -   id       : BD-C-026
+        name     : "Similar Project Experience Requirement Quantified"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.similar_project_experience"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Similar project experience requirement (entities.similar_project_experience) is not quantified (e.g., minimum 3 similar projects in past 10 years)."
+        category : "ELIGIBILITY"
 
-  - id: BD-C-027
-    name: "Reimbursable Expenses Policy Defined"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.reimbursable_expenses"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Reimbursable expenses policy (entities.reimbursable_expenses) is not defined."
-    category: "FINANCIAL"
+    -   id       : BD-C-027
+        name     : "Reimbursable Expenses Policy Defined"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.reimbursable_expenses"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Reimbursable expenses policy (entities.reimbursable_expenses) is not defined."
+        category : "FINANCIAL"
 
-  - id: BD-C-028
-    name: "Training / Capacity Building Requirement Stated (If Applicable)"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.training_requirements"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Training/capacity building requirement (entities.training_requirements) is not addressed. If not applicable, this should be explicitly stated."
-    category: "DELIVERABLES"
+    -   id       : BD-C-028
+        name     : "Training / Capacity Building Requirement Stated (If Applicable)"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.training_requirements"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Training/capacity building requirement (entities.training_requirements) is not addressed. If not applicable, this should be explicitly stated."
+        category : "DELIVERABLES"
 
-  - id: BD-C-029
-    name: "Progress Report Frequency Stated"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.reporting_requirements[?contains(@, 'progress')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "Progress report frequency not mentioned in reporting_requirements."
-    category: "DELIVERABLES"
+    -   id       : BD-C-029
+        name     : "Progress Report Frequency Stated"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.reporting_requirements[?contains(@, 'progress')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "Progress report frequency not mentioned in reporting_requirements."
+        category : "DELIVERABLES"
 
-  - id: BD-C-030
-    name: "Submission Address / Contact Stated"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.submission_address"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Submission address or contact details (entities.submission_address) are missing."
-    category: "SUBMISSION"
+    -   id       : BD-C-030
+        name     : "Submission Address / Contact Stated"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.submission_address"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Submission address or contact details (entities.submission_address) are missing."
+        category : "SUBMISSION"
 
-  # ── SEMANTIC RULES (LLM) ─────────────────────────────────────────────────────
+    # ── SEMANTIC RULES (LLM) ─────────────────────────────────────────────────────
 
-  - id: BD-C-031
-    name: "Scope of ToR Is Clear Enough to Propose Methodology"
-    severity: HIGH
-    type: SEMANTIC
-    evidenceJmesPath: "entities.scope_of_work"
-    promptKey: "rule-judgment-v1"
-    judgmentInstruction: "Evaluate whether the Terms of Reference scope is sufficiently clear for a consulting firm to propose a relevant methodology. The ToR must describe: background context, specific objectives, key activities or tasks expected, geographic scope, and any constraints. Vague objectives without measurable outcomes are insufficient. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
-    message: "Scope of ToR is insufficiently defined for firms to propose a credible methodology."
-    category: "SEMANTIC_SCOPE"
+    -   id                 : BD-C-031
+        name               : "Scope of ToR Is Clear Enough to Propose Methodology"
+        severity           : HIGH
+        type               : SEMANTIC
+        evidenceJmesPath   : "entities.scope_of_work"
+        promptKey          : "rule-judgment-v1"
+        judgmentInstruction: "Evaluate whether the Terms of Reference scope is sufficiently clear for a consulting firm to propose a relevant methodology. The ToR must describe: background context, specific objectives, key activities or tasks expected, geographic scope, and any constraints. Vague objectives without measurable outcomes are insufficient. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
+        message            : "Scope of ToR is insufficiently defined for firms to propose a credible methodology."
+        category           : "SEMANTIC_SCOPE"
 
-  - id: BD-C-032
-    name: "Deliverables Have Clear Acceptance Criteria"
-    severity: HIGH
-    type: SEMANTIC
-    evidenceJmesPath: "entities.reporting_requirements"
-    promptKey: "rule-judgment-v1"
-    judgmentInstruction: "Determine whether the stated deliverables (reports, studies, plans) include clear acceptance criteria: format requirements, minimum content specifications, review and approval timelines, and who approves each deliverable. Generic statements like 'satisfactory final report' without criteria are insufficient. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
-    message: "Deliverable acceptance criteria are vague; disputes over deliverable approval are likely."
-    category: "SEMANTIC_DELIVERABLES"
+    -   id                 : BD-C-032
+        name               : "Deliverables Have Clear Acceptance Criteria"
+        severity           : HIGH
+        type               : SEMANTIC
+        evidenceJmesPath   : "entities.reporting_requirements"
+        promptKey          : "rule-judgment-v1"
+        judgmentInstruction: "Determine whether the stated deliverables (reports, studies, plans) include clear acceptance criteria: format requirements, minimum content specifications, review and approval timelines, and who approves each deliverable. Generic statements like 'satisfactory final report' without criteria are insufficient. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
+        message            : "Deliverable acceptance criteria are vague; disputes over deliverable approval are likely."
+        category           : "SEMANTIC_DELIVERABLES"
 
-  - id: BD-C-033
-    name: "Team Composition Is Justified for Scope"
-    severity: MEDIUM
-    type: SEMANTIC
-    evidenceJmesPath: "entities.key_personnel"
-    promptKey: "rule-judgment-v1"
-    judgmentInstruction: "Assess whether the proposed team composition (roles, number of experts, staff months) is logically justified by the scope of the ToR. An over-specified team (e.g., 15 senior experts for a 3-month assignment) or under-specified team (e.g., 1 expert for a complex 2-year assignment) is a concern. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
-    message: "Team composition appears misaligned with the scope and complexity of the assignment."
-    category: "SEMANTIC_PERSONNEL"
+    -   id                 : BD-C-033
+        name               : "Team Composition Is Justified for Scope"
+        severity           : MEDIUM
+        type               : SEMANTIC
+        evidenceJmesPath   : "entities.key_personnel"
+        promptKey          : "rule-judgment-v1"
+        judgmentInstruction: "Assess whether the proposed team composition (roles, number of experts, staff months) is logically justified by the scope of the ToR. An over-specified team (e.g., 15 senior experts for a 3-month assignment) or under-specified team (e.g., 1 expert for a complex 2-year assignment) is a concern. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
+        message            : "Team composition appears misaligned with the scope and complexity of the assignment."
+        category           : "SEMANTIC_PERSONNEL"
 ```
 
 **Dependencies:** Same as Story 1.1.
@@ -840,9 +847,13 @@ Structure mirrors `RulePackWorksTest`. 33 parameterized cases covering all struc
 Notable assertions:
 
 ```java
-Arguments.of("BD-C-007", docWithKeyPersonnel(null), FAIL),
-Arguments.of("BD-C-019", docWithTechnicalFinancialSplit("80/20"), PASS),
-Arguments.of("BD-C-022", docWithOtherInfo(List.of("conflict of interest declaration required")), PASS),
+Arguments.of("BD-C-007",docWithKeyPersonnel(null),FAIL),
+    Arguments.
+
+of("BD-C-019",docWithTechnicalFinancialSplit("80/20"),PASS),
+    Arguments.
+
+of("BD-C-022",docWithOtherInfo(List.of("conflict of interest declaration required")),PASS),
 ```
 
 **Observability:** Same `[RulePackLoader]` log line as Story 1.1.
@@ -880,220 +891,220 @@ Then all 22 pass
 File: `rfp-extractor/rules/bd-govt-goods-v1.yaml`
 
 ```yaml
-id: bd-govt-goods-v1
-name: "BD Government Goods Procurement"
-version: "1.0.0"
-rfpType: GOODS
+id         : bd-govt-goods-v1
+name       : "BD Government Goods Procurement"
+version    : "1.0.0"
+rfpType    : GOODS
 description: "Rules for GOB goods procurement contracts under PPR 2008 and CPTU SBD-Goods."
-rules:
+rules      :
 
-  # ── MANDATORY FIELDS ────────────────────────────────────────────────────────
+    # ── MANDATORY FIELDS ────────────────────────────────────────────────────────
 
-  - id: BD-G-001
-    name: "RFP Title Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "metadata.title"
-    condition: NOT_NULL_OR_EMPTY
-    message: "RFP title (metadata.title) is missing."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-G-001
+        name     : "RFP Title Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "metadata.title"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "RFP title (metadata.title) is missing."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-G-002
-    name: "Procurement Reference Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "metadata.procurement_ref"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Procurement reference number (metadata.procurement_ref) is missing."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-G-002
+        name     : "Procurement Reference Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "metadata.procurement_ref"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Procurement reference number (metadata.procurement_ref) is missing."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-G-003
-    name: "Client Name Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "metadata.client_name"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Client/procuring entity name (metadata.client_name) is missing."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-G-003
+        name     : "Client Name Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "metadata.client_name"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Client/procuring entity name (metadata.client_name) is missing."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-G-004
-    name: "Submission Deadline Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.submission_deadline"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Submission deadline (entities.submission_deadline) is missing."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-G-004
+        name     : "Submission Deadline Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.submission_deadline"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Submission deadline (entities.submission_deadline) is missing."
+        category : "MANDATORY_FIELDS"
 
-  - id: BD-G-005
-    name: "Technical Specifications Present"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.technical_specifications"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Technical specifications (entities.technical_specifications) are missing. Goods RFPs must include measurable technical specifications."
-    category: "SPECIFICATIONS"
+    -   id       : BD-G-005
+        name     : "Technical Specifications Present"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.technical_specifications"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Technical specifications (entities.technical_specifications) are missing. Goods RFPs must include measurable technical specifications."
+        category : "SPECIFICATIONS"
 
-  - id: BD-G-006
-    name: "Delivery Schedule Stated"
-    severity: FATAL
-    type: STRUCTURAL
-    jmesPath: "entities.delivery_schedule"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Delivery schedule (entities.delivery_schedule) is not stated. Delivery timeline is mandatory for goods procurement."
-    category: "MANDATORY_FIELDS"
+    -   id       : BD-G-006
+        name     : "Delivery Schedule Stated"
+        severity : FATAL
+        type     : STRUCTURAL
+        jmesPath : "entities.delivery_schedule"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Delivery schedule (entities.delivery_schedule) is not stated. Delivery timeline is mandatory for goods procurement."
+        category : "MANDATORY_FIELDS"
 
-  # ── HIGH SEVERITY ────────────────────────────────────────────────────────────
+    # ── HIGH SEVERITY ────────────────────────────────────────────────────────────
 
-  - id: BD-G-007
-    name: "Inspection and Acceptance Criteria Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.inspection_criteria"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Inspection and acceptance criteria (entities.inspection_criteria) are not specified."
-    category: "QUALITY"
+    -   id       : BD-G-007
+        name     : "Inspection and Acceptance Criteria Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.inspection_criteria"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Inspection and acceptance criteria (entities.inspection_criteria) are not specified."
+        category : "QUALITY"
 
-  - id: BD-G-008
-    name: "Warranty Period Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.warranty_period"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Warranty period (entities.warranty_period) is not stated."
-    category: "CONTRACT_CONDITIONS"
+    -   id       : BD-G-008
+        name     : "Warranty Period Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.warranty_period"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Warranty period (entities.warranty_period) is not stated."
+        category : "CONTRACT_CONDITIONS"
 
-  - id: BD-G-009
-    name: "Incoterms (CIF/FOB/DDP) Specified"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.incoterms"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Incoterms (CIF/FOB/DDP etc.) are not specified (entities.incoterms). Delivery terms determine freight and insurance responsibility."
-    category: "FINANCIAL"
+    -   id       : BD-G-009
+        name     : "Incoterms (CIF/FOB/DDP) Specified"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.incoterms"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Incoterms (CIF/FOB/DDP etc.) are not specified (entities.incoterms). Delivery terms determine freight and insurance responsibility."
+        category : "FINANCIAL"
 
-  - id: BD-G-010
-    name: "Performance Security Requirement Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.performance_security_pct"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Performance security requirement (entities.performance_security_pct) is not stated."
-    category: "FINANCIAL_SECURITY"
+    -   id       : BD-G-010
+        name     : "Performance Security Requirement Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.performance_security_pct"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Performance security requirement (entities.performance_security_pct) is not stated."
+        category : "FINANCIAL_SECURITY"
 
-  - id: BD-G-011
-    name: "Payment Terms Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.payment_terms"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Payment terms (entities.payment_terms) are not specified."
-    category: "FINANCIAL"
+    -   id       : BD-G-011
+        name     : "Payment Terms Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.payment_terms"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Payment terms (entities.payment_terms) are not specified."
+        category : "FINANCIAL"
 
-  - id: BD-G-012
-    name: "Delivery Address / Destination Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.delivery_address"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Delivery address/destination (entities.delivery_address) is not specified."
-    category: "LOGISTICS"
+    -   id       : BD-G-012
+        name     : "Delivery Address / Destination Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.delivery_address"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Delivery address/destination (entities.delivery_address) is not specified."
+        category : "LOGISTICS"
 
-  - id: BD-G-013
-    name: "Bid Validity Period Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.bid_validity_days"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Bid validity period (entities.bid_validity_days) is not stated."
-    category: "SUBMISSION"
+    -   id       : BD-G-013
+        name     : "Bid Validity Period Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.bid_validity_days"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Bid validity period (entities.bid_validity_days) is not stated."
+        category : "SUBMISSION"
 
-  - id: BD-G-014
-    name: "Bank Guarantee / Bid Bond Requirement Mentioned"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.pricing_factors[?contains(@, 'bank guarantee') || contains(@, 'bid bond') || contains(@, 'bid security')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "Bank guarantee or bid bond requirement not found in pricing_factors."
-    category: "FINANCIAL_SECURITY"
+    -   id       : BD-G-014
+        name     : "Bank Guarantee / Bid Bond Requirement Mentioned"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.pricing_factors[?contains(@, 'bank guarantee') || contains(@, 'bid bond') || contains(@, 'bid security')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "Bank guarantee or bid bond requirement not found in pricing_factors."
+        category : "FINANCIAL_SECURITY"
 
-  - id: BD-G-015
-    name: "After-Sales Service / Spare Parts Availability Stated"
-    severity: HIGH
-    type: STRUCTURAL
-    jmesPath: "entities.after_sales_service"
-    condition: NOT_NULL_OR_EMPTY
-    message: "After-sales service and spare parts availability requirements (entities.after_sales_service) are not specified."
-    category: "CONTRACT_CONDITIONS"
+    -   id       : BD-G-015
+        name     : "After-Sales Service / Spare Parts Availability Stated"
+        severity : HIGH
+        type     : STRUCTURAL
+        jmesPath : "entities.after_sales_service"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "After-sales service and spare parts availability requirements (entities.after_sales_service) are not specified."
+        category : "CONTRACT_CONDITIONS"
 
-  # ── MEDIUM SEVERITY ───────────────────────────────────────────────────────────
+    # ── MEDIUM SEVERITY ───────────────────────────────────────────────────────────
 
-  - id: BD-G-016
-    name: "Packaging Requirements Specified"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.packaging_requirements"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Packaging requirements (entities.packaging_requirements) are not specified."
-    category: "LOGISTICS"
+    -   id       : BD-G-016
+        name     : "Packaging Requirements Specified"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.packaging_requirements"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Packaging requirements (entities.packaging_requirements) are not specified."
+        category : "LOGISTICS"
 
-  - id: BD-G-017
-    name: "Pre-Shipment Inspection Requirement Stated"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.other_info[?contains(@, 'pre-shipment') || contains(@, 'pre shipment') || contains(@, 'factory acceptance')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "Pre-shipment inspection requirement not found in other_info."
-    category: "QUALITY"
+    -   id       : BD-G-017
+        name     : "Pre-Shipment Inspection Requirement Stated"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.other_info[?contains(@, 'pre-shipment') || contains(@, 'pre shipment') || contains(@, 'factory acceptance')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "Pre-shipment inspection requirement not found in other_info."
+        category : "QUALITY"
 
-  - id: BD-G-018
-    name: "Country of Origin Requirements Stated"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.country_of_origin"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Country of origin requirements or restrictions (entities.country_of_origin) are not stated."
-    category: "COMPLIANCE"
+    -   id       : BD-G-018
+        name     : "Country of Origin Requirements Stated"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.country_of_origin"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Country of origin requirements or restrictions (entities.country_of_origin) are not stated."
+        category : "COMPLIANCE"
 
-  - id: BD-G-019
-    name: "Insurance Requirements Stated"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.pricing_factors[?contains(@, 'insurance')]"
-    condition: NOT_EMPTY_ARRAY
-    message: "Insurance requirements for transport/delivery not found in pricing_factors."
-    category: "LOGISTICS"
+    -   id       : BD-G-019
+        name     : "Insurance Requirements Stated"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.pricing_factors[?contains(@, 'insurance')]"
+        condition: NOT_EMPTY_ARRAY
+        message  : "Insurance requirements for transport/delivery not found in pricing_factors."
+        category : "LOGISTICS"
 
-  - id: BD-G-020
-    name: "Submission Copies / Format Stated"
-    severity: MEDIUM
-    type: STRUCTURAL
-    jmesPath: "entities.number_of_copies"
-    condition: NOT_NULL_OR_EMPTY
-    message: "Number of bid copies or submission format (entities.number_of_copies) is not stated."
-    category: "SUBMISSION"
+    -   id       : BD-G-020
+        name     : "Submission Copies / Format Stated"
+        severity : MEDIUM
+        type     : STRUCTURAL
+        jmesPath : "entities.number_of_copies"
+        condition: NOT_NULL_OR_EMPTY
+        message  : "Number of bid copies or submission format (entities.number_of_copies) is not stated."
+        category : "SUBMISSION"
 
-  # ── SEMANTIC RULES (LLM) ─────────────────────────────────────────────────────
+    # ── SEMANTIC RULES (LLM) ─────────────────────────────────────────────────────
 
-  - id: BD-G-021
-    name: "Technical Specifications Are Unambiguous"
-    severity: HIGH
-    type: SEMANTIC
-    evidenceJmesPath: "entities.technical_specifications"
-    promptKey: "rule-judgment-v1"
-    judgmentInstruction: "Assess whether the technical specifications are unambiguous and objectively measurable. They must use specific values (dimensions, tolerances, standards references like ISO/BIS/BNBC) rather than subjective language like 'good quality' or 'suitable grade'. Proprietary brand-only specifications without 'or equivalent' are also a concern. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
-    message: "Technical specifications contain ambiguous or subjective language that may lead to disputes or non-comparable bids."
-    category: "SEMANTIC_SPECIFICATIONS"
+    -   id                 : BD-G-021
+        name               : "Technical Specifications Are Unambiguous"
+        severity           : HIGH
+        type               : SEMANTIC
+        evidenceJmesPath   : "entities.technical_specifications"
+        promptKey          : "rule-judgment-v1"
+        judgmentInstruction: "Assess whether the technical specifications are unambiguous and objectively measurable. They must use specific values (dimensions, tolerances, standards references like ISO/BIS/BNBC) rather than subjective language like 'good quality' or 'suitable grade'. Proprietary brand-only specifications without 'or equivalent' are also a concern. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
+        message            : "Technical specifications contain ambiguous or subjective language that may lead to disputes or non-comparable bids."
+        category           : "SEMANTIC_SPECIFICATIONS"
 
-  - id: BD-G-022
-    name: "Warranty Terms Clearly Define Scope of Coverage"
-    severity: MEDIUM
-    type: SEMANTIC
-    evidenceJmesPath: "entities.warranty_period"
-    promptKey: "rule-judgment-v1"
-    judgmentInstruction: "Determine whether warranty terms clearly define: duration, what is covered (parts, labor, defects), exclusions, response time for warranty claims, and who bears transport costs for warranty repairs. Vague 'standard warranty' without specifics is insufficient. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
-    message: "Warranty terms do not clearly define scope of coverage; warranty obligations may be disputed."
-    category: "SEMANTIC_WARRANTY"
+    -   id                 : BD-G-022
+        name               : "Warranty Terms Clearly Define Scope of Coverage"
+        severity           : MEDIUM
+        type               : SEMANTIC
+        evidenceJmesPath   : "entities.warranty_period"
+        promptKey          : "rule-judgment-v1"
+        judgmentInstruction: "Determine whether warranty terms clearly define: duration, what is covered (parts, labor, defects), exclusions, response time for warranty claims, and who bears transport costs for warranty repairs. Vague 'standard warranty' without specifics is insufficient. Return {pass: true/false, confidence: 0.0-1.0, reason: '...'}."
+        message            : "Warranty terms do not clearly define scope of coverage; warranty obligations may be disputed."
+        category           : "SEMANTIC_WARRANTY"
 ```
 
 **Dependencies:** Same as Story 1.1.
@@ -1105,9 +1116,13 @@ Class: `rfp-service/src/test/java/com/dsi/rfp/adapter/rulepack/RulePackGoodsTest
 22 parameterized cases. Key assertions:
 
 ```java
-Arguments.of("BD-G-005", docWithTechnicalSpecifications(null), FAIL),
-Arguments.of("BD-G-009", docWithIncoterms("CIF Chittagong"), PASS),
-Arguments.of("BD-G-014", docWithPricingFactors(List.of("bid bond 2% of contract value")), PASS),
+Arguments.of("BD-G-005",docWithTechnicalSpecifications(null),FAIL),
+    Arguments.
+
+of("BD-G-009",docWithIncoterms("CIF Chittagong"),PASS),
+    Arguments.
+
+of("BD-G-014",docWithPricingFactors(List.of("bid bond 2% of contract value")),PASS),
 ```
 
 **Story Points:** 5
@@ -1168,20 +1183,20 @@ public class RfpTypeClassifier {
     // Map<RfpType, List<keyword>> — add to existing Sprint 8 map
     private static final Map<RfpType, List<String>> KEYWORD_GROUPS = Map.of(
         RfpType.ICT, List.of("software", "ict", "information technology",
-                              "hardware", "network", "system development",
-                              "data center", "cloud", "erp", "application"),
+            "hardware", "network", "system development",
+            "data center", "cloud", "erp", "application"),
         RfpType.GOODS, List.of("supply of", "procurement of goods",
-                                "equipment", "vehicle", "furniture",
-                                "medical equipment", "laboratory equipment"),
+            "equipment", "vehicle", "furniture",
+            "medical equipment", "laboratory equipment"),
         RfpType.WORKS, List.of("civil works", "construction", "infrastructure project",
-                                "building construction", "road construction",
-                                "bridge", "renovation", "rehabilitation",
-                                "bill of quantities", "boq", "contractor"),
+            "building construction", "road construction",
+            "bridge", "renovation", "rehabilitation",
+            "bill of quantities", "boq", "contractor"),
         RfpType.CONSULTANCY, List.of("terms of reference", "tor",
-                                      "consulting services", "consultancy",
-                                      "technical assistance", "advisory services",
-                                      "feasibility study", "environmental impact",
-                                      "design services", "project management consultant")
+            "consulting services", "consultancy",
+            "technical assistance", "advisory services",
+            "feasibility study", "environmental impact",
+            "design services", "project management consultant")
     );
 
     public RfpType classify(RfpDocument doc) {
@@ -1204,7 +1219,7 @@ public class RfpTypeClassifier {
         }
 
         log.info("[RfpTypeClassifier] Classified document={} as type={} score={}",
-                 doc.getJobId(), bestType, bestScore);
+            doc.getJobId(), bestType, bestScore);
         return bestType;
     }
 
@@ -1244,11 +1259,11 @@ public class RfpTypeClassifier {
 ```java
 // In RunRulePackNode (or a separate RfpTypeToPackMapper component)
 private static final Map<RfpType, String> TYPE_TO_PACK = Map.of(
-    RfpType.ICT,         "bd-govt-ict-v1",
-    RfpType.GOODS,       "bd-govt-goods-v1",
-    RfpType.WORKS,       "bd-govt-works-v1",
-    RfpType.CONSULTANCY, "bd-govt-consultancy-v1"
-);
+        RfpType.ICT, "bd-govt-ict-v1",
+        RfpType.GOODS, "bd-govt-goods-v1",
+        RfpType.WORKS, "bd-govt-works-v1",
+        RfpType.CONSULTANCY, "bd-govt-consultancy-v1"
+    );
 ```
 
 If `RfpType.UNKNOWN`, select `"bd-govt-ict-v1"` as default fallback and log a warning.
@@ -1260,19 +1275,27 @@ If `RfpType.UNKNOWN`, select `"bd-govt-ict-v1"` as default fallback and log a wa
 Class: `rfp-service/src/test/java/com/dsi/rfp/adapter/rulepack/RfpTypeClassifierTest.java`
 
 ```java
-@Test void classifiesWorks_whenTitleContainsCivilWorks() {
+
+@Test
+void classifiesWorks_whenTitleContainsCivilWorks() {
     RfpDocument doc = docWithTitle("Civil Works Construction of Upazila Complex");
     assertThat(classifier.classify(doc)).isEqualTo(RfpType.WORKS);
 }
-@Test void classifiesConsultancy_whenTitleContainsTor() {
+
+@Test
+void classifiesConsultancy_whenTitleContainsTor() {
     RfpDocument doc = docWithTitle("Terms of Reference for DPP Preparation Consultant");
     assertThat(classifier.classify(doc)).isEqualTo(RfpType.CONSULTANCY);
 }
-@Test void classifiesUnknown_whenNoKeywords() {
+
+@Test
+void classifiesUnknown_whenNoKeywords() {
     RfpDocument doc = docWithTitle("General Procurement Notice 2024");
     assertThat(classifier.classify(doc)).isEqualTo(RfpType.UNKNOWN);
 }
-@Test void doesNotMisclassifyIctAsWorks() {
+
+@Test
+void doesNotMisclassifyIctAsWorks() {
     RfpDocument doc = docWithTitle("Supply and Installation of Network Infrastructure");
     // "network" is ICT keyword; "infrastructure" should not alone trigger WORKS
     RfpType result = classifier.classify(doc);
@@ -1356,7 +1379,8 @@ public record RulePackSummaryDto(
     int ruleCount,
     Instant lastLoadedAt,
     String filePath
-) {}
+) {
+}
 ```
 
 DTOs (file: `rfp-service/src/main/java/com/dsi/rfp/adapter/api/dto/ReloadResultDto.java`):
@@ -1370,7 +1394,8 @@ import java.util.List;
 public record ReloadResultDto(
     List<String> reloadedPacks,
     Instant timestamp
-) {}
+) {
+}
 ```
 
 `RulePackLoader` must expose (add these methods if not present from Sprint 8):
@@ -1378,6 +1403,7 @@ public record ReloadResultDto(
 ```java
 // In RulePackLoader.java (adapter/rulepack/)
 public List<RulePackSummaryDto> getAllPackSummaries()  // returns summary for each loaded pack
+
 public List<String> reloadAll()                        // triggers reload of all packs, returns pack IDs
 ```
 
@@ -1402,13 +1428,17 @@ in-memory `LoadedPackEntry` wrapper if needed).
 Class: `rfp-service/src/test/java/com/dsi/rfp/application/service/RulePackAdminServiceTest.java`
 
 ```java
+
 @ExtendWith(MockitoExtension.class)
 class RulePackAdminServiceTest {
 
-    @Mock RulePackLoader rulePackLoader;
-    @InjectMocks RulePackAdminService service;
+    @Mock
+    RulePackLoader rulePackLoader;
+    @InjectMocks
+    RulePackAdminService service;
 
-    @Test void listLoadedPacks_delegatesToLoader() {
+    @Test
+    void listLoadedPacks_delegatesToLoader() {
         var summary = new RulePackSummaryDto("bd-govt-ict-v1", "1.0.0", 64, Instant.now(), "/rules/bd-govt-ict-v1.yaml");
         when(rulePackLoader.getAllPackSummaries()).thenReturn(List.of(summary));
         List<RulePackSummaryDto> result = service.listLoadedPacks();
@@ -1416,7 +1446,8 @@ class RulePackAdminServiceTest {
         assertThat(result.get(0).packId()).isEqualTo("bd-govt-ict-v1");
     }
 
-    @Test void reloadAll_returnsReloadedIds() {
+    @Test
+    void reloadAll_returnsReloadedIds() {
         when(rulePackLoader.reloadAll()).thenReturn(List.of("bd-govt-ict-v1", "bd-govt-works-v1"));
         ReloadResultDto result = service.reloadAll();
         assertThat(result.reloadedPacks()).containsExactlyInAnyOrder("bd-govt-ict-v1", "bd-govt-works-v1");
@@ -1503,20 +1534,20 @@ GET `/api/v1/admin/rule-packs` response JSON example:
 
 ```json
 [
-  {
-    "packId": "bd-govt-ict-v1",
-    "version": "1.0.0",
-    "ruleCount": 64,
-    "lastLoadedAt": "2025-08-01T10:00:00Z",
-    "filePath": "/app/rules/bd-govt-ict-v1.yaml"
-  },
-  {
-    "packId": "bd-govt-works-v1",
-    "version": "1.0.0",
-    "ruleCount": 33,
-    "lastLoadedAt": "2025-08-01T10:00:00Z",
-    "filePath": "/app/rules/bd-govt-works-v1.yaml"
-  }
+    {
+        "packId": "bd-govt-ict-v1",
+        "version": "1.0.0",
+        "ruleCount": 64,
+        "lastLoadedAt": "2025-08-01T10:00:00Z",
+        "filePath": "/app/rules/bd-govt-ict-v1.yaml"
+    },
+    {
+        "packId": "bd-govt-works-v1",
+        "version": "1.0.0",
+        "ruleCount": 33,
+        "lastLoadedAt": "2025-08-01T10:00:00Z",
+        "filePath": "/app/rules/bd-govt-works-v1.yaml"
+    }
 ]
 ```
 
@@ -1524,8 +1555,13 @@ POST `/api/v1/admin/rule-packs/reload` response JSON example:
 
 ```json
 {
-  "reloadedPacks": ["bd-govt-ict-v1", "bd-govt-works-v1", "bd-govt-consultancy-v1", "bd-govt-goods-v1"],
-  "timestamp": "2025-08-01T10:05:00Z"
+    "reloadedPacks": [
+        "bd-govt-ict-v1",
+        "bd-govt-works-v1",
+        "bd-govt-consultancy-v1",
+        "bd-govt-goods-v1"
+    ],
+    "timestamp": "2025-08-01T10:05:00Z"
 }
 ```
 
@@ -1542,16 +1578,20 @@ POST `/api/v1/admin/rule-packs/reload` response JSON example:
 Class: `rfp-service/src/test/java/com/dsi/rfp/adapter/api/AdminRulePackControllerTest.java`
 
 ```java
+
 @WebMvcTest(AdminRulePackController.class)
 class AdminRulePackControllerTest {
 
-    @Autowired MockMvc mockMvc;
-    @MockBean RulePackAdminService rulePackAdminService;
+    @Autowired
+    MockMvc mockMvc;
+    @MockBean
+    RulePackAdminService rulePackAdminService;
 
-    @Test void listRulePacks_returns200WithPackList() throws Exception {
+    @Test
+    void listRulePacks_returns200WithPackList() throws Exception {
         var summary = new RulePackSummaryDto("bd-govt-ict-v1", "1.0.0", 64,
-                                              Instant.parse("2025-08-01T10:00:00Z"),
-                                              "/rules/bd-govt-ict-v1.yaml");
+            Instant.parse("2025-08-01T10:00:00Z"),
+            "/rules/bd-govt-ict-v1.yaml");
         when(rulePackAdminService.listLoadedPacks()).thenReturn(List.of(summary));
         mockMvc.perform(get("/api/v1/admin/rule-packs"))
                .andExpect(status().isOk())
@@ -1559,7 +1599,8 @@ class AdminRulePackControllerTest {
                .andExpect(jsonPath("$[0].ruleCount").value(64));
     }
 
-    @Test void listRulePacks_returnsEmptyList_whenNoPacks() throws Exception {
+    @Test
+    void listRulePacks_returnsEmptyList_whenNoPacks() throws Exception {
         when(rulePackAdminService.listLoadedPacks()).thenReturn(List.of());
         mockMvc.perform(get("/api/v1/admin/rule-packs"))
                .andExpect(status().isOk())
@@ -1567,9 +1608,10 @@ class AdminRulePackControllerTest {
                .andExpect(jsonPath("$").isEmpty());
     }
 
-    @Test void reloadRulePacks_returns200WithReloadResult() throws Exception {
+    @Test
+    void reloadRulePacks_returns200WithReloadResult() throws Exception {
         var result = new ReloadResultDto(List.of("bd-govt-ict-v1", "bd-govt-works-v1"),
-                                          Instant.parse("2025-08-01T10:05:00Z"));
+            Instant.parse("2025-08-01T10:05:00Z"));
         when(rulePackAdminService.reloadAll()).thenReturn(result);
         mockMvc.perform(post("/api/v1/admin/rule-packs/reload"))
                .andExpect(status().isOk())
@@ -1578,7 +1620,8 @@ class AdminRulePackControllerTest {
                .andExpect(jsonPath("$.timestamp").isNotEmpty());
     }
 
-    @Test void reloadRulePacks_callsServiceReloadAll() throws Exception {
+    @Test
+    void reloadRulePacks_callsServiceReloadAll() throws Exception {
         when(rulePackAdminService.reloadAll())
             .thenReturn(new ReloadResultDto(List.of(), Instant.now()));
         mockMvc.perform(post("/api/v1/admin/rule-packs/reload"))
@@ -1586,16 +1629,18 @@ class AdminRulePackControllerTest {
         verify(rulePackAdminService, times(1)).reloadAll();
     }
 
-    @Test void listRulePacks_containsAllExpectedFields() throws Exception {
+    @Test
+    void listRulePacks_containsAllExpectedFields() throws Exception {
         var summary = new RulePackSummaryDto("bd-govt-works-v1", "1.0.0", 33,
-                                              Instant.now(), "/rules/bd-govt-works-v1.yaml");
+            Instant.now(), "/rules/bd-govt-works-v1.yaml");
         when(rulePackAdminService.listLoadedPacks()).thenReturn(List.of(summary));
         mockMvc.perform(get("/api/v1/admin/rule-packs"))
                .andExpect(jsonPath("$[0].version").value("1.0.0"))
                .andExpect(jsonPath("$[0].filePath").value("/rules/bd-govt-works-v1.yaml"));
     }
 
-    @Test void reloadRulePacks_returnsTimestamp() throws Exception {
+    @Test
+    void reloadRulePacks_returnsTimestamp() throws Exception {
         Instant now = Instant.parse("2025-08-15T12:00:00Z");
         when(rulePackAdminService.reloadAll())
             .thenReturn(new ReloadResultDto(List.of("bd-govt-ict-v1"), now));
@@ -1642,11 +1687,14 @@ Then RulePackLoader.getAllPackSummaries() returns the pack with the new ruleCoun
 File: `rfp-service/src/test/java/com/dsi/rfp/adapter/rulepack/RulePackLoaderHotReloadTest.java`
 
 ```java
+
 @SpringBootTest
 @TestPropertySource(properties = "app.rules.directory=${java.io.tmpdir}/rfp-rules-test")
 class RulePackLoaderHotReloadTest {
-    @Autowired RulePackLoader rulePackLoader;
-    @TempDir Path tempRulesDir;
+    @Autowired
+    RulePackLoader rulePackLoader;
+    @TempDir
+    Path tempRulesDir;
 
     @Test
     @Timeout(60)
@@ -1706,108 +1754,110 @@ And the table refreshes with updated Last Loaded timestamps
 File: `rfp-extractor/rfp-frontend/src/pages/AdminPage.tsx`
 
 ```tsx
-import React, { useEffect, useState } from 'react';
-import { rfpClient } from '../api/rfpClient';
+import React, {useEffect, useState} from 'react';
+import {rfpClient} from '../api/rfpClient';
 
 interface RulePackSummary {
-  packId: string;
-  version: string;
-  ruleCount: number;
-  lastLoadedAt: string;
-  filePath: string;
+    packId: string;
+    version: string;
+    ruleCount: number;
+    lastLoadedAt: string;
+    filePath: string;
 }
 
 interface ReloadResult {
-  reloadedPacks: string[];
-  timestamp: string;
+    reloadedPacks: string[];
+    timestamp: string;
 }
 
 export const AdminPage: React.FC = () => {
-  const [packs, setPacks] = useState<RulePackSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [reloading, setReloading] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+    const [packs, setPacks] = useState<RulePackSummary[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [reloading, setReloading] = useState(false);
+    const [toast, setToast] = useState<string | null>(null);
 
-  const fetchPacks = async () => {
-    setLoading(true);
-    try {
-      const response = await rfpClient.get<RulePackSummary[]>('/admin/rule-packs');
-      setPacks(response.data);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchPacks = async () => {
+        setLoading(true);
+        try {
+            const response = await rfpClient.get<RulePackSummary[]>('/admin/rule-packs');
+            setPacks(response.data);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleReloadAll = async () => {
-    setReloading(true);
-    try {
-      const response = await rfpClient.post<ReloadResult>('/admin/rule-packs/reload');
-      setToast(`Rule packs reloaded successfully. Packs: ${response.data.reloadedPacks.join(', ')}`);
-      await fetchPacks();
-    } catch {
-      setToast('Reload failed. Check server logs.');
-    } finally {
-      setReloading(false);
-      setTimeout(() => setToast(null), 5000);
-    }
-  };
+    const handleReloadAll = async () => {
+        setReloading(true);
+        try {
+            const response = await rfpClient.post<ReloadResult>('/admin/rule-packs/reload');
+            setToast(`Rule packs reloaded successfully. Packs: ${response.data.reloadedPacks.join(', ')}`);
+            await fetchPacks();
+        } catch {
+            setToast('Reload failed. Check server logs.');
+        } finally {
+            setReloading(false);
+            setTimeout(() => setToast(null), 5000);
+        }
+    };
 
-  useEffect(() => { fetchPacks(); }, []);
+    useEffect(() => {
+        fetchPacks();
+    }, []);
 
-  return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Admin — Rule Pack Management</h1>
-        <button
-          onClick={handleReloadAll}
-          disabled={reloading}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        >
-          {reloading ? 'Reloading…' : 'Reload All'}
-        </button>
-      </div>
+    return (
+        <div className="p-6 max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="text-2xl font-bold text-gray-900">Admin — Rule Pack Management</h1>
+                <button
+                    onClick={handleReloadAll}
+                    disabled={reloading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                >
+                    {reloading ? 'Reloading…' : 'Reload All'}
+                </button>
+            </div>
 
-      {toast && (
-        <div className="mb-4 p-3 bg-green-100 text-green-800 rounded border border-green-300">
-          {toast}
+            {toast && (
+                <div className="mb-4 p-3 bg-green-100 text-green-800 rounded border border-green-300">
+                    {toast}
+                </div>
+            )}
+
+            {loading ? (
+                <p className="text-gray-500">Loading rule packs…</p>
+            ) : (
+                <table className="w-full border-collapse border border-gray-200 text-sm">
+                    <thead className="bg-gray-50">
+                    <tr>
+                        <th className="p-3 text-left border border-gray-200">Pack ID</th>
+                        <th className="p-3 text-left border border-gray-200">Version</th>
+                        <th className="p-3 text-right border border-gray-200">Rule Count</th>
+                        <th className="p-3 text-left border border-gray-200">Last Loaded</th>
+                        <th className="p-3 text-left border border-gray-200">File Path</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {packs.map((pack) => (
+                        <tr key={pack.packId} className="hover:bg-gray-50">
+                            <td className="p-3 border border-gray-200 font-mono text-blue-700">{pack.packId}</td>
+                            <td className="p-3 border border-gray-200">{pack.version}</td>
+                            <td className="p-3 border border-gray-200 text-right">{pack.ruleCount}</td>
+                            <td className="p-3 border border-gray-200">{new Date(pack.lastLoadedAt).toLocaleString()}</td>
+                            <td className="p-3 border border-gray-200 font-mono text-xs text-gray-500">{pack.filePath}</td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            )}
         </div>
-      )}
-
-      {loading ? (
-        <p className="text-gray-500">Loading rule packs…</p>
-      ) : (
-        <table className="w-full border-collapse border border-gray-200 text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="p-3 text-left border border-gray-200">Pack ID</th>
-              <th className="p-3 text-left border border-gray-200">Version</th>
-              <th className="p-3 text-right border border-gray-200">Rule Count</th>
-              <th className="p-3 text-left border border-gray-200">Last Loaded</th>
-              <th className="p-3 text-left border border-gray-200">File Path</th>
-            </tr>
-          </thead>
-          <tbody>
-            {packs.map((pack) => (
-              <tr key={pack.packId} className="hover:bg-gray-50">
-                <td className="p-3 border border-gray-200 font-mono text-blue-700">{pack.packId}</td>
-                <td className="p-3 border border-gray-200">{pack.version}</td>
-                <td className="p-3 border border-gray-200 text-right">{pack.ruleCount}</td>
-                <td className="p-3 border border-gray-200">{new Date(pack.lastLoadedAt).toLocaleString()}</td>
-                <td className="p-3 border border-gray-200 font-mono text-xs text-gray-500">{pack.filePath}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
+    );
 };
 ```
 
 Add route in `App.tsx`:
 
 ```tsx
-<Route path="/admin" element={<AdminPage />} />
+<Route path="/admin" element={<AdminPage/>}/>
 ```
 
 Add nav link in `Navbar.tsx` or equivalent header component:
@@ -1847,28 +1897,30 @@ File: `rfp-extractor/rfp-frontend/src/pages/ResultPage.tsx` — add the followin
 ```tsx
 // RFP Type badge component
 const RFP_TYPE_COLORS: Record<string, string> = {
-  ICT: 'bg-blue-100 text-blue-800',
-  WORKS: 'bg-orange-100 text-orange-800',
-  CONSULTANCY: 'bg-purple-100 text-purple-800',
-  GOODS: 'bg-green-100 text-green-800',
-  UNKNOWN: 'bg-gray-100 text-gray-700',
+    ICT: 'bg-blue-100 text-blue-800',
+    WORKS: 'bg-orange-100 text-orange-800',
+    CONSULTANCY: 'bg-purple-100 text-purple-800',
+    GOODS: 'bg-green-100 text-green-800',
+    UNKNOWN: 'bg-gray-100 text-gray-700',
 };
 
-const RfpTypeBadge: React.FC<{ rfpType: string }> = ({ rfpType }) => (
-  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${RFP_TYPE_COLORS[rfpType] ?? 'bg-gray-100 text-gray-700'}`}>
+const RfpTypeBadge: React.FC<{ rfpType: string }> = ({rfpType}) => (
+    <span
+        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${RFP_TYPE_COLORS[rfpType] ?? 'bg-gray-100 text-gray-700'}`}>
     {rfpType}
   </span>
 );
 
 // In the Quality Gate tab render:
 <div className="mb-4 flex items-center gap-3">
-  <span className="text-sm text-gray-500 font-medium">Detected RFP Type:</span>
-  <RfpTypeBadge rfpType={doc.rfpType} />
-  {doc.rfpType === 'UNKNOWN' && (
-    <div className="ml-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-      RFP type could not be detected. Rule pack selection defaulted to ICT. Review document classification and resubmit if incorrect.
-    </div>
-  )}
+    <span className="text-sm text-gray-500 font-medium">Detected RFP Type:</span>
+    <RfpTypeBadge rfpType={doc.rfpType}/>
+    {doc.rfpType === 'UNKNOWN' && (
+        <div className="ml-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+            RFP type could not be detected. Rule pack selection defaulted to ICT. Review document classification and
+            resubmit if incorrect.
+        </div>
+    )}
 </div>
 ```
 
@@ -1959,7 +2011,11 @@ curl http://localhost:8080/api/v1/health
 Expected:
 
 ```json
-{"status": "UP", "provider": "openrouter", "model": "google/gemini-2.0-flash-001"}
+{
+    "status": "UP",
+    "provider": "openrouter",
+    "model": "google/gemini-2.0-flash-001"
+}
 ```
 
 ### Step 2: Verify All 4 Rule Packs Loaded
@@ -1972,10 +2028,34 @@ Expected:
 
 ```json
 [
-  {"packId": "bd-govt-ict-v1",         "version": "1.0.0", "ruleCount": 64, "lastLoadedAt": "...", "filePath": "..."},
-  {"packId": "bd-govt-works-v1",       "version": "1.0.0", "ruleCount": 33, "lastLoadedAt": "...", "filePath": "..."},
-  {"packId": "bd-govt-consultancy-v1", "version": "1.0.0", "ruleCount": 33, "lastLoadedAt": "...", "filePath": "..."},
-  {"packId": "bd-govt-goods-v1",       "version": "1.0.0", "ruleCount": 22, "lastLoadedAt": "...", "filePath": "..."}
+    {
+        "packId": "bd-govt-ict-v1",
+        "version": "1.0.0",
+        "ruleCount": 64,
+        "lastLoadedAt": "...",
+        "filePath": "..."
+    },
+    {
+        "packId": "bd-govt-works-v1",
+        "version": "1.0.0",
+        "ruleCount": 33,
+        "lastLoadedAt": "...",
+        "filePath": "..."
+    },
+    {
+        "packId": "bd-govt-consultancy-v1",
+        "version": "1.0.0",
+        "ruleCount": 33,
+        "lastLoadedAt": "...",
+        "filePath": "..."
+    },
+    {
+        "packId": "bd-govt-goods-v1",
+        "version": "1.0.0",
+        "ruleCount": 22,
+        "lastLoadedAt": "...",
+        "filePath": "..."
+    }
 ]
 ```
 
@@ -2046,8 +2126,13 @@ Expected:
 
 ```json
 {
-  "reloadedPacks": ["bd-govt-ict-v1", "bd-govt-works-v1", "bd-govt-consultancy-v1", "bd-govt-goods-v1"],
-  "timestamp": "2025-08-15T..."
+    "reloadedPacks": [
+        "bd-govt-ict-v1",
+        "bd-govt-works-v1",
+        "bd-govt-consultancy-v1",
+        "bd-govt-goods-v1"
+    ],
+    "timestamp": "2025-08-15T..."
 }
 ```
 

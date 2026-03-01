@@ -123,6 +123,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Value;
 import lombok.With;
+
 import java.util.*;
 
 @Value
@@ -183,9 +184,9 @@ public class ExtractionState {
 
     public static ExtractionState initial(String jobId, String documentPath) {
         return ExtractionState.builder()
-                .jobId(jobId)
-                .documentPath(documentPath)
-                .build();
+                              .jobId(jobId)
+                              .documentPath(documentPath)
+                              .build();
     }
 }
 ```
@@ -246,6 +247,7 @@ import lombok.RequiredArgsConstructor;
 import org.bsc.langgraph4j.StateGraph;
 import org.bsc.langgraph4j.action.NodeAction;
 import org.springframework.stereotype.Component;
+
 import static org.bsc.langgraph4j.StateGraph.END;
 import static org.bsc.langgraph4j.StateGraph.START;
 
@@ -253,16 +255,16 @@ import static org.bsc.langgraph4j.StateGraph.START;
 @RequiredArgsConstructor
 public class ExtractionGraph {
 
-    public static final String VALIDATE_NODE       = "VALIDATE";
-    public static final String CLASSIFY_PAGES      = "CLASSIFY_PAGES";
-    public static final String EXTRACT_TEXT        = "EXTRACT_TEXT";
-    public static final String SEGMENT_SECTIONS    = "SEGMENT_SECTIONS";
-    public static final String EXTRACT_TABLES      = "EXTRACT_TABLES";
-    public static final String EXTRACT_ENTITIES    = "EXTRACT_ENTITIES";
-    public static final String SCORE_CONFIDENCE    = "SCORE_CONFIDENCE";
-    public static final String REPAIR_LOOP         = "REPAIR_LOOP";
-    public static final String RUN_RULE_PACK       = "RUN_RULE_PACK";
-    public static final String FINALIZE            = "FINALIZE";
+    public static final String VALIDATE_NODE = "VALIDATE";
+    public static final String CLASSIFY_PAGES = "CLASSIFY_PAGES";
+    public static final String EXTRACT_TEXT = "EXTRACT_TEXT";
+    public static final String SEGMENT_SECTIONS = "SEGMENT_SECTIONS";
+    public static final String EXTRACT_TABLES = "EXTRACT_TABLES";
+    public static final String EXTRACT_ENTITIES = "EXTRACT_ENTITIES";
+    public static final String SCORE_CONFIDENCE = "SCORE_CONFIDENCE";
+    public static final String REPAIR_LOOP = "REPAIR_LOOP";
+    public static final String RUN_RULE_PACK = "RUN_RULE_PACK";
+    public static final String FINALIZE = "FINALIZE";
 
     private final ValidateNode validateNode;
     private final ClassifyPagesNode classifyPagesNode;
@@ -294,11 +296,12 @@ package com.dsi.rfp.agent;
 public final class ConfidenceRouter {
     public static final double LOW_CONFIDENCE_THRESHOLD = 0.6;
 
-    private ConfidenceRouter() {}
+    private ConfidenceRouter() {
+    }
 
     public static boolean anyFieldBelowThreshold(ExtractionState state) {
         return state.getConfidenceMap().values().stream()
-                .anyMatch(score -> score < LOW_CONFIDENCE_THRESHOLD);
+                    .anyMatch(score -> score < LOW_CONFIDENCE_THRESHOLD);
     }
 }
 ```
@@ -393,7 +396,9 @@ public class ExtractionOrchestrationService {
 2. Annotate `runExtraction()` with `@Async("extractionExecutor")`. Add `@EnableAsync` to a Spring config class in the
    `adapter/config/` package.
 3. Define the `extractionExecutor` bean in `AsyncConfig.java`: `ThreadPoolTaskExecutor` with core=4, max=8,
-   queue-capacity=20, thread-name-prefix `extraction-`, `RejectedExecutionHandler = AbortPolicy` (default — lets `JobQueueGuard` in Sprint 12 handle overflow via HTTP 503; never use `CallerRunsPolicy` which would block a REST thread for the full extraction duration).
+   queue-capacity=20, thread-name-prefix `extraction-`, `RejectedExecutionHandler = AbortPolicy` (default — lets
+   `JobQueueGuard` in Sprint 12 handle overflow via HTTP 503; never use `CallerRunsPolicy` which would block a REST
+   thread for the full extraction duration).
 4. In `runExtraction()`: wrap in try-catch. On entry call `jobStatePort.updateStatus(jobId, JobStatus.IN_PROGRESS)`.
    Build `ExtractionState.initial(jobId, documentPath)`. Call `extractionGraph.build().invoke(initialState)`. On success
    call `jobStatePort.updateStatus(jobId, JobStatus.COMPLETED)`. On exception call
@@ -468,6 +473,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bsc.langgraph4j.action.NodeAction;
 import org.springframework.stereotype.Component;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -495,12 +501,12 @@ public class FinalizeNode implements NodeAction<ExtractionState> {
     private final RfpDocumentAssembler assembler;
 
     @Override
-    public Map<String, Object> apply(ExtractionState state) throws Exception { ... }
+    public Map<String, Object> apply(ExtractionState state) throws Exception { ...}
 }
 
 // RfpDocumentAssembler.java — adapter/entity/
 public class RfpDocumentAssembler {
-    public RfpDocument assemble(ExtractionState state) { ... }
+    public RfpDocument assemble(ExtractionState state) { ...}
 }
 ```
 
@@ -569,6 +575,7 @@ package com.dsi.rfp.domain.model;
 
 import lombok.Builder;
 import lombok.Value;
+
 import java.util.List;
 
 @Value
@@ -596,12 +603,12 @@ import java.util.List;
 public class DocumentChunkingService {
 
     private static final int MAX_TOKENS_PER_CHUNK = 3500;
-    private static final int OVERLAP_TOKENS       = 200;
+    private static final int OVERLAP_TOKENS = 200;
 
     // Uses LangChain4J RecursiveCharacterTextSplitter internally
-    public List<DocumentChunk> chunkDocument(Path pdfPath, List<Section> sections) { ... }
+    public List<DocumentChunk> chunkDocument(Path pdfPath, List<Section> sections) { ...}
 
-    private String buildContextHeader(List<Section> sections) { ... }
+    private String buildContextHeader(List<Section> sections) { ...}
 
     private int estimateTokens(String text) {
         return (int) Math.ceil(text.length() / 4.0); // 4 chars ≈ 1 token
@@ -684,6 +691,7 @@ import com.dsi.rfp.domain.model.Section;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import java.util.List;
 import java.util.Map;
 
@@ -692,7 +700,7 @@ import java.util.Map;
 public abstract class BaseEntityExtractor {
 
     protected static final String EXTRACTION_MODEL = "google/gemini-2.0-flash-001";
-    protected static final double TEMPERATURE      = 0.0;
+    protected static final double TEMPERATURE = 0.0;
 
     protected final LlmAdapter llmAdapter;
     protected final DocumentChunkingService chunkingService;
@@ -700,16 +708,16 @@ public abstract class BaseEntityExtractor {
 
     // Template method — final so subclasses cannot override the algorithm
     public final Map<String, Object> extract(
-            List<Section> sections,
-            List<Clause> clauses,
-            ExtractionState state) {
+        List<Section> sections,
+        List<Clause> clauses,
+        ExtractionState state) {
 
         List<DocumentChunk> chunks = chunkSections(sections);
         Map<String, Object> accumulated = new java.util.LinkedHashMap<>();
 
         for (DocumentChunk chunk : chunks) {
-            String prompt    = buildPrompt(chunk);
-            String json      = callLlmWithRetry(prompt, state.getJobId());
+            String prompt = buildPrompt(chunk);
+            String json = callLlmWithRetry(prompt, state.getJobId());
             Map<String, Object> parsed = parseResponseSafe(json, state.getJobId());
             validateFields(parsed);
             mergeInto(accumulated, parsed);
@@ -727,11 +735,11 @@ public abstract class BaseEntityExtractor {
 
     protected abstract String promptResourcePath();
 
-    private String callLlmWithRetry(String prompt, String jobId) { ... }
+    private String callLlmWithRetry(String prompt, String jobId) { ...}
 
-    private Map<String, Object> parseResponseSafe(String json, String jobId) { ... }
+    private Map<String, Object> parseResponseSafe(String json, String jobId) { ...}
 
-    private void mergeInto(Map<String, Object> target, Map<String, Object> source) { ... }
+    private void mergeInto(Map<String, Object> target, Map<String, Object> source) { ...}
 }
 ```
 
@@ -802,6 +810,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 import java.util.Map;
 
@@ -815,19 +824,19 @@ public class GeneralEntityExtractor extends BaseEntityExtractor {
     );
 
     public GeneralEntityExtractor(LlmAdapter llmAdapter,
-                                   DocumentChunkingService chunkingService,
-                                   ObjectMapper objectMapper) {
+                                  DocumentChunkingService chunkingService,
+                                  ObjectMapper objectMapper) {
         super(llmAdapter, chunkingService, objectMapper);
     }
 
     @Override
-    protected String buildPrompt(DocumentChunk chunk) { ... }
+    protected String buildPrompt(DocumentChunk chunk) { ...}
 
     @Override
     protected void validateFields(Map<String, Object> parsed) {
         REQUIRED_FIELDS.stream()
-            .filter(f -> !parsed.containsKey(f))
-            .forEach(f -> log.warn("entity.field.missing extractor=General field={}", f));
+                       .filter(f -> !parsed.containsKey(f))
+                       .forEach(f -> log.warn("entity.field.missing extractor=General field={}", f));
     }
 
     @Override
@@ -873,14 +882,14 @@ meeting will be held on 20 January 2025 at the Ministry's conference room. Conta
 
 Output:
 {
-  "client_name": "Ministry of Digital Affairs",
-  "submission_deadline": "2025-03-03T17:00:00",
-  "issue_date": "2025-01-02",
-  "method_of_selection": "QCBS",
-  "procurement_method": "Services",
-  "project_duration": null,
-  "pre_bid_meeting": "2025-01-20, Ministry conference room",
-  "contact": {"name": null, "email": "procurement@mda.gov.bd", "phone": null}
+"client_name": "Ministry of Digital Affairs",
+"submission_deadline": "2025-03-03T17:00:00",
+"issue_date": "2025-01-02",
+"method_of_selection": "QCBS",
+"procurement_method": "Services",
+"project_duration": null,
+"pre_bid_meeting": "2025-01-20, Ministry conference room",
+"contact": {"name": null, "email": "procurement@mda.gov.bd", "phone": null}
 }
 
 ## Document Context
@@ -943,8 +952,8 @@ Then it returns a path matching "prompts/entity-{domain}-v1.md"
 ```java
 // SubmissionEntityExtractor — fields
 private static final List<String> REQUIRED_FIELDS = List.of(
-    "guidelines_summary", "number_of_copies", "soft_submission_required", "submission_address"
-);
+        "guidelines_summary", "number_of_copies", "soft_submission_required", "submission_address"
+    );
 
 // FinancialEntityExtractor — fields
 private static final List<String> REQUIRED_FIELDS = List.of(
@@ -1051,6 +1060,7 @@ import com.dsi.rfp.domain.model.Section;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1060,23 +1070,23 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EntityExtractor {
 
-    private final GeneralEntityExtractor    generalExtractor;
+    private final GeneralEntityExtractor generalExtractor;
     private final SubmissionEntityExtractor submissionExtractor;
-    private final FinancialEntityExtractor  financialExtractor;
-    private final IctEntityExtractor        ictExtractor;
-    private final StaffingEntityExtractor   staffingExtractor;
-    private final SupportEntityExtractor    supportExtractor;
+    private final FinancialEntityExtractor financialExtractor;
+    private final IctEntityExtractor ictExtractor;
+    private final StaffingEntityExtractor staffingExtractor;
+    private final SupportEntityExtractor supportExtractor;
     private final EvaluationEntityExtractor evaluationExtractor;
-    private final RfpEntitiesMapper         entitiesMapper;
+    private final RfpEntitiesMapper entitiesMapper;
 
     public RfpEntities extractAll(List<Section> sections, List<Clause> clauses, ExtractionState state) {
         Map<String, Object> merged = new HashMap<>();
-        runSafe(generalExtractor,    sections, clauses, state, merged, "general");
+        runSafe(generalExtractor, sections, clauses, state, merged, "general");
         runSafe(submissionExtractor, sections, clauses, state, merged, "submission");
-        runSafe(financialExtractor,  sections, clauses, state, merged, "financial");
-        runSafe(ictExtractor,        sections, clauses, state, merged, "ict");
-        runSafe(staffingExtractor,   sections, clauses, state, merged, "staffing");
-        runSafe(supportExtractor,    sections, clauses, state, merged, "support");
+        runSafe(financialExtractor, sections, clauses, state, merged, "financial");
+        runSafe(ictExtractor, sections, clauses, state, merged, "ict");
+        runSafe(staffingExtractor, sections, clauses, state, merged, "staffing");
+        runSafe(supportExtractor, sections, clauses, state, merged, "support");
         runSafe(evaluationExtractor, sections, clauses, state, merged, "evaluation");
         return entitiesMapper.fromMap(merged);
     }
@@ -1088,7 +1098,7 @@ public class EntityExtractor {
             target.putAll(extractor.extract(sections, clauses, state));
         } catch (Exception e) {
             log.error("entity.extractor.failed extractor={} jobId={} error={}",
-                      name, state.getJobId(), e.getMessage(), e);
+                name, state.getJobId(), e.getMessage(), e);
         }
     }
 }
@@ -1158,6 +1168,7 @@ import com.dsi.rfp.domain.model.RfpEntities;
 import lombok.extern.slf4j.Slf4j;
 import org.bsc.langgraph4j.action.NodeAction;
 import org.springframework.stereotype.Component;
+
 import java.util.*;
 
 @Slf4j
@@ -1175,22 +1186,22 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
     public Map<String, Object> apply(ExtractionState state) throws Exception {
         Map<String, Double> scores = new LinkedHashMap<>();
         List<String> lowConfQueue = new ArrayList<>();
-        RfpEntities entities      = state.getEntities();
+        RfpEntities entities = state.getEntities();
 
-        scoreField(scores, lowConfQueue, "client_name",               entities.getClientName());
-        scoreField(scores, lowConfQueue, "submission_deadline",        entities.getSubmissionDeadline());
-        scoreField(scores, lowConfQueue, "procurement_ref",            entities.getProcurementRef());
-        scoreField(scores, lowConfQueue, "technical_financial_split",  entities.getTechnicalFinancialSplit());
-        scoreField(scores, lowConfQueue, "marking_criteria",           entities.getMarkingCriteria());
-        scoreField(scores, lowConfQueue, "criteria",                   entities.getCriteria());
-        scoreField(scores, lowConfQueue, "eligibility_summary",        entities.getEligibilitySummary());
+        scoreField(scores, lowConfQueue, "client_name", entities.getClientName());
+        scoreField(scores, lowConfQueue, "submission_deadline", entities.getSubmissionDeadline());
+        scoreField(scores, lowConfQueue, "procurement_ref", entities.getProcurementRef());
+        scoreField(scores, lowConfQueue, "technical_financial_split", entities.getTechnicalFinancialSplit());
+        scoreField(scores, lowConfQueue, "marking_criteria", entities.getMarkingCriteria());
+        scoreField(scores, lowConfQueue, "criteria", entities.getCriteria());
+        scoreField(scores, lowConfQueue, "eligibility_summary", entities.getEligibilitySummary());
         // ... all other entity fields ...
 
         double completeness = computeCompleteness(scores);
         scores.put("doc_completeness_score", completeness);
 
         log.info("confidence.score jobId={} completeness={} lowConfFields={}",
-                 state.getJobId(), completeness, lowConfQueue);
+            state.getJobId(), completeness, lowConfQueue);
         return Map.of("confidenceMap", scores, "lowConfidenceQueue", lowConfQueue);
     }
 
@@ -1210,8 +1221,8 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
 
     private double computeCompleteness(Map<String, Double> scores) {
         long nonNull = CRITICAL_FIELDS.stream()
-            .filter(f -> scores.getOrDefault(f, 0.0) > 0.0)
-            .count();
+                                      .filter(f -> scores.getOrDefault(f, 0.0) > 0.0)
+                                      .count();
         return (double) nonNull / CRITICAL_FIELDS.size();
     }
 }
@@ -1280,43 +1291,43 @@ Then it appears in the right panel, tabbed alongside SectionTree on the left
 
 ```typescript
 // rfp-frontend/src/components/EntityTable.tsx
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 
 type ConfidenceBadgeProps = {
-  score: number;
+    score: number;
 };
 
 type EntityField = {
-  key: string;
-  label: string;
-  value: string | null;
-  sourceClauseId?: string;
-  confidence: number;
+    key: string;
+    label: string;
+    value: string | null;
+    sourceClauseId?: string;
+    confidence: number;
 };
 
 type EntityCategory = {
-  id: string;
-  label: string;
-  fields: EntityField[];
+    id: string;
+    label: string;
+    fields: EntityField[];
 };
 
 type EntityTableProps = {
-  entities: Record<string, unknown>;
-  confidenceMap: Record<string, number>;
-  onClauseClick: (clauseId: string) => void;
+    entities: Record<string, unknown>;
+    confidenceMap: Record<string, number>;
+    onClauseClick: (clauseId: string) => void;
 };
 
 export const EntityTable: React.FC<EntityTableProps> = ({
-  entities, confidenceMap, onClauseClick
-}) => {
-  const [activeTab, setActiveTab] = useState<string>('general');
-  // ...
+                                                            entities, confidenceMap, onClauseClick
+                                                        }) => {
+    const [activeTab, setActiveTab] = useState<string>('general');
+    // ...
 };
 
-const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({ score }) => {
-  if (score >= 0.8) return <span className="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold">HIGH</span>;
-  if (score >= 0.5) return <span className="bg-yellow-400 text-gray-900 px-2 py-0.5 rounded text-xs font-bold">MED</span>;
-  return <span className="bg-red-500 text-white px-2 py-0.5 rounded text-xs font-bold">LOW</span>;
+const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({score}) => {
+    if (score >= 0.8) return <span className = "bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold" > HIGH < /span>;
+    if (score >= 0.5) return <span className = "bg-yellow-400 text-gray-900 px-2 py-0.5 rounded text-xs font-bold" > MED < /span>;
+    return <span className = "bg-red-500 text-white px-2 py-0.5 rounded text-xs font-bold" > LOW < /span>;
 };
 ```
 
@@ -1478,12 +1489,12 @@ curl -s http://localhost:8080/actuator/metrics/rfp.entity.extraction.duration | 
 > 1. Add `org.bsc.langgraph4j:langgraph4j-core:1.8.4` to a throwaway Maven project.
 > 2. Wire a single node (`addNode("test", state -> Map.of("status", "ok"))`).
 > 3. Confirm: `StateGraph<ExtractionState>`, `addNode(name, NodeAction)`, `addEdge()`, and `compile()` all work as
->    documented without runtime errors.
+     > documented without runtime errors.
 > 4. If the API differs (e.g., uses `AgentStateFactory`, `HashMap`-based state, or different class names), document the
->    actual API and update all node stories accordingly BEFORE writing any node code.
+     > actual API and update all node stories accordingly BEFORE writing any node code.
 > 5. **Fallback plan:** If LangGraph4J 1.8.4 does not compile or the API is incompatible, replace the graph with a
->    `ThreadPoolTaskExecutor` + explicit step enum state machine. Document this as the adopted approach in this Notes
->    section. The individual node classes remain unchanged — only `ExtractionGraph.build()` changes.
+     > `ThreadPoolTaskExecutor` + explicit step enum state machine. Document this as the adopted approach in this Notes
+     > section. The individual node classes remain unchanged — only `ExtractionGraph.build()` changes.
 >
 > POC verdict must be recorded here before Sprint 4 day-1 standup.
 

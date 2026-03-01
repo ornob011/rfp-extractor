@@ -90,6 +90,7 @@ Then HTTP 403 Forbidden is returned
 **Interfaces / Contracts:**
 
 ```java
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -156,7 +157,9 @@ Then a JwtValidationException is thrown
 **Interfaces / Contracts:**
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class JwtClaims {
     private String subject;
     private Set<String> roles;
@@ -172,6 +175,7 @@ public class JwtTokenService {
     // expiry: app.security.jwt.expiry-hours (default 8)
 
     public String generateToken(String username, Set<String> roles);
+
     public JwtClaims validateToken(String token);
 }
 ```
@@ -214,9 +218,11 @@ Then HTTP 401 is returned
 **Interfaces / Contracts:**
 
 ```java
-public record LoginRequest(String username, String password) {}
+public record LoginRequest(String username, String password) {
+}
 
-public record LoginResponse(String token, Instant expiresAt, Set<String> roles) {}
+public record LoginResponse(String token, Instant expiresAt, Set<String> roles) {
+}
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -315,7 +321,10 @@ public enum AuditAction {
     DOWNLOAD_ARTIFACT, RELOAD_RULE_PACK, VIEW_ADMIN, ACCESS_DENIED
 }
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserAuditEvent {
     private UUID eventId;
     private String userId;
@@ -328,7 +337,9 @@ public class UserAuditEvent {
 
 public interface UserAuditPort {
     void record(UserAuditEvent event);
+
     List<UserAuditEvent> findByUser(String userId, int limit);
+
     List<UserAuditEvent> findAll(int limit);
 }
 ```
@@ -384,6 +395,7 @@ Then an event with success=false is recorded before the exception propagates
 **Interfaces / Contracts:**
 
 ```java
+
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Auditable {
@@ -400,7 +412,9 @@ public class AuditingAspect {
     public Object audit(ProceedingJoinPoint pjp, Auditable auditable) throws Throwable;
 
     private String extractUserId();
+
     private String extractIpAddress(ProceedingJoinPoint pjp);
+
     private String extractDocumentId(ProceedingJoinPoint pjp);
 }
 ```
@@ -444,7 +458,9 @@ Then IllegalStateException is thrown at startup
 **Interfaces / Contracts:**
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class EncryptedPayload {
     private byte[] iv;         // 12 bytes (GCM standard)
     private byte[] ciphertext;
@@ -457,6 +473,7 @@ public class FileEncryptionService {
     // Key loaded from env var STORAGE_ENCRYPTION_KEY (32 bytes hex-encoded = 64 hex chars)
 
     public EncryptedPayload encrypt(byte[] plaintext);
+
     public byte[] decrypt(EncryptedPayload payload);
 
     @PostConstruct
@@ -501,6 +518,7 @@ Then the original plaintext PDF bytes are returned
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Primary   // overrides LocalDocumentStorageAdapter
 @RequiredArgsConstructor
@@ -555,11 +573,13 @@ Then the text is returned unchanged (only wrapped in delimiters)
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Slf4j
 public class PromptInjectionFilter {
 
     public String sanitize(String rawText);
+
     public boolean containsInjectionPattern(String text);
 }
 ```
@@ -612,7 +632,9 @@ Then suspectedLegacy is false
 **Interfaces / Contracts:**
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class EncodingDetectionResult {
     private boolean suspectedLegacy;
     private double confidence;
@@ -666,6 +688,7 @@ Then the job's files are deleted from disk and the Redis key is removed
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -675,6 +698,7 @@ public class DataRetentionScheduler {
     public void runRetention();
 
     private void softDeleteExpiredJobs(List<ExtractionJob> jobs);
+
     private void hardDeleteExpiredJobs(List<ExtractionJob> jobs);
 }
 ```

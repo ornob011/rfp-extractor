@@ -586,7 +586,7 @@ public class OcrSidecarClient {
     - Build `OcrPageRequest(base64, lang, 300)`.
     - Call `restClient.post().uri("/ocr/page").contentType(MediaType.APPLICATION_JSON).body(request).retrieve()`.
     -
-    `.onStatus(HttpStatusCode::is5xxServerError, (req, res) -> { throw new OcrUnavailableException("OCR sidecar returned " + res.getStatusCode()); })`.
+   `.onStatus(HttpStatusCode::is5xxServerError, (req, res) -> { throw new OcrUnavailableException("OCR sidecar returned " + res.getStatusCode()); })`.
     - `.toEntity(OcrResultDto.class)`.
     - Return `Optional.ofNullable(response.getBody())`.
     - On `ResourceAccessException` (network) → `log.error(...)`, return `Optional.empty()`.
@@ -611,7 +611,11 @@ Use `MockRestServiceServer` (Spring Test) or WireMock to stub HTTP responses.
 
 ```java
 log.info("[OcrSidecarClient] Page OCR completed: lang={} confidence={} method={} words={}",
-    lang, result.pageConfidence(), result.extractionMethod(), result.wordCount());
+         lang, result.pageConfidence(),result.
+
+extractionMethod(),result.
+
+wordCount());
 ```
 
 **Story Points:** 8
@@ -762,7 +766,9 @@ subclass).
 
 ```java
 log.info("[ScannedPageExtractor] Page={} confidence={} words={} method={}",
-    pageNum, result.confidence(), result.wordCount(), "easyocr|tesseract");
+         pageNum, result.confidence(),result.
+
+wordCount(), "easyocr|tesseract");
 ```
 
 **Story Points:** 5
@@ -1075,7 +1081,7 @@ public class ScannedTableReconstructor {
     - Call `buildGrid(headers, rows)`.
     - `TableTypeClassifier.classify(headers, "")` → type.
     -
-    `confidence = ExtractionConfidence.builder().score(ocrPageConfidence * 0.8).method("ocr_llm_reconstruct").build()`.
+   `confidence = ExtractionConfidence.builder().score(ocrPageConfidence * 0.8).method("ocr_llm_reconstruct").build()`.
     - Return `Optional.of(TableExtractionResult.builder()...build())`.
 
 5. `buildGrid(headers, rows)`:
@@ -1102,7 +1108,7 @@ Mock `LlmAdapter`. Test `looksLikeTable` with direct string inputs.
 
 ```java
 log.info("[ScannedTableReconstructor] Page={} tabular={} llmSuccess={} confidence={}",
-    pageNum, looksTabular, llmSuccess, confidence);
+         pageNum, looksTabular, llmSuccess, confidence);
 ```
 
 **Story Points:** 8
@@ -1466,20 +1472,20 @@ curl http://localhost:8080/api/v1/rfp/result/$JOB_ID \
 
 ## 6) Exit Criteria (NON-NEGOTIABLE)
 
-| #     | Criterion                                                                                                         | Measure                                                                                  |
-|-------|-------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| EC-01 | Python sidecar passes all pytest tests                                                                            | `pytest rfp-python-ocr/tests/ -v` → 0 failures                                           |
-| EC-02 | `GET /health` on sidecar returns `{"status": "ok"}` within 2 seconds after container start                        | Manual curl or Docker healthcheck                                                        |
-| EC-03 | `ScannedPageExtractor` extracts text from 3 annotated scanned-page PDFs with `confidence >= 0.5`                  | Manual check against `testdata/ground-truth/scanned-*.pdf`                               |
-| EC-04 | `ColumnDetector` correctly identifies 2-column layout on 4 of 5 known 2-column test documents                     | Manual verification: correct reading order (left column before right)                    |
-| EC-05 | `ScannedTableReconstructor` successfully reconstructs table from OCR text for 2 of 3 annotated scanned-table docs | Compare grid to ground truth; ≥ 80% cell value match                                     |
-| EC-06 | `OcrSidecarClient` retries exactly once (2 total attempts) on first-call failure                                  | `OcrSidecarClientTest.shouldRetryOnce` passes                                            |
-| EC-07 | `MixedPageExtractor` does not crash when OCR sidecar is unavailable (text-only fallback)                          | `MixedPageExtractorTest.shouldFallBackToTextOnlyWhenOcrUnavailable` passes               |
-| EC-08 | `ExtractTextNode` routes SCANNED pages to `ScannedPageExtractor`, not to `PdfDocumentLoader`                      | `ExtractTextNodeTest.shouldUseScannedExtractorForScannedPages` passes                    |
-| EC-09 | All Java unit tests pass                                                                                          | `mvn test -pl rfp-service` → 0 failures                                                  |
-| EC-10 | `ResultPage.tsx` Pages tab renders per-page classification with correct badge color                               | Browser visual check; code review confirms Tailwind class names                          |
-| EC-11 | `prompts/scanned-table-reconstruction-v1.md` has valid YAML frontmatter                                           | `grep -A5 "^---" prompts/scanned-table-reconstruction-v1.md` shows all 5 required fields |
-| EC-12 | No class exceeds 250 lines; no method exceeds 20 lines                                                            | Manual audit + checkstyle                                                                |
+| #     | Criterion                                                                                                       | Measure                                                                                  |
+|-------|-----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| EC-01 | Python sidecar passes all pytest tests                                                                          | `pytest rfp-python-ocr/tests/ -v` → 0 failures                                           |
+| EC-02 | `GET /health` on sidecar returns `{"status": "ok"}` within 2 seconds after container start                      | Manual curl or Docker healthcheck                                                        |
+| EC-03 | `ScannedPageExtractor` extracts text from 3 fixture scanned-page PDFs with `confidence >= 0.5`                  | Manual check against `testdata/fixtures/scanned-*.pdf`                                   |
+| EC-04 | `ColumnDetector` correctly identifies 2-column layout on 4 of 5 known 2-column test documents                   | Manual verification: correct reading order (left column before right)                    |
+| EC-05 | `ScannedTableReconstructor` successfully reconstructs table from OCR text for 2 of 3 fixture scanned-table docs | Compare grid to fixture expectation; ≥ 80% cell value match                              |
+| EC-06 | `OcrSidecarClient` retries exactly once (2 total attempts) on first-call failure                                | `OcrSidecarClientTest.shouldRetryOnce` passes                                            |
+| EC-07 | `MixedPageExtractor` does not crash when OCR sidecar is unavailable (text-only fallback)                        | `MixedPageExtractorTest.shouldFallBackToTextOnlyWhenOcrUnavailable` passes               |
+| EC-08 | `ExtractTextNode` routes SCANNED pages to `ScannedPageExtractor`, not to `PdfDocumentLoader`                    | `ExtractTextNodeTest.shouldUseScannedExtractorForScannedPages` passes                    |
+| EC-09 | All Java unit tests pass                                                                                        | `mvn test -pl rfp-service` → 0 failures                                                  |
+| EC-10 | `ResultPage.tsx` Pages tab renders per-page classification with correct badge color                             | Browser visual check; code review confirms Tailwind class names                          |
+| EC-11 | `prompts/scanned-table-reconstruction-v1.md` has valid YAML frontmatter                                         | `grep -A5 "^---" prompts/scanned-table-reconstruction-v1.md` shows all 5 required fields |
+| EC-12 | No class exceeds 250 lines; no method exceeds 20 lines                                                          | Manual audit + checkstyle                                                                |
 
 ---
 
