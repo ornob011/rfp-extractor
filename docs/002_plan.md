@@ -1,6 +1,6 @@
 # Plan: Agentic Govt RFP Extraction + Quality Gate
 
-**Source:** 001_research.md (54 issues resolved) <br>
+**Source:** 001_research.md (59 issues resolved) <br>
 **Methodology:** Agile — 2-week sprints, each delivering production-grade, runnable software <br>
 **LLM Default:** OpenRouter (Gemini), configurable via `application.properties` to Ollama or any OpenAI-compatible
 API <br>
@@ -25,7 +25,8 @@ codebase.
 |----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Backend              | Spring Boot 3.5.11, Java 21, Maven multi-module                                                                                                                                                                                                                                                                     |
 | LLM abstraction      | Spring AI (primary LLM client) — supports OpenRouter, Ollama, OpenAI via config                                                                                                                                                                                                                                     |
-| Default LLM          | OpenRouter → `google/gemini-2.5-pro-exp-03-25` (configurable)                                                                                                                                                                                                                                                       |
+| LLM — extraction     | OpenRouter → `google/gemini-2.0-flash-001` (fast, cheap per-chunk extraction)                                                                                                                                                                                                                                       |
+| LLM — judgment       | OpenRouter → `google/gemini-2.5-pro-preview-06-05` (semantic rule checks, clarification generation)                                                                                                                                                                                                                 |
 | Doc processing       | LangChain4J (text splitters, doc loaders, embeddings)                                                                                                                                                                                                                                                               |
 | Agent orchestration  | LangGraph4J (state machine graph, conditional edges, persistence)                                                                                                                                                                                                                                                   |
 | OCR                  | Python FastAPI sidecar (easyOCR + Tesseract) — Java calls it via REST                                                                                                                                                                                                                                               |
@@ -42,6 +43,80 @@ codebase.
 | Database             | PostgreSQL (via Spring Data JPA + Hibernate). For vector similarity search: pgvector extension (`spring-ai-pgvector-store`)                                                                                                                                                                                         |
 | Lombok               | Use Lombok on all domain models and DTOs: `@Data`, `@Builder`, `@RequiredArgsConstructor`, `@Slf4j`, `@Value`, `@Getter`/`@Setter` as appropriate. Never write boilerplate getters, setters, constructors, `equals`, `hashCode`, or `toString` by hand.                                                             |
 | Library-first rule   | **Always use an existing library/package for any capability that already exists.** Never write custom code for: text splitting, PDF parsing, JSON Schema validation, JMESPath evaluation, JWT handling, encryption, HTTP clients, metrics, scheduling, etc. Justify in a code comment if a library cannot be found. |
+
+---
+
+## Issue Resolution Matrix
+
+Every issue from `001_research.md` §15 is resolved in a specific sprint. "Resolved" means the sprint's Definition of
+Done includes verifying the fix.
+
+| Issue ID | Description (brief)                 | Resolved In                                            |
+|----------|-------------------------------------|--------------------------------------------------------|
+| A-01     | Tika/PDFBox redundancy              | Sprint 2                                               |
+| A-02     | No input validation                 | Sprint 2                                               |
+| A-03     | Mixed pages unhandled               | Sprint 6                                               |
+| A-04     | image_detect() undefined            | Sprint 2                                               |
+| A-05     | Section segmenter heuristics fail   | Sprint 3                                               |
+| A-06     | Clause ID instability               | Sprint 3                                               |
+| T-01     | No column de-interleaving           | Sprint 6                                               |
+| T-02     | Multi-page table fragmentation      | Sprint 5                                               |
+| T-03     | Merged cells corrupt grid           | Sprint 5                                               |
+| T-04     | Scanned tables have no path         | Sprint 6                                               |
+| T-05     | Stream mode requires tuning         | Sprint 5                                               |
+| T-06     | Bangla OCR engine undefined         | Sprint 6                                               |
+| T-07     | Legacy Bangla encoding corruption   | Sprint 11                                              |
+| T-08     | OCR confidence not propagated       | Sprint 6                                               |
+| T-09     | Rule pack DSL undefined             | Sprint 8                                               |
+| D-01     | Clause-to-section link missing      | Sprint 3                                               |
+| D-02     | Clause page_range missing           | Sprint 3                                               |
+| D-03     | Cross-clause refs not modeled       | Sprint 3                                               |
+| D-04     | Tables not linked to sections       | Sprint 5                                               |
+| D-05     | Tags field undefined                | Sprint 4                                               |
+| D-06     | Entity provenance missing           | Sprint 4                                               |
+| D-07     | Confidence structure ambiguous      | Sprint 3                                               |
+| D-08     | Grid format undefined               | Sprint 5                                               |
+| R-01     | No rule DSL or schema               | Sprint 8                                               |
+| R-02     | Deterministic/LLM boundary          | Sprint 8                                               |
+| R-03     | No domain expert for rules          | Pre-Sprint (user provided checklist)                   |
+| R-04     | Single pack can't cover all types   | Sprint 9                                               |
+| AG-01    | "Agent" decisions are deterministic | Sprint 4 (LangGraph4J deterministic repair)            |
+| AG-02    | Repair loop no termination          | Sprint 7                                               |
+| AG-03    | Context window management absent    | Sprint 4                                               |
+| AG-04    | LLM non-determinism in IDs/tags     | Sprint 3 (deterministic ClauseIdAssigner)              |
+| O-01     | Clarification question generation   | Sprint 10                                              |
+| O-02     | DOCX/XLSX stack undefined           | Sprint 1 (POI + Freemarker locked)                     |
+| O-03     | PDF page refs path-dependent        | Sprint 10 (clause_id + page number as evidence)        |
+| O-04     | Audit log is JSON not readable      | Sprint 10 (HTML audit report)                          |
+| B-01     | Legacy Bangla silent corruption     | Sprint 11 (BanglaEncodingDetector rejects)             |
+| B-02     | No Bangla NER                       | Sprint 13+ (deferred; graceful rejection)              |
+| B-03     | No Bangla heading patterns          | Sprint 13+ (deferred)                                  |
+| B-04     | LLM degraded on Bangla              | Sprint 13+ (deferred)                                  |
+| S-01     | Spring AI no agentic loop           | Sprint 4 (LangGraph4J)                                 |
+| S-02     | Long-running tools block sync       | Sprint 2 (async job infrastructure)                    |
+| S-03     | No state persistence                | Sprint 2 (Redis-backed ExtractionState)                |
+| S-04     | Local LLM hardware undefined        | Deployment Tiers (see docs/003)                        |
+| OP-01    | 10-40 min processing time           | Accepted; async background job; Sprint 2               |
+| OP-02    | No concurrency model                | Sprint 2 (ThreadPoolTaskExecutor, queue=20)            |
+| OP-03    | Model updates change behavior       | Sprint 12 (model version pinning)                      |
+| OP-04    | No monitoring/observability         | Sprint 12 (Micrometer, 7 custom metrics)               |
+| DIFF-01  | Off-the-shelf tools overlap         | Architectural (self-hosted + GOB rules + Bangla)       |
+| DIFF-02  | Unique value buried                 | 003_implementation-index.md executive summary          |
+| MVP-01   | MVP is actually a full v1.0         | Accepted; scope is correct for a serious pitch         |
+| MVP-02   | Artifacts shouldn't be in MVP       | Accepted; deferred to Sprint 10                        |
+| MVP-03   | Repair loop shouldn't be in MVP     | Sprint 7 (after extraction is proven in Sprints 3-6)   |
+| SEC-01   | No RBAC/audit/encryption            | Sprint 11                                              |
+| SEC-02   | Prompt injection via doc content    | Sprint 11 (PromptInjectionFilter)                      |
+| SEC-03   | Self-hosted not leading pitch       | 003_implementation-index.md executive summary          |
+| TEST-01  | No ground truth dataset             | Sprint 3 (15 annotated docs)                           |
+| TEST-02  | No evaluation metrics               | Sprint 3 (F1 > 0.80 section, > 90% deadline)           |
+| TEST-03  | Rule pack has no test suite         | Sprint 8 (64 parameterized tests) + Sprint 9 (88 more) |
+| TEST-04  | Repair loop hard to test            | Sprint 7 (deliberately degraded test docs)             |
+
+**Bangla issues B-02, B-03, B-04 are intentionally deferred to Sprint 13+.** The system gracefully rejects
+legacy-encoded Bangla documents with a structured error (Sprint 11 `BanglaEncodingDetector`). Unicode Bangla is accepted
+but extraction quality is not guaranteed until Sprint 13+. This is an explicit, documented scope boundary — not an
+omission.
 
 ---
 
@@ -256,8 +331,8 @@ app.llm.provider=openrouter
 # OpenRouter (default)
 app.llm.openrouter.base-url=https://openrouter.ai/api/v1
 app.llm.openrouter.api-key=${OPENROUTER_API_KEY}
-app.llm.openrouter.model=google/gemini-2.5-pro-exp-03-25
-app.llm.openrouter.model.judge=google/gemini-2.5-pro-exp-03-25
+app.llm.openrouter.model=google/gemini-2.0-flash-001
+app.llm.openrouter.model.judge=google/gemini-2.5-pro-preview-06-05
 # Ollama (self-hosted fallback)
 app.llm.ollama.base-url=http://localhost:11434
 app.llm.ollama.model=llama3.1:8b
@@ -313,10 +388,10 @@ rfp-extractor/
 │   ├── rfp-schema-v1.json           ← RFP JSON Schema (canonical)
 │   └── rule-schema-v1.json          ← Rule YAML validation schema
 ├── rules/
-│   ├── bd-govt-ict-v1.yaml          ← 60+ ICT rules (user's checklist + additions)
-│   ├── bd-govt-works-v1.yaml        ← 30+ Works contract rules
-│   ├── bd-govt-consultancy-v1.yaml  ← 30+ Consultancy/ToR rules
-│   └── bd-govt-goods-v1.yaml        ← 20+ Goods procurement rules
+│   ├── bd-govt-ict-v1.yaml          ← 64 ICT rules (55 structural JMESPath + 9 semantic LLM)
+│   ├── bd-govt-works-v1.yaml        ← 33 Works contract rules (30 structural + 3 semantic)
+│   ├── bd-govt-consultancy-v1.yaml  ← 33 Consultancy/ToR rules (30 structural + 3 semantic)
+│   └── bd-govt-goods-v1.yaml        ← 22 Goods procurement rules (20 structural + 2 semantic)
 ├── testdata/ground-truth/           ← Annotated GOB RFP JSON files
 └── docker-compose.yml               ← All services
 ```
@@ -329,394 +404,394 @@ The schema captures ALL 45 fields from the user's checklist, organized into type
 
 ```json
 {
-  "schema_version": "1.0",
-  "doc_meta": {
-    "title": "",
-    "procurement_ref": "",
-    "issue_date": "",
-    "rfp_type": "ict|works|consultancy|goods|unknown",
-    "source_language": "en|bn|mixed|unknown",
-    "extraction_model": "",
-    "extraction_timestamp": ""
-  },
-  "sections": [
-    {
-      "id": "",
-      "title": "",
-      "level": 1,
-      "page_start": 0,
-      "page_end": 0,
-      "children": [],
-      "confidence": {
-        "score": 0.0,
-        "method": "bookmark|heading_style|regex|font_size|caps|llm"
-      }
-    }
-  ],
-  "clauses": [
-    {
-      "id": "",
-      "section_id": "",
-      "page_start": 0,
-      "page_end": 0,
-      "text": "",
-      "text_language": "en|bn|mixed",
-      "tags": [],
-      "references": [],
-      "confidence": {
-        "score": 0.0,
-        "method": "text_layer|ocr|text+ocr",
-        "ocr_confidence": null
-      }
-    }
-  ],
-  "tables": [
-    {
-      "id": "",
-      "section_id": "",
-      "clause_id": "",
-      "page_start": 0,
-      "page_end": 0,
-      "caption": "",
-      "type": "deliverables|evaluation|payment|staffing|schedule|other",
-      "headers": [],
-      "rows": [],
-      "grid": [
+    "schema_version": "1.0",
+    "doc_meta": {
+        "title": "",
+        "procurement_ref": "",
+        "issue_date": "",
+        "rfp_type": "ict|works|consultancy|goods|unknown",
+        "source_language": "en|bn|mixed|unknown",
+        "extraction_model": "",
+        "extraction_timestamp": ""
+    },
+    "sections": [
         {
-          "row": 0,
-          "col": 0,
-          "value": "",
-          "rowspan": 1,
-          "colspan": 1
+            "id": "",
+            "title": "",
+            "level": 1,
+            "page_start": 0,
+            "page_end": 0,
+            "children": [],
+            "confidence": {
+                "score": 0.0,
+                "method": "bookmark|heading_style|regex|font_size|caps|llm"
+            }
         }
-      ],
-      "confidence": {
-        "score": 0.0,
-        "method": "lattice|stream|ocr_llm_reconstruct"
-      }
-    }
-  ],
-  "entities": {
-    "general": {
-      "client_name": {
-        "value": "",
-        "clause_id": "",
-        "page": 0,
-        "confidence": 0.0
-      },
-      "submission_deadline": {
-        "value": "",
-        "clause_id": "",
-        "page": 0,
-        "confidence": 0.0
-      },
-      "issue_date": {
-        "value": "",
-        "clause_id": "",
-        "page": 0,
-        "confidence": 0.0
-      },
-      "method_of_selection": {
-        "value": "",
-        "clause_id": "",
-        "page": 0,
-        "confidence": 0.0
-      },
-      "procurement_method": {
-        "value": "",
-        "clause_id": "",
-        "page": 0,
-        "confidence": 0.0
-      },
-      "project_duration": {
-        "value": "",
-        "clause_id": "",
-        "page": 0,
-        "confidence": 0.0
-      },
-      "pre_bid_meeting": {
-        "date": "",
-        "venue": "",
-        "clause_id": "",
-        "page": 0,
-        "confidence": 0.0
-      },
-      "contact": {
-        "name": "",
-        "email": "",
-        "phone": "",
-        "address": "",
-        "clause_id": "",
-        "page": 0,
-        "confidence": 0.0
-      }
-    },
-    "submission": {
-      "guidelines_summary": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "number_of_copies": {
-        "value": 0,
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "soft_submission_required": {
-        "value": false,
-        "email": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "submission_address": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      }
-    },
-    "financial": {
-      "technical_financial_split": {
-        "technical_weight": 0,
-        "financial_weight": 0,
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "performance_security": {
-        "percentage": 0,
-        "type": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "bank_guarantee": {
-        "required": false,
-        "details": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "payment_terms": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "reimbursable_expenses": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "bid_validity_period": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      }
-    },
-    "ict": {
-      "total_users": {
-        "value": 0,
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "concurrent_users": {
-        "value": 0,
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "programming_language_preference": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "system_language": {
-        "value": "en|bn|both",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "architecture": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "tech_stack": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "database": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "hosting": {
-        "type": "cloud|on-premise|hybrid",
-        "details": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "data_migration_required": {
-        "value": false,
-        "details": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "legacy_system": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "hardware_requirements": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "integrations": [
-        {
-          "system": "",
-          "type": "",
-          "clause_id": "",
-          "confidence": 0.0
-        }
-      ],
-      "mobile_app_required": {
-        "value": false,
-        "platforms": [],
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "ui_mock_required": {
-        "value": false,
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "presentation_required": {
-        "value": false,
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "gantt_chart_required": {
-        "value": false,
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "e_governance_compliance": {
-        "required": false,
-        "framework": "",
-        "clause_id": "",
-        "confidence": 0.0
-      }
-    },
-    "staffing": {
-      "staff_months": {
-        "value": 0,
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "onsite_resource_requirements": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "marking_criteria": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      }
-    },
-    "support": {
-      "training": {
-        "value": "",
-        "duration": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "support_maintenance": {
-        "value": "",
-        "period": "",
-        "sla": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "warranty_period": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      }
-    },
-    "evaluation": {
-      "criteria": [
-        {
-          "name": "",
-          "weight": 0,
-          "clause_id": "",
-          "confidence": 0.0
-        }
-      ],
-      "eligibility_summary": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      },
-      "scope_summary": {
-        "value": "",
-        "clause_id": "",
-        "confidence": 0.0
-      }
-    },
-    "pricing_factors": [
-      {
-        "factor": "",
-        "clause_id": "",
-        "confidence": 0.0
-      }
     ],
-    "rfp_amendments": [
-      {
-        "description": "",
-        "date": "",
-        "clause_id": "",
-        "confidence": 0.0
-      }
+    "clauses": [
+        {
+            "id": "",
+            "section_id": "",
+            "page_start": 0,
+            "page_end": 0,
+            "text": "",
+            "text_language": "en|bn|mixed",
+            "tags": [],
+            "references": [],
+            "confidence": {
+                "score": 0.0,
+                "method": "text_layer|ocr|text+ocr",
+                "ocr_confidence": null
+            }
+        }
     ],
-    "other_info": {
-      "value": "",
-      "clause_id": "",
-      "confidence": 0.0
-    }
-  },
-  "rule_pack_results": {
-    "pack_id": "",
-    "pack_version": "",
-    "run_timestamp": "",
-    "summary": {
-      "fatal": 0,
-      "high": 0,
-      "medium": 0,
-      "low": 0,
-      "info": 0
+    "tables": [
+        {
+            "id": "",
+            "section_id": "",
+            "clause_id": "",
+            "page_start": 0,
+            "page_end": 0,
+            "caption": "",
+            "type": "deliverables|evaluation|payment|staffing|schedule|other",
+            "headers": [],
+            "rows": [],
+            "grid": [
+                {
+                    "row": 0,
+                    "col": 0,
+                    "value": "",
+                    "rowspan": 1,
+                    "colspan": 1
+                }
+            ],
+            "confidence": {
+                "score": 0.0,
+                "method": "lattice|stream|ocr_llm_reconstruct"
+            }
+        }
+    ],
+    "entities": {
+        "general": {
+            "client_name": {
+                "value": "",
+                "clause_id": "",
+                "page": 0,
+                "confidence": 0.0
+            },
+            "submission_deadline": {
+                "value": "",
+                "clause_id": "",
+                "page": 0,
+                "confidence": 0.0
+            },
+            "issue_date": {
+                "value": "",
+                "clause_id": "",
+                "page": 0,
+                "confidence": 0.0
+            },
+            "method_of_selection": {
+                "value": "",
+                "clause_id": "",
+                "page": 0,
+                "confidence": 0.0
+            },
+            "procurement_method": {
+                "value": "",
+                "clause_id": "",
+                "page": 0,
+                "confidence": 0.0
+            },
+            "project_duration": {
+                "value": "",
+                "clause_id": "",
+                "page": 0,
+                "confidence": 0.0
+            },
+            "pre_bid_meeting": {
+                "date": "",
+                "venue": "",
+                "clause_id": "",
+                "page": 0,
+                "confidence": 0.0
+            },
+            "contact": {
+                "name": "",
+                "email": "",
+                "phone": "",
+                "address": "",
+                "clause_id": "",
+                "page": 0,
+                "confidence": 0.0
+            }
+        },
+        "submission": {
+            "guidelines_summary": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "number_of_copies": {
+                "value": 0,
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "soft_submission_required": {
+                "value": false,
+                "email": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "submission_address": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            }
+        },
+        "financial": {
+            "technical_financial_split": {
+                "technical_weight": 0,
+                "financial_weight": 0,
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "performance_security": {
+                "percentage": 0,
+                "type": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "bank_guarantee": {
+                "required": false,
+                "details": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "payment_terms": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "reimbursable_expenses": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "bid_validity_period": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            }
+        },
+        "ict": {
+            "total_users": {
+                "value": 0,
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "concurrent_users": {
+                "value": 0,
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "programming_language_preference": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "system_language": {
+                "value": "en|bn|both",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "architecture": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "tech_stack": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "database": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "hosting": {
+                "type": "cloud|on-premise|hybrid",
+                "details": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "data_migration_required": {
+                "value": false,
+                "details": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "legacy_system": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "hardware_requirements": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "integrations": [
+                {
+                    "system": "",
+                    "type": "",
+                    "clause_id": "",
+                    "confidence": 0.0
+                }
+            ],
+            "mobile_app_required": {
+                "value": false,
+                "platforms": [],
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "ui_mock_required": {
+                "value": false,
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "presentation_required": {
+                "value": false,
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "gantt_chart_required": {
+                "value": false,
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "e_governance_compliance": {
+                "required": false,
+                "framework": "",
+                "clause_id": "",
+                "confidence": 0.0
+            }
+        },
+        "staffing": {
+            "staff_months": {
+                "value": 0,
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "onsite_resource_requirements": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "marking_criteria": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            }
+        },
+        "support": {
+            "training": {
+                "value": "",
+                "duration": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "support_maintenance": {
+                "value": "",
+                "period": "",
+                "sla": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "warranty_period": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            }
+        },
+        "evaluation": {
+            "criteria": [
+                {
+                    "name": "",
+                    "weight": 0,
+                    "clause_id": "",
+                    "confidence": 0.0
+                }
+            ],
+            "eligibility_summary": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            },
+            "scope_summary": {
+                "value": "",
+                "clause_id": "",
+                "confidence": 0.0
+            }
+        },
+        "pricing_factors": [
+            {
+                "factor": "",
+                "clause_id": "",
+                "confidence": 0.0
+            }
+        ],
+        "rfp_amendments": [
+            {
+                "description": "",
+                "date": "",
+                "clause_id": "",
+                "confidence": 0.0
+            }
+        ],
+        "other_info": {
+            "value": "",
+            "clause_id": "",
+            "confidence": 0.0
+        }
     },
-    "findings": [
-      {
-        "rule_id": "",
-        "severity": "",
-        "status": "PASS|FAIL|SKIPPED",
-        "message": "",
-        "evidence": ""
-      }
-    ]
-  },
-  "extraction_state": {
-    "job_id": "",
-    "doc_completeness_score": 0.0,
-    "missing_fields": [],
-    "manual_review_required": [],
-    "page_summary": [
-      {
-        "page": 0,
-        "classification": "DIGITAL|SCANNED|MIXED",
-        "method": "",
-        "confidence": 0.0,
-        "retries": 0
-      }
-    ]
-  }
+    "rule_pack_results": {
+        "pack_id": "",
+        "pack_version": "",
+        "run_timestamp": "",
+        "summary": {
+            "fatal": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "info": 0
+        },
+        "findings": [
+            {
+                "rule_id": "",
+                "severity": "",
+                "status": "PASS|FAIL|SKIPPED",
+                "message": "",
+                "evidence": ""
+            }
+        ]
+    },
+    "extraction_state": {
+        "job_id": "",
+        "doc_completeness_score": 0.0,
+        "missing_fields": [],
+        "manual_review_required": [],
+        "page_summary": [
+            {
+                "page": 0,
+                "classification": "DIGITAL|SCANNED|MIXED",
+                "method": "",
+                "confidence": 0.0,
+                "retries": 0
+            }
+        ]
+    }
 }
 ```
 
@@ -727,29 +802,29 @@ The schema captures ALL 45 fields from the user's checklist, organized into type
 Each rule is a YAML entry validated against `rule-schema-v1.json`:
 
 ```yaml
-- id           : BD-ICT-001
-  name         : RFP Title Present
-  pack         : bd-govt-ict-v1
-  version      : "1.0.0"
-  severity     : FATAL           # FATAL | HIGH | MEDIUM | LOW | INFO
-  check_type   : structural    # structural (JMESPath) | semantic (LLM)
-  condition    : "doc_meta.title != null && doc_meta.title != ''"
-  evidence_path: "doc_meta.title"
-  message      : "RFP Title is missing from the document"
+-   id           : BD-ICT-001
+    name         : RFP Title Present
+    pack         : bd-govt-ict-v1
+    version      : "1.0.0"
+    severity     : FATAL           # FATAL | HIGH | MEDIUM | LOW | INFO
+    check_type   : structural    # structural (JMESPath) | semantic (LLM)
+    condition    : "doc_meta.title != null && doc_meta.title != ''"
+    evidence_path: "doc_meta.title"
+    message      : "RFP Title is missing from the document"
 
-- id           : BD-ICT-056
-  name         : Scope Sufficiently Specific
-  pack         : bd-govt-ict-v1
-  version      : "1.0.0"
-  severity     : HIGH
-  check_type   : semantic
-  evidence_path: "entities.evaluation.scope_summary.value"
-  llm_prompt   : |
-    You are a GOB ICT procurement expert. Evaluate if this scope of work is specific enough
-    to price accurately. Reply with JSON: {"finding": true/false, "explanation": "...", "confidence": 0.0-1.0}
-    finding=true means there IS a problem (scope is vague).
-    Scope text: {{evidence}}
-  message      : "Scope of work may be too vague to price accurately"
+-   id           : BD-ICT-056
+    name         : Scope Sufficiently Specific
+    pack         : bd-govt-ict-v1
+    version      : "1.0.0"
+    severity     : HIGH
+    check_type   : semantic
+    evidence_path: "entities.evaluation.scope_summary.value"
+    llm_prompt   : |
+        You are a GOB ICT procurement expert. Evaluate if this scope of work is specific enough
+        to price accurately. Reply with JSON: {"finding": true/false, "explanation": "...", "confidence": 0.0-1.0}
+        finding=true means there IS a problem (scope is vague).
+        Scope text: {{evidence}}
+    message      : "Scope of work may be too vague to price accurately"
 ```
 
 ---

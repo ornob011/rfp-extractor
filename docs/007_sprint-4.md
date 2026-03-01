@@ -40,7 +40,7 @@
   `rfp-core`.
 - `RfpJsonSchemaValidator` (networknt) is wired and operational.
 - `UploadPage`, `JobStatusPage`, `ResultPage` (with `SectionTree`) are shipping in the React frontend.
-- LangGraph4J dependency `0.6.0` is declared in root `pom.xml` but no graph code exists yet.
+- LangGraph4J dependency `1.8.4` is declared in root `pom.xml` but no graph code exists yet.
 - `mvn test` passes with no failures.
 
 ---
@@ -305,7 +305,7 @@ public final class ConfidenceRouter {
 
 **Implementation Plan:**
 
-1. Add `langgraph4j-core 0.6.0` dependency to `rfp-service/pom.xml` if not already declared in root BOM.
+1. Add `langgraph4j-core 1.8.4` dependency to `rfp-service/pom.xml` if not already declared in root BOM.
 2. Create the `ExtractionGraph` Spring `@Component`. Inject all 10 node beans via constructor injection with Lombok
    `@RequiredArgsConstructor`.
 3. Inside `build()`: call `graph.addNode(VALIDATE_NODE, validateNode::apply)` for each of the 10 nodes. Each node bean
@@ -382,7 +382,7 @@ public class ExtractionOrchestrationService {
 // application.yml additions:
 // spring.task.execution.pool.core-size: 4
 // spring.task.execution.pool.max-size: 8
-// spring.task.execution.pool.queue-capacity: 100
+// spring.task.execution.pool.queue-capacity: 20
 // spring.task.execution.thread-name-prefix: extraction-
 ```
 
@@ -393,7 +393,7 @@ public class ExtractionOrchestrationService {
 2. Annotate `runExtraction()` with `@Async("extractionExecutor")`. Add `@EnableAsync` to a Spring config class in the
    `adapter/config/` package.
 3. Define the `extractionExecutor` bean in `AsyncConfig.java`: `ThreadPoolTaskExecutor` with core=4, max=8,
-   queue-capacity=100, thread-name-prefix `extraction-`, `RejectedExecutionHandler = CallerRunsPolicy`.
+   queue-capacity=20, thread-name-prefix `extraction-`, `RejectedExecutionHandler = AbortPolicy` (default — lets `JobQueueGuard` in Sprint 12 handle overflow via HTTP 503; never use `CallerRunsPolicy` which would block a REST thread for the full extraction duration).
 4. In `runExtraction()`: wrap in try-catch. On entry call `jobStatePort.updateStatus(jobId, JobStatus.IN_PROGRESS)`.
    Build `ExtractionState.initial(jobId, documentPath)`. Call `extractionGraph.build().invoke(initialState)`. On success
    call `jobStatePort.updateStatus(jobId, JobStatus.COMPLETED)`. On exception call
@@ -613,7 +613,9 @@ public class DocumentChunkingService {
 
 1. Create `DocumentChunk.java` in `rfp-core/domain/model/` as `@Value @Builder`. List field `sections` needs
    `@Builder.Default List.of()`.
-2. Add LangChain4J `langchain4j 0.35.0` to `rfp-service/pom.xml` if not declared. Use `dev.langchain4j:langchain4j`.
+2. Do NOT add an explicit LangChain4J version to `rfp-service/pom.xml`. Use `dev.langchain4j:langchain4j` with version
+   managed by the root POM property `${langchain4j.version}` (set to `1.11.0` in Sprint 1). Adding an explicit version
+   here would create a classpath conflict with the root POM-managed version.
 3. In `DocumentChunkingService.chunkDocument()`: extract full text from all sections' clauses (concatenate clause
    bodies). Instantiate
    `RecursiveCharacterTextSplitter.builder().maxSegmentSizeInChars(14000).maxOverlapSizeInChars(800).build()` (4 chars
@@ -1470,15 +1472,40 @@ curl -s http://localhost:8080/actuator/metrics/rfp.entity.extraction.duration | 
 
 ## 7) Notes & Assumptions
 
-**LangGraph4J API:**
+**LangGraph4J API — POC REQUIRED BEFORE SPRINT 4 CODING STARTS:**
 
-- Using `org.bsc.langgraph4j:langgraph4j-core:0.6.0`. The `StateGraph` API uses `addNode(name, NodeAction)` where
+> **CRITICAL:** Before implementing the 10-node `StateGraph`, run a 1-day proof-of-concept:
+> 1. Add `org.bsc.langgraph4j:langgraph4j-core:1.8.4` to a throwaway Maven project.
+> 2. Wire a single node (`addNode("test", state -> Map.of("status", "ok"))`).
+> 3. Confirm: `StateGraph<ExtractionState>`, `addNode(name, NodeAction)`, `addEdge()`, and `compile()` all work as
+>    documented without runtime errors.
+> 4. If the API differs (e.g., uses `AgentStateFactory`, `HashMap`-based state, or different class names), document the
+>    actual API and update all node stories accordingly BEFORE writing any node code.
+> 5. **Fallback plan:** If LangGraph4J 1.8.4 does not compile or the API is incompatible, replace the graph with a
+>    `ThreadPoolTaskExecutor` + explicit step enum state machine. Document this as the adopted approach in this Notes
+>    section. The individual node classes remain unchanged — only `ExtractionGraph.build()` changes.
+>
+> POC verdict must be recorded here before Sprint 4 day-1 standup.
+
+- Using `org.bsc.langgraph4j:langgraph4j-core:1.8.4`. The `StateGraph` API uses `addNode(name, NodeAction)` where
   `NodeAction.apply(state)` returns `Map<String,Object>` of state field deltas. LangGraph4J merges deltas into the next
   state using field-name matching. If the LangGraph4J 0.6.x API differs (e.g., uses `AgentStateFactory`), adapt the node
   return type accordingly.
 - `ExtractionState` uses `@Value @Builder(toBuilder=true)` — LangGraph4J must be configured with a `StateFactory` that
   deserializes JSON into `ExtractionState`. If LangGraph4J requires a `HashMap`-based state, wrap `ExtractionState` in a
   thin `AgentState` subclass and convert at node boundaries.
+
+**Scope management — if Sprint 4 runs behind:**
+
+Sprint 4 contains a minimum of 4 weeks of engineering work (10 graph nodes + 7 extractors + 6 prompt files + confidence
+scoring + React EntityTable). If the sprint falls behind after the first week, use **Option B** (recommended):
+
+- **Option B (keep 2 weeks):** Implement the 3 core extractors (`GeneralEntityExtractor`, `SubmissionEntityExtractor`,
+  `FinancialEntityExtractor`) plus the graph skeleton. The remaining 4 extractors (`IctEntityExtractor`,
+  `StaffingEntityExtractor`, `SupportEntityExtractor`, `EvaluationEntityExtractor`) become **stubs** that return empty
+  `RfpEntities` with confidence 0.0. Implement the stubs fully in Sprint 5 (after table extraction is unblocked).
+- **Option A (if more time available):** Split into Sprint 4a (graph wiring + 3 core extractors) and Sprint 4b
+  (remaining 4 extractors + confidence scoring). Requires re-numbering Sprints 5–12.
 
 **Immutability strategy:**
 
@@ -1503,8 +1530,10 @@ curl -s http://localhost:8080/actuator/metrics/rfp.entity.extraction.duration | 
 
 **LangChain4J dependency:**
 
-- `dev.langchain4j:langchain4j:0.35.0` in `rfp-service/pom.xml`. Only `RecursiveCharacterTextSplitter` is used this
-  sprint. `DocumentLoader` not used yet (Sprint 6 adds scanned page handling).
+- `dev.langchain4j:langchain4j` (version managed by root POM property `${langchain4j.version}` = `1.11.0`) in
+  `rfp-service/pom.xml`. Do NOT pin an explicit version here — it conflicts with the root BOM. Only
+  `RecursiveCharacterTextSplitter` is used this sprint. `DocumentLoader` not used yet (Sprint 6 adds scanned page
+  handling).
 
 **`RfpEntities` domain model:**
 

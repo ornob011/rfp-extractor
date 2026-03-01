@@ -1829,12 +1829,38 @@ class RfpSchemaValidatorTest {
 
 ### Epic 6 — Ground Truth Dataset and Evaluation Harness
 
+#### Story 6.0 — Ground Truth Pre-Sprint Prerequisite (must complete BEFORE Sprint 3 coding starts)
+
+**Description:**
+Collect, annotate, and validate the ground truth dataset. This is a **blocking prerequisite** — Sprint 3's F1 > 0.80
+exit criterion cannot be measured without it, and every downstream sprint (4, 5, 6, 7) depends on these annotations.
+
+**Assignment:** Must be assigned to a named team member (annotator) at Sprint 3 kickoff.
+
+**Annotation format** — each file at `testdata/ground-truth/{doc-id}.json` must include:
+1. Section boundaries: `title`, `level` (1–3), `page_start`, `page_end`, `children[]`.
+2. Entity values for all fields present in the doc (use `null` for absent fields, not omit them).
+3. First table structure: `headers[]`, `rows[][]` (minimum one table per ICT/Works doc; skip if no table).
+4. Expected rule findings: `expected_rule_failures: ["BD-ICT-001", "BD-ICT-005"]` (which rules SHOULD fire on this doc).
+
+**Deliverable:** 5 fully annotated JSON files (all 4 fields above) + 10 partially annotated (sections + entities only)
+committed to `testdata/ground-truth/` by Sprint 3 day 1.
+
+**Annotation JSON schema location:** `testdata/README.md` (see Story 6.1 below) must be committed before any JSON files
+are created, so annotators and the evaluator code share a single source of truth.
+
+**Acceptance Criterion (blocks Sprint 3 exit):**
+- `GroundTruthLoader.load("testdata/ground-truth")` returns 15 documents without exceptions.
+- At least 5 documents have non-empty `entities` and at least 1 `expected_rule_failures` entry.
+
+---
+
 #### Story 6.1 — Ground Truth Infrastructure
 
 **Description:**
 Create the directory structure, annotation template, and README for the ground truth dataset. The actual PDF collection
-and annotation is a parallel task assigned to a team member. The code harness (evaluator + loader) is implemented in
-this sprint.
+and annotation is handled in Story 6.0 (pre-sprint prerequisite, assigned to a named team member). The code harness
+(evaluator + loader) is implemented in this story.
 
 **File: `rfp-extractor/testdata/ground-truth/README.md`:**
 
@@ -1900,7 +1926,18 @@ See sample-annotation-template.json for the schema.
     "client_name": "Ministry of ICT, Bangladesh",
     "procurement_ref": "CPTU-2024-ICT-001"
   },
-  "notes": "Add any annotator notes here."
+  "tables": [
+    {
+      "page": 7,
+      "headers": ["Item", "Quantity", "Unit Price (BDT)"],
+      "rows": [
+        ["Laptop", "10", "85000"],
+        ["Server", "2", "450000"]
+      ]
+    }
+  ],
+  "expected_rule_failures": ["BD-ICT-001", "BD-ICT-014"],
+  "notes": "Add any annotator notes here. Use null (not omit) for entity fields absent from this document."
 }
 ```
 

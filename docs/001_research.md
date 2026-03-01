@@ -875,11 +875,11 @@ Building such a test corpus requires deliberately degraded documents. This is no
 | TEST-03 | Testing         | Rule pack has no test suite                                                     | High     | Medium                   |
 | TEST-04 | Testing         | Repair loop is extremely difficult to test systematically                       | Medium   | High                     |
 
-**Total issues identified: 54**
-**Critical severity: 9**
-**High severity: 30**
-**Medium severity: 13**
-**Low severity: 2**
+**Total issues identified: 59**
+**Critical severity: 10**
+**High severity: 29**
+**Medium severity: 19**
+**Low severity: 1**
 
 ---
 

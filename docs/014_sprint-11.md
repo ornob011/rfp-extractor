@@ -275,12 +275,21 @@ Then HTTP 200 is returned regardless of who submitted it
 
 1. `RfpJobService.getJob(UUID jobId, String userId, Set<String> roles)`:
     - Load job from `JobStatePort`.
-    - If `roles` contains `ANALYST` only: check `job.getCreatedByUserId().equals(userId)`. If not: throw
-      `AccessDeniedException`.
+    - Ownership check — use this logic (**not** `roles.contains("ANALYST")`, which fails for multi-role tokens):
+      ```java
+      // Correct: skip ownership check only if user holds ADMIN or AUDITOR
+      boolean skipOwnershipCheck = roles.contains("ADMIN") || roles.contains("AUDITOR");
+      if (!skipOwnershipCheck && !job.getCreatedByUserId().equals(userId)) {
+          throw new AccessDeniedException("Access denied to job " + jobId);
+      }
+      ```
+      Rationale: `roles.contains("ANALYST")` is **wrong** — a token with `[ANALYST, ADMIN]` would incorrectly trigger
+      the ownership check and deny the admin access. Always check for elevated roles, not the restricted role.
     - `ADMIN` and `AUDITOR`: return job without ownership check.
 2. `RfpJobService.listJobs(String userId, Set<String> roles)`:
-    - `ANALYST`: filter `JobStatePort.listJobsForUser(userId)`.
-    - `ADMIN`/`AUDITOR`: `JobStatePort.listAllJobs()` (add this method to port and Redis implementation).
+    - If `roles.contains("ADMIN") || roles.contains("AUDITOR")`: `JobStatePort.listAllJobs()`.
+    - Otherwise (ANALYST or unknown): `JobStatePort.listJobsForUser(userId)`.
+    - (Add `listAllJobs()` method to port and Redis implementation.)
 3. Update `RfpController` to extract `userId` and `roles` from `SecurityContextHolder.getContext().getAuthentication()`.
 4. `GlobalExceptionHandler` maps `AccessDeniedException` → 403.
 

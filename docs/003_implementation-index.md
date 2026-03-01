@@ -16,13 +16,18 @@ Clarity Pack (DOCX + XLSX artifacts).
 
 The system's competitive advantages over off-the-shelf tools (AWS Textract, Azure Document Intelligence, etc.) are:
 
-1. **Air-gapped / self-hosted** — GOB contract documents never leave DSI's network. Compliance, not a feature flag.
-2. **GOB-specific rule pack on structured JSON** — 64+ ICT rules, 30+ works rules, 30+ consultancy rules derived from
-   PPR 2008 / CPTU standards. Runs on extracted JSON, not raw text — faster, more reliable, auditable.
-3. **Adaptive extraction** — three-class page classification (DIGITAL / SCANNED / MIXED), multi-strategy section
-   segmentation, table extraction with merged-cell support, scanned-table LLM reconstruction.
-4. **LangGraph4J agent loop** — bounded, deterministic repair loop that retries low-confidence items without LLM
-   routing (no hallucinated re-plans).
+1. **Air-gapped / self-hosted** — GOB contract documents never leave DSI's network. No commercial SaaS tool (AWS
+   Textract, Azure Document Intelligence, Google Document AI) can match this compliance guarantee for government
+   procurement work.
+2. **152 GOB-specific rules on structured JSON** — 64 ICT + 33 Works + 33 Consultancy + 22 Goods rules, derived from PPR
+   2008 / CPTU standards. Rules run on extracted JSON (not raw text): deterministic, fast, auditable. No off-the-shelf
+   tool ships this domain knowledge.
+3. **Adaptive extraction pipeline** — three-class page classification (DIGITAL / SCANNED / MIXED), six heading-strategy
+   section segmentation, table extraction with merged-cell support, scanned-table LLM reconstruction. Handles real-world
+   GOB PDF chaos, not just clean digital documents.
+4. **LLM-augmented quality gate with page-level evidence** — bounded, deterministic repair loop (no LLM re-planning).
+   Every extracted fact carries a clause ID and source page number. Audit trail is human-readable HTML, not a raw JSON
+   file.
 
 ---
 
@@ -79,20 +84,20 @@ A sprint is **Done** when ALL of the following are true:
 
 ## Sprint Overview Table
 
-| Sprint | Prefix | Theme                                          | Primary Deliverables                                                                                                                                                      | Entry Criteria | Exit Criteria                                                                                    | Demo                                                                   |
-|--------|--------|------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
-| 1      | `004`  | **Foundation & LLM Infrastructure**            | Maven skeleton, LLM provider abstraction (OpenRouter/Ollama), Resilience4j reliability layer, Python OCR sidecar skeleton, React skeleton, Docker Compose                 | Empty repo     | `GET /api/v1/health` returns provider info; LLM call succeeds via `LlmAdapter`                   | Call LLM via endpoint, see structured response                         |
-| 2      | `005`  | **Document Ingestion & Page Classification**   | File upload API, input validation (encrypted/XFA/corrupt), PDFBox unified loader, 3-class page classifier, async job infrastructure, Redis job state                      | Sprint 1 done  | Upload a real PDF, get job ID, poll status, see per-page classification                          | Upload RFP, show job status with DIGITAL/SCANNED/MIXED per page        |
-| 3      | `006`  | **Section Segmentation & Clause IDs**          | 5-strategy `SectionSegmenter`, TOC detector, deterministic `ClauseIdAssigner`, ground truth dataset (15 docs), JSON Schema validator                                      | Sprint 2 done  | Section tree extracted with stable IDs from 5 annotated docs; F1 > 0.80                          | Show section hierarchy tree for a real RFP in React UI                 |
-| 4      | `007`  | **LangGraph4J Agent + Full Entity Extraction** | Full `ExtractionGraph` (9 nodes), all 45 entity fields extracted, context chunking, structured LLM output, JSON Schema conformance                                        | Sprint 3 done  | Full RFP JSON produced, schema-valid, all 45 fields attempted; deadline accuracy > 90%           | Submit RFP, receive populated JSON with confidence scores              |
-| 5      | `008`  | **Table Extraction**                           | Lattice + stream table extractors, merged-cell support, multi-page merge, table-section linker                                                                            | Sprint 4 done  | Tables extracted with correct cell-object format; row-match > 75% on annotated docs              | Show table with merged cells rendered in React                         |
-| 6      | `009`  | **OCR & Mixed Pages**                          | Python FastAPI OCR (full easyOCR), Java OCR client, mixed-page merger, scanned table LLM reconstruction, multi-column de-interleaving                                     | Sprint 5 done  | Scanned pages extracted; OCR confidence propagated; mixed pages handled                          | Process a fully scanned RFP; show extracted text + confidence per page |
-| 7      | `010`  | **Repair Loop**                                | Repair node in LangGraph4J (deterministic strategy table), bounded iterations, LLM section fallback, repair audit trail                                                   | Sprint 6 done  | Low-confidence items retried; hard stop at 20 iterations; audit log shows retry events           | Inject artificially degraded doc; show repair attempts in UI           |
-| 8      | `011`  | **Rule Pack Engine & ICT Rules**               | `RulePackRunner` (JMESPath + LLM judgment), `RfpTypeClassifier`, `bd-govt-ict-v1.yaml` (64 rules), rule test suite                                                        | Sprint 7 done  | All 64 ICT rules run; FATAL rules fire on docs missing mandatory fields                          | Show PASS/FAIL rule results colour-coded by severity                   |
-| 9      | `012`  | **Additional Rule Packs & Hot Reload**         | Works, consultancy, goods rule packs; hot-reload without restart; admin API for rule pack management                                                                      | Sprint 8 done  | Works/consultancy/goods rules run on respective doc types; hot-reload verified                   | Edit a rule YAML, reload without restart, see new result               |
-| 10     | `013`  | **Bid Clarity Pack Artifacts**                 | Clarification Questions DOCX, Ambiguity Register XLSX, Compliance Checklist XLSX, Risk Log XLSX, HTML audit report, artifact download API                                 | Sprint 9 done  | All 4 artifacts generated and downloadable; clause references correct                            | Download all 4 artifacts; open DOCX, verify page references            |
-| 11     | `014`  | **Security & RBAC**                            | JWT auth, 3 roles (ANALYST/ADMIN/AUDITOR), per-document ownership, AES-256 encryption at rest, data retention scheduler, prompt injection filter, legacy Bangla rejection | Sprint 10 done | ANALYST cannot access another user's doc; encryption verified; rejection error for legacy Bangla | Demo role-based access; show encrypted file on disk                    |
-| 12     | `015`  | **Operational Hardening**                      | Micrometer metrics (7 custom), Prometheus endpoint, model version pinning, job queue backpressure, SLA docs, security pitch doc                                           | Sprint 11 done | All metrics scraped by Prometheus; 503 on full queue; model digest logged                        | Show Grafana-ready metrics; trigger queue full error                   |
+| Sprint | Prefix | Theme                                          | Primary Deliverables                                                                                                                                                                               | Entry Criteria | Exit Criteria                                                                                    | Demo                                                                   |
+|--------|--------|------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| 1      | `004`  | **Foundation & LLM Infrastructure**            | Maven skeleton, LLM provider abstraction (OpenRouter/Ollama), Resilience4j reliability layer, Python OCR sidecar skeleton, React skeleton, Docker Compose                                          | Empty repo     | `GET /api/v1/health` returns provider info; LLM call succeeds via `LlmAdapter`                   | Call LLM via endpoint, see structured response                         |
+| 2      | `005`  | **Document Ingestion & Page Classification**   | File upload API, input validation (encrypted/XFA/corrupt), PDFBox unified loader, 3-class page classifier, async job infrastructure, Redis job state                                               | Sprint 1 done  | Upload a real PDF, get job ID, poll status, see per-page classification                          | Upload RFP, show job status with DIGITAL/SCANNED/MIXED per page        |
+| 3      | `006`  | **Section Segmentation & Clause IDs**          | 6-strategy `SectionSegmenter` (Bookmark, HeadingStyle, Numbered, Bangla, FontSize, AllCaps), TOC detector, deterministic `ClauseIdAssigner`, ground truth dataset (15 docs), JSON Schema validator | Sprint 2 done  | Section tree extracted with stable IDs from 5 annotated docs; F1 > 0.80                          | Show section hierarchy tree for a real RFP in React UI                 |
+| 4      | `007`  | **LangGraph4J Agent + Full Entity Extraction** | Full `ExtractionGraph` (10 nodes + conditional FLAG_MANUAL_REVIEW branch), all 45 entity fields extracted, context chunking, structured LLM output, JSON Schema conformance                        | Sprint 3 done  | Full RFP JSON produced, schema-valid, all 45 fields attempted; deadline accuracy > 90%           | Submit RFP, receive populated JSON with confidence scores              |
+| 5      | `008`  | **Table Extraction**                           | Lattice + stream table extractors, merged-cell support, multi-page merge, table-section linker                                                                                                     | Sprint 4 done  | Tables extracted with correct cell-object format; row-match > 75% on annotated docs              | Show table with merged cells rendered in React                         |
+| 6      | `009`  | **OCR & Mixed Pages**                          | Python FastAPI OCR (full easyOCR), Java OCR client, mixed-page merger, scanned table LLM reconstruction, multi-column de-interleaving                                                              | Sprint 5 done  | Scanned pages extracted; OCR confidence propagated; mixed pages handled                          | Process a fully scanned RFP; show extracted text + confidence per page |
+| 7      | `010`  | **Repair Loop**                                | Repair node in LangGraph4J (deterministic strategy table), bounded iterations, LLM section fallback, repair audit trail                                                                            | Sprint 6 done  | Low-confidence items retried; hard stop at 20 iterations; audit log shows retry events           | Inject artificially degraded doc; show repair attempts in UI           |
+| 8      | `011`  | **Rule Pack Engine & ICT Rules**               | `RulePackRunner` (JMESPath + LLM judgment), `RfpTypeClassifier`, `bd-govt-ict-v1.yaml` (64 rules), rule test suite                                                                                 | Sprint 7 done  | All 64 ICT rules run; FATAL rules fire on docs missing mandatory fields                          | Show PASS/FAIL rule results colour-coded by severity                   |
+| 9      | `012`  | **Additional Rule Packs & Hot Reload**         | Works, consultancy, goods rule packs; hot-reload without restart; admin API for rule pack management                                                                                               | Sprint 8 done  | Works/consultancy/goods rules run on respective doc types; hot-reload verified                   | Edit a rule YAML, reload without restart, see new result               |
+| 10     | `013`  | **Bid Clarity Pack Artifacts**                 | Clarification Questions DOCX, Ambiguity Register XLSX, Compliance Checklist XLSX, Risk Log XLSX, HTML audit report, artifact download API                                                          | Sprint 9 done  | All 4 artifacts generated and downloadable; clause references correct                            | Download all 4 artifacts; open DOCX, verify page references            |
+| 11     | `014`  | **Security & RBAC**                            | JWT auth, 3 roles (ANALYST/ADMIN/AUDITOR), per-document ownership, AES-256 encryption at rest, data retention scheduler, prompt injection filter, legacy Bangla rejection                          | Sprint 10 done | ANALYST cannot access another user's doc; encryption verified; rejection error for legacy Bangla | Demo role-based access; show encrypted file on disk                    |
+| 12     | `015`  | **Operational Hardening**                      | Micrometer metrics (7 custom), Prometheus endpoint, model version pinning, job queue backpressure, SLA docs, security pitch doc                                                                    | Sprint 11 done | All metrics scraped by Prometheus; 503 on full queue; model digest logged                        | Show Grafana-ready metrics; trigger queue full error                   |
 
 ---
 
@@ -137,6 +142,21 @@ All external calls:
   - Idempotency:     job ID passed as correlation header on all calls
   - Logging:         every call logs provider, model, tokens (in/out), latency, success/failure
 ```
+
+---
+
+## Deployment Tiers
+
+The system ships identical code for both modes; provider switches via `app.llm.provider` in `application.properties`.
+
+| Mode                | LLM Provider                            | GPU Requirement                                                                                                                    | Data Boundary                                              | Use Case                  |
+|---------------------|-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|---------------------------|
+| **Cloud-connected** | OpenRouter (Gemini 2.0 Flash + 2.5 Pro) | None                                                                                                                               | Data processed under OpenRouter DPA; does not reach Google | Pilot / evaluation        |
+| **Air-gapped**      | Ollama on-premise                       | Min: 1× GPU 24 GB VRAM (Llama 3.1 8B, adequate for extraction). Recommended: 2× A100 80 GB (Llama 3.1 70B, high-accuracy judgment) | Data never leaves client premises                          | GOB production deployment |
+
+The default Ollama model (`llama3.1:8b`) handles structured extraction reliably. The judgment model (`llama3.1:70b`) is
+used only for the 9 ICT semantic rules and 8 semantic rules across other packs — approximately 11% of all rule
+evaluations.
 
 ---
 
