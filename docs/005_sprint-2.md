@@ -117,10 +117,10 @@ public class ValidationResult {
 
     public static ValidationResult fail(String errorCode, String errorMessage) {
         return ValidationResult.builder()
-            .valid(false)
-            .errorCode(errorCode)
-            .errorMessage(errorMessage)
-            .build();
+                               .valid(false)
+                               .errorCode(errorCode)
+                               .errorMessage(errorMessage)
+                               .build();
     }
 }
 ```
@@ -131,7 +131,9 @@ File: `rfp-core/src/main/java/com/dsi/rfp/domain/exception/DocumentEncryptedExce
 package com.dsi.rfp.domain.exception;
 
 public class DocumentEncryptedException extends RuntimeException {
-    public DocumentEncryptedException(String message) { super(message); }
+    public DocumentEncryptedException(String message) {
+        super(message);
+    }
 }
 ```
 
@@ -141,7 +143,9 @@ File: `rfp-core/src/main/java/com/dsi/rfp/domain/exception/DocumentCorruptExcept
 package com.dsi.rfp.domain.exception;
 
 public class DocumentCorruptException extends RuntimeException {
-    public DocumentCorruptException(String message, Throwable cause) { super(message, cause); }
+    public DocumentCorruptException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
 ```
 
@@ -151,7 +155,9 @@ File: `rfp-core/src/main/java/com/dsi/rfp/domain/exception/DocumentXfaException.
 package com.dsi.rfp.domain.exception;
 
 public class DocumentXfaException extends RuntimeException {
-    public DocumentXfaException(String message) { super(message); }
+    public DocumentXfaException(String message) {
+        super(message);
+    }
 }
 ```
 
@@ -163,13 +169,20 @@ package com.dsi.rfp.domain.exception;
 public class FileSizeLimitExceededException extends RuntimeException {
     private final long actualBytes;
     private final long limitBytes;
+
     public FileSizeLimitExceededException(long actualBytes, long limitBytes) {
         super(String.format("File size %d bytes exceeds limit %d bytes", actualBytes, limitBytes));
         this.actualBytes = actualBytes;
         this.limitBytes = limitBytes;
     }
-    public long getActualBytes() { return actualBytes; }
-    public long getLimitBytes() { return limitBytes; }
+
+    public long getActualBytes() {
+        return actualBytes;
+    }
+
+    public long getLimitBytes() {
+        return limitBytes;
+    }
 }
 ```
 
@@ -434,15 +447,20 @@ public class TextBlock {
 File: `rfp-core/src/main/java/com/dsi/rfp/domain/model/EmbeddedImageInfo.java`:
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class EmbeddedImageInfo {
     private int pageNumber;
     private float x;
     private float y;
     private float width;
     private float height;
+
     // area() is computed: width * height
-    public float area() { return width * height; }
+    public float area() {
+        return width * height;
+    }
 }
 ```
 
@@ -604,10 +622,10 @@ public List<EmbeddedImageInfo> loadPageImages(Path pdfPath, int pageIndex) throw
             PDXObject xobj = page.getResources().getXObject(name);
             if (xobj instanceof PDImageXObject img) {
                 images.add(EmbeddedImageInfo.builder()
-                    .pageNumber(pageIndex)
-                    .x(0).y(0)
-                    .width(img.getWidth()).height(img.getHeight())
-                    .build());
+                                            .pageNumber(pageIndex)
+                                            .x(0).y(0)
+                                            .width(img.getWidth()).height(img.getHeight())
+                                            .build());
             }
         }
     }
@@ -660,16 +678,16 @@ class PdfDocumentLoaderTest {
     }
 
     @Test
-    void shouldReturnNonBlankTextWhenDigitalPdfLoaded() throws IOException { ... }
+    void shouldReturnNonBlankTextWhenDigitalPdfLoaded() throws IOException { ...}
 
     @Test
-    void shouldReturnPageCountMatchingFixture() throws IOException { ... }
+    void shouldReturnPageCountMatchingFixture() throws IOException { ...}
 
     @Test
-    void shouldReturnEmptyTextBlocksForEmptyPage() throws IOException { ... }
+    void shouldReturnEmptyTextBlocksForEmptyPage() throws IOException { ...}
 
     @Test
-    void shouldReturnPositiveWidthAndHeightForEmbeddedImages() throws IOException { ... }
+    void shouldReturnPositiveWidthAndHeightForEmbeddedImages() throws IOException { ...}
 
     @Test
     void shouldThrowIOExceptionWhenFileDoesNotExist() {
@@ -760,6 +778,7 @@ import com.dsi.rfp.domain.model.PageClassification;
 import com.dsi.rfp.domain.model.PageClassificationResult;
 import com.dsi.rfp.domain.model.TextBlock;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 
 @Component
@@ -782,43 +801,43 @@ public class PageClassifier {
      * @return PageClassificationResult with classification and raw metrics
      */
     public PageClassificationResult classify(
-            int pageNumber,
-            List<TextBlock> textBlocks,
-            List<EmbeddedImageInfo> images,
-            float pageWidth,
-            float pageHeight) {
+        int pageNumber,
+        List<TextBlock> textBlocks,
+        List<EmbeddedImageInfo> images,
+        float pageWidth,
+        float pageHeight) {
 
         double pageArea = pageWidth * pageHeight;
         int totalChars = computeTotalCharCount(textBlocks);
         double charDensity = pageArea > 0 ? totalChars / pageArea : 0.0;
 
         double totalImageArea = images.stream()
-            .mapToDouble(EmbeddedImageInfo::area)
-            .sum();
+                                      .mapToDouble(EmbeddedImageInfo::area)
+                                      .sum();
         double rasterCoverage = pageArea > 0 ? totalImageArea / pageArea : 0.0;
 
         PageClassification classification = applyThresholds(charDensity, rasterCoverage);
 
         return PageClassificationResult.builder()
-            .pageNumber(pageNumber)
-            .classification(classification)
-            .charDensity(charDensity)
-            .rasterCoverage(rasterCoverage)
-            .charCount(totalChars)
-            .pageWidth(pageWidth)
-            .pageHeight(pageHeight)
-            .pageAreaPixels(pageArea)
-            .totalImageArea(totalImageArea)
-            .build();
+                                       .pageNumber(pageNumber)
+                                       .classification(classification)
+                                       .charDensity(charDensity)
+                                       .rasterCoverage(rasterCoverage)
+                                       .charCount(totalChars)
+                                       .pageWidth(pageWidth)
+                                       .pageHeight(pageHeight)
+                                       .pageAreaPixels(pageArea)
+                                       .totalImageArea(totalImageArea)
+                                       .build();
     }
 
     private PageClassification applyThresholds(double charDensity, double rasterCoverage) {
         if (charDensity > DIGITAL_CHAR_DENSITY_THRESHOLD
-                && rasterCoverage < DIGITAL_MAX_RASTER_COVERAGE) {
+            && rasterCoverage < DIGITAL_MAX_RASTER_COVERAGE) {
             return PageClassification.DIGITAL;
         }
         if (charDensity < SCANNED_CHAR_DENSITY_THRESHOLD
-                || rasterCoverage > SCANNED_RASTER_COVERAGE_THRESHOLD) {
+            || rasterCoverage > SCANNED_RASTER_COVERAGE_THRESHOLD) {
             return PageClassification.SCANNED;
         }
         return PageClassification.MIXED;
@@ -826,8 +845,8 @@ public class PageClassifier {
 
     private int computeTotalCharCount(List<TextBlock> textBlocks) {
         return textBlocks.stream()
-            .mapToInt(tb -> tb.getText() != null ? tb.getText().length() : 0)
-            .sum();
+                         .mapToInt(tb -> tb.getText() != null ? tb.getText().length() : 0)
+                         .sum();
     }
 }
 ```
@@ -840,7 +859,9 @@ class PageClassifierTest {
     private PageClassifier classifier;
 
     @BeforeEach
-    void setUp() { classifier = new PageClassifier(); }
+    void setUp() {
+        classifier = new PageClassifier();
+    }
 
     @Test
     void shouldReturnDigitalWhenHighCharDensityAndLowRasterCoverage() {
@@ -930,6 +951,7 @@ import com.dsi.rfp.domain.port.JobStatePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -954,7 +976,7 @@ public class PageClassificationService {
      * @throws IOException if PDF cannot be read
      */
     public List<PageClassificationResult> classifyAllPages(Path pdfPath, UUID jobId)
-            throws IOException {
+        throws IOException {
 
         int pageCount = pdfDocumentLoader.getPageCount(pdfPath);
         List<PageClassificationResult> results = new ArrayList<>(pageCount);
@@ -973,7 +995,7 @@ public class PageClassificationService {
     }
 
     private PageClassificationResult classifySinglePage(Path pdfPath, int pageIndex)
-            throws IOException {
+        throws IOException {
         var textBlocks = pdfDocumentLoader.loadPageBoundingBoxes(pdfPath, pageIndex);
         var images = pdfDocumentLoader.loadPageImages(pdfPath, pageIndex);
         // Get page dimensions from PDFBox (requires a helper method in PdfDocumentLoader)
@@ -1002,7 +1024,7 @@ public float[] getPageDimensions(Path pdfPath, int pageIndex) throws IOException
     try (PDDocument doc = Loader.loadPDF(pdfPath.toFile())) {
         PDPage page = doc.getPage(pageIndex);
         PDRectangle box = page.getMediaBox();
-        return new float[]{ box.getWidth(), box.getHeight() };
+        return new float[]{box.getWidth(), box.getHeight()};
     }
 }
 ```
@@ -1012,12 +1034,17 @@ Class: `PageClassificationServiceTest`
 Mocks: `PdfDocumentLoader` (mock), `PageClassifier` (mock), `JobStatePort` (mock).
 
 ```java
+
 @ExtendWith(MockitoExtension.class)
 class PageClassificationServiceTest {
-    @Mock PdfDocumentLoader pdfDocumentLoader;
-    @Mock PageClassifier pageClassifier;
-    @Mock JobStatePort jobStatePort;
-    @InjectMocks PageClassificationService service;
+    @Mock
+    PdfDocumentLoader pdfDocumentLoader;
+    @Mock
+    PageClassifier pageClassifier;
+    @Mock
+    JobStatePort jobStatePort;
+    @InjectMocks
+    PageClassificationService service;
 
     @Test
     void shouldReturnOneResultPerPage() throws IOException {
@@ -1029,8 +1056,8 @@ class PageClassificationServiceTest {
         when(pdfDocumentLoader.getPageDimensions(any(), anyInt())).thenReturn(new float[]{595, 842});
         when(pageClassifier.classify(anyInt(), any(), any(), anyFloat(), anyFloat()))
             .thenReturn(PageClassificationResult.builder()
-                .pageNumber(0).classification(PageClassification.DIGITAL)
-                .charDensity(0.01).rasterCoverage(0.1).build());
+                                                .pageNumber(0).classification(PageClassification.DIGITAL)
+                                                .charDensity(0.01).rasterCoverage(0.1).build());
 
         List<PageClassificationResult> results = service.classifyAllPages(fakePath, jobId);
 
@@ -1090,6 +1117,7 @@ package com.dsi.rfp.domain.model;
 
 import lombok.Builder;
 import lombok.Data;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -1149,15 +1177,20 @@ package com.dsi.rfp.domain.port;
 
 import com.dsi.rfp.domain.model.ExtractionJob;
 import com.dsi.rfp.domain.model.JobStatus;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface JobStatePort {
     void save(ExtractionJob job);
+
     Optional<ExtractionJob> findById(UUID jobId);
+
     void updateStatus(UUID jobId, JobStatus status);
+
     void updateProgress(UUID jobId, int progress);
+
     List<ExtractionJob> findAll();
 }
 ```
@@ -1175,6 +1208,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
+
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1242,17 +1276,17 @@ public class RedisJobStateRepository implements JobStatePort {
         List<String> values = redisTemplate.opsForValue().multiGet(new ArrayList<>(keys));
         if (values == null) return List.of();
         return values.stream()
-            .filter(Objects::nonNull)
-            .map(json -> {
-                try {
-                    return objectMapper.readValue(json, ExtractionJob.class);
-                } catch (Exception e) {
-                    log.warn("Could not deserialize job JSON from Redis: {}", e.getMessage());
-                    return null;
-                }
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+                     .filter(Objects::nonNull)
+                     .map(json -> {
+                         try {
+                             return objectMapper.readValue(json, ExtractionJob.class);
+                         } catch (Exception e) {
+                             log.warn("Could not deserialize job JSON from Redis: {}", e.getMessage());
+                             return null;
+                         }
+                     })
+                     .filter(Objects::nonNull)
+                     .collect(Collectors.toList());
     }
 
     private String buildKey(UUID jobId) {
@@ -1290,10 +1324,13 @@ Class: `RedisJobStateRepositoryTest`
 Mocks: `StringRedisTemplate` (mock), `ObjectMapper` (real instance).
 
 ```java
+
 @ExtendWith(MockitoExtension.class)
 class RedisJobStateRepositoryTest {
-    @Mock StringRedisTemplate redisTemplate;
-    @Mock org.springframework.data.redis.core.ValueOperations<String, String> valueOps;
+    @Mock
+    StringRedisTemplate redisTemplate;
+    @Mock
+    org.springframework.data.redis.core.ValueOperations<String, String> valueOps;
 
     private RedisJobStateRepository repository;
     private ObjectMapper objectMapper;
@@ -1399,6 +1436,7 @@ import com.dsi.rfp.domain.port.FileStoragePort;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.UUID;
@@ -1441,7 +1479,7 @@ public class LocalFileStorageAdapter implements FileStoragePort {
     private String sanitizeFilename(String filename) {
         // Strip path traversal characters
         return Path.of(filename).getFileName().toString()
-            .replaceAll("[^a-zA-Z0-9._\\-]", "_");
+                   .replaceAll("[^a-zA-Z0-9._\\-]", "_");
     }
 }
 ```
@@ -1451,7 +1489,8 @@ Class: `LocalFileStorageAdapterTest` — use `@TempDir` JUnit 5 annotation for r
 
 ```java
 class LocalFileStorageAdapterTest {
-    @TempDir Path tempDir;
+    @TempDir
+    Path tempDir;
     private LocalFileStorageAdapter adapter;
 
     @BeforeEach
@@ -1547,6 +1586,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -1560,7 +1600,7 @@ public class RfpController {
 
     @PostMapping(value = "/submit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SubmitResponse> submit(
-            @RequestPart("file") MultipartFile file) {
+        @RequestPart("file") MultipartFile file) {
         SubmitResponse response = submissionService.submit(file);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
@@ -1568,8 +1608,8 @@ public class RfpController {
     @GetMapping("/status/{jobId}")
     public ResponseEntity<JobStatusResponse> getStatus(@PathVariable UUID jobId) {
         return jobService.findById(jobId)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+                         .map(ResponseEntity::ok)
+                         .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/jobs")
@@ -1629,6 +1669,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.UUID;
@@ -1662,9 +1703,9 @@ public class RfpSubmissionService {
         log.info("Job submitted: jobId={} file={} size={}KB",
             jobId, file.getOriginalFilename(), fileBytes.length / 1024);
         return SubmitResponse.builder()
-            .jobId(jobId.toString())
-            .status("QUEUED")
-            .build();
+                             .jobId(jobId.toString())
+                             .status("QUEUED")
+                             .build();
     }
 
     private byte[] readFileBytes(MultipartFile file) {
@@ -1705,12 +1746,12 @@ public class RfpSubmissionService {
 
     private ExtractionJob createJob(UUID jobId, String filename, long sizeBytes) {
         return ExtractionJob.builder()
-            .jobId(jobId)
-            .status(JobStatus.QUEUED)
-            .submittedAt(Instant.now())
-            .originalFilename(filename)
-            .progress(0)
-            .build();
+                            .jobId(jobId)
+                            .status(JobStatus.QUEUED)
+                            .submittedAt(Instant.now())
+                            .originalFilename(filename)
+                            .progress(0)
+                            .build();
     }
 }
 ```
@@ -1725,6 +1766,7 @@ import com.dsi.rfp.domain.model.ExtractionJob;
 import com.dsi.rfp.domain.port.JobStatePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -1742,21 +1784,21 @@ public class RfpJobService {
 
     public List<JobStatusResponse> findAll() {
         return jobStatePort.findAll().stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
+                           .map(this::toResponse)
+                           .collect(Collectors.toList());
     }
 
     private JobStatusResponse toResponse(ExtractionJob job) {
         return JobStatusResponse.builder()
-            .jobId(job.getJobId().toString())
-            .status(job.getStatus().name())
-            .progress(job.getProgress())
-            .submittedAt(job.getSubmittedAt() != null ? job.getSubmittedAt().toString() : null)
-            .completedAt(job.getCompletedAt() != null ? job.getCompletedAt().toString() : null)
-            .errorMessage(job.getErrorMessage())
-            .originalFilename(job.getOriginalFilename())
-            .pageCount(job.getPageCount())
-            .build();
+                                .jobId(job.getJobId().toString())
+                                .status(job.getStatus().name())
+                                .progress(job.getProgress())
+                                .submittedAt(job.getSubmittedAt() != null ? job.getSubmittedAt().toString() : null)
+                                .completedAt(job.getCompletedAt() != null ? job.getCompletedAt().toString() : null)
+                                .errorMessage(job.getErrorMessage())
+                                .originalFilename(job.getOriginalFilename())
+                                .pageCount(job.getPageCount())
+                                .build();
     }
 }
 ```
@@ -1772,6 +1814,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
 import java.nio.file.Path;
 import java.util.UUID;
 
@@ -1827,6 +1870,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+
 import java.util.Map;
 
 @Slf4j
@@ -1837,10 +1881,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleResponseStatus(ResponseStatusException ex) {
         log.warn("Request failed: status={} reason={}", ex.getStatusCode(), ex.getReason());
         return ResponseEntity.status(ex.getStatusCode())
-            .body(Map.of(
-                "error", ex.getStatusCode().toString(),
-                "message", ex.getReason() != null ? ex.getReason() : "Unknown error"
-            ));
+                             .body(Map.of(
+                                 "error", ex.getStatusCode().toString(),
+                                 "message", ex.getReason() != null ? ex.getReason() : "Unknown error"
+                             ));
     }
 }
 ```
@@ -1856,23 +1900,33 @@ spring.servlet.multipart.max-request-size=110MB
 Class: `RfpSubmissionServiceTest`
 
 ```java
+
 @ExtendWith(MockitoExtension.class)
 class RfpSubmissionServiceTest {
-    @Mock DocumentValidationService validationService;
-    @Mock MimeTypeDetector mimeTypeDetector;
-    @Mock FileStoragePort fileStorage;
-    @Mock JobStatePort jobStatePort;
-    @Mock ExtractionPipelineService pipelineService;
-    @InjectMocks RfpSubmissionService service;
+    @Mock
+    DocumentValidationService validationService;
+    @Mock
+    MimeTypeDetector mimeTypeDetector;
+    @Mock
+    FileStoragePort fileStorage;
+    @Mock
+    JobStatePort jobStatePort;
+    @Mock
+    ExtractionPipelineService pipelineService;
+    @InjectMocks
+    RfpSubmissionService service;
 
     @Test
-    void shouldReturnJobIdWhenValidPdfSubmitted() throws Exception { ... }
+    void shouldReturnJobIdWhenValidPdfSubmitted() throws Exception { ...}
+
     @Test
-    void shouldThrowWhenValidationFails() throws Exception { ... }
+    void shouldThrowWhenValidationFails() throws Exception { ...}
+
     @Test
-    void shouldSaveJobWithQueuedStatusBeforeDispatch() throws Exception { ... }
+    void shouldSaveJobWithQueuedStatusBeforeDispatch() throws Exception { ...}
+
     @Test
-    void shouldDispatchPipelineAfterSuccessfulSave() throws Exception { ... }
+    void shouldDispatchPipelineAfterSuccessfulSave() throws Exception { ...}
 }
 ```
 
@@ -1940,10 +1994,10 @@ And errorMessage is displayed below the progress bar
 File: `rfp-frontend/src/pages/JobStatusPage.tsx`:
 
 ```tsx
-import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { getJobStatus } from '../api/rfpClient';
-import { JobStatusResponse } from '../types/rfp';
+import {useParams, Link} from 'react-router-dom';
+import {useQuery} from '@tanstack/react-query';
+import {getJobStatus} from '../api/rfpClient';
+import {JobStatusResponse} from '../types/rfp';
 
 const STATUS_COLORS: Record<string, string> = {
     QUEUED: 'bg-gray-100 text-gray-700',
@@ -1954,9 +2008,9 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function JobStatusPage() {
-    const { jobId } = useParams<{ jobId: string }>();
+    const {jobId} = useParams<{ jobId: string }>();
 
-    const { data, error } = useQuery<JobStatusResponse>({
+    const {data, error} = useQuery<JobStatusResponse>({
         queryKey: ['jobStatus', jobId],
         queryFn: () => getJobStatus(jobId!),
         refetchInterval: (data) =>
@@ -1986,7 +2040,7 @@ export function JobStatusPage() {
                 <div className="w-full bg-gray-200 rounded-full h-3">
                     <div
                         className="bg-blue-500 h-3 rounded-full transition-all duration-500"
-                        style={{ width: `${data.progress}%` }}
+                        style={{width: `${data.progress}%`}}
                     />
                 </div>
             </div>
@@ -2021,12 +2075,13 @@ export function JobStatusPage() {
 Update `rfp-frontend/src/main.tsx` to wrap App with `QueryClientProvider`:
 
 ```tsx
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
-        <App />
+        <App/>
     </QueryClientProvider>
 );
 ```
@@ -2139,9 +2194,9 @@ Expected output:
 
 ```json
 {
-  "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "status": "QUEUED",
-  "message": null
+    "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "status": "QUEUED",
+    "message": null
 }
 ```
 
@@ -2156,14 +2211,14 @@ Expected (while running):
 
 ```json
 {
-  "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "status": "RUNNING",
-  "progress": 45,
-  "submittedAt": "2025-06-01T10:00:00Z",
-  "completedAt": null,
-  "errorMessage": null,
-  "originalFilename": "sample-rfp.pdf",
-  "pageCount": 0
+    "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "status": "RUNNING",
+    "progress": 45,
+    "submittedAt": "2025-06-01T10:00:00Z",
+    "completedAt": null,
+    "errorMessage": null,
+    "originalFilename": "sample-rfp.pdf",
+    "pageCount": 0
 }
 ```
 
@@ -2171,14 +2226,14 @@ Expected (after completion):
 
 ```json
 {
-  "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "status": "COMPLETED",
-  "progress": 100,
-  "submittedAt": "2025-06-01T10:00:00Z",
-  "completedAt": "2025-06-01T10:00:12Z",
-  "errorMessage": null,
-  "originalFilename": "sample-rfp.pdf",
-  "pageCount": 23
+    "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "status": "COMPLETED",
+    "progress": 100,
+    "submittedAt": "2025-06-01T10:00:00Z",
+    "completedAt": "2025-06-01T10:00:12Z",
+    "errorMessage": null,
+    "originalFilename": "sample-rfp.pdf",
+    "pageCount": 23
 }
 ```
 
@@ -2193,8 +2248,8 @@ Expected:
 
 ```json
 {
-  "error": "422 UNPROCESSABLE_ENTITY",
-  "message": "PDF is password-protected and cannot be processed"
+    "error": "422 UNPROCESSABLE_ENTITY",
+    "message": "PDF is password-protected and cannot be processed"
 }
 ```
 

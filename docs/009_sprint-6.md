@@ -518,13 +518,16 @@ Scenario: Resilience4j retries on failure
 
 ```java
 // rfp-service/.../adapter/ocr/OcrPageRequest.java
-public record OcrPageRequest(String imageBase64, String lang, int dpi) {}
+public record OcrPageRequest(String imageBase64, String lang, int dpi) {
+}
 
 // rfp-service/.../adapter/ocr/BoundingBoxDto.java
-public record BoundingBoxDto(double x, double y, double width, double height) {}
+public record BoundingBoxDto(double x, double y, double width, double height) {
+}
 
 // rfp-service/.../adapter/ocr/OcrWordDto.java
-public record OcrWordDto(String text, double confidence, BoundingBoxDto bbox) {}
+public record OcrWordDto(String text, double confidence, BoundingBoxDto bbox) {
+}
 
 // rfp-service/.../adapter/ocr/OcrResultDto.java
 public record OcrResultDto(
@@ -533,22 +536,30 @@ public record OcrResultDto(
     double pageConfidence,
     int wordCount,
     String extractionMethod
-) {}
+) {
+}
 
 // rfp-service/.../adapter/ocr/LayoutDetectionDto.java
 public record LayoutDetectionDto(
     boolean hasTable,
     List<BoundingBoxDto> tableRegions,
     List<BoundingBoxDto> textRegions
-) {}
+) {
+}
 
 // rfp-service/.../adapter/ocr/OcrPageWithLayoutResultDto.java
-public record OcrPageWithLayoutResultDto(OcrResultDto ocrResult, LayoutDetectionDto layout) {}
+public record OcrPageWithLayoutResultDto(OcrResultDto ocrResult, LayoutDetectionDto layout) {
+}
 
 // rfp-service/.../adapter/ocr/OcrUnavailableException.java
 public class OcrUnavailableException extends RuntimeException {
-    public OcrUnavailableException(String message) { super(message); }
-    public OcrUnavailableException(String message, Throwable cause) { super(message, cause); }
+    public OcrUnavailableException(String message) {
+        super(message);
+    }
+
+    public OcrUnavailableException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
 
 // rfp-service/.../adapter/ocr/OcrSidecarClient.java
@@ -559,17 +570,17 @@ public class OcrSidecarClient {
 
     // Base URL injected from @Value("${app.ocr.sidecar.url:http://rfp-python-ocr:8000}")
     public OcrSidecarClient(RestClient.Builder builder,
-                             @Value("${app.ocr.sidecar.url:http://rfp-python-ocr:8000}") String baseUrl) {
+                            @Value("${app.ocr.sidecar.url:http://rfp-python-ocr:8000}") String baseUrl) {
         this.restClient = builder
             .baseUrl(baseUrl)
             .build();
     }
 
     @Retry(name = "ocrRetry")
-    public Optional<OcrResultDto> extractPage(byte[] imageBytes, String lang) { ... }
+    public Optional<OcrResultDto> extractPage(byte[] imageBytes, String lang) { ...}
 
     @Retry(name = "ocrRetry")
-    public Optional<OcrPageWithLayoutResultDto> extractPageWithLayout(byte[] imageBytes) { ... }
+    public Optional<OcrPageWithLayoutResultDto> extractPageWithLayout(byte[] imageBytes) { ...}
 }
 ```
 
@@ -648,11 +659,11 @@ public class OcrResilienceConfig {
     @Bean
     public RetryConfig ocrRetryConfig() {
         return RetryConfig.custom()
-            .maxAttempts(2)
-            .waitDuration(Duration.ofSeconds(2))
-            .retryExceptions(OcrUnavailableException.class, ResourceAccessException.class)
-            .ignoreExceptions(IllegalArgumentException.class)
-            .build();
+                          .maxAttempts(2)
+                          .waitDuration(Duration.ofSeconds(2))
+                          .retryExceptions(OcrUnavailableException.class, ResourceAccessException.class)
+                          .ignoreExceptions(IllegalArgumentException.class)
+                          .build();
     }
 
     @Bean
@@ -716,11 +727,12 @@ Scenario: OCR sidecar unavailable
 ```java
 // rfp-service/.../adapter/ocr/ScannedPageExtractionResult.java
 public record ScannedPageExtractionResult(
-    int pageNum,
-    String text,
-    double confidence,
-    int wordCount
-) {}
+        int pageNum,
+        String text,
+        double confidence,
+        int wordCount
+    ) {
+}
 
 // rfp-service/.../adapter/ocr/ScannedPageExtractor.java
 @Component
@@ -728,13 +740,13 @@ public class ScannedPageExtractor {
 
     private final OcrSidecarClient ocrClient;
 
-    public ScannedPageExtractor(OcrSidecarClient ocrClient) { ... }
+    public ScannedPageExtractor(OcrSidecarClient ocrClient) { ...}
 
     /**
      * Renders the page and extracts text via OCR sidecar.
      * Never throws; returns degraded result on failure.
      */
-    public ScannedPageExtractionResult extractPage(PDDocument doc, int pageNum) { ... }
+    public ScannedPageExtractionResult extractPage(PDDocument doc, int pageNum) { ...}
 }
 ```
 
@@ -806,7 +818,8 @@ Scenario: Reading order — two columns
 
 ```java
 // rfp-service/.../adapter/extraction/ColumnLayout.java
-public record ColumnLayout(int columnCount, Optional<Integer> columnBoundaryX) {}
+public record ColumnLayout(int columnCount, Optional<Integer> columnBoundaryX) {
+}
 
 // rfp-service/.../adapter/extraction/ColumnDetector.java
 @Component
@@ -814,11 +827,11 @@ public class ColumnDetector {
 
     private static final double COLUMN_GAP_RATIO = 0.12;
 
-    public ColumnLayout detectColumns(List<TextBlock> blocks, int pageWidth) { ... }
+    public ColumnLayout detectColumns(List<TextBlock> blocks, int pageWidth) { ...}
 
-    public List<TextBlock> sortBlocksForReading(List<TextBlock> blocks, ColumnLayout layout) { ... }
+    public List<TextBlock> sortBlocksForReading(List<TextBlock> blocks, ColumnLayout layout) { ...}
 
-    private List<Integer> findGaps(List<Float> sortedXPositions, int pageWidth) { ... }
+    private List<Integer> findGaps(List<Float> sortedXPositions, int pageWidth) { ...}
 }
 ```
 
@@ -877,7 +890,8 @@ Scenario: OCR sidecar unavailable for mixed page
 
 ```java
 // rfp-service/.../adapter/extraction/MixedPageContent.java
-public record MixedPageContent(String text, double confidence, String method) {}
+public record MixedPageContent(String text, double confidence, String method) {
+}
 
 // rfp-service/.../adapter/extraction/MixedPageExtractor.java
 @Component
@@ -887,16 +901,17 @@ public class MixedPageExtractor {
     private final OcrSidecarClient ocrClient;
     private final PDFRenderer pdfRenderer;  // injected or created per-call
 
-    public MixedPageExtractor(PdfDocumentLoader loader, OcrSidecarClient ocrClient) { ... }
+    public MixedPageExtractor(PdfDocumentLoader loader, OcrSidecarClient ocrClient) { ...}
 
-    public MixedPageContent extractPage(PDDocument doc, int pageNum) { ... }
+    public MixedPageContent extractPage(PDDocument doc, int pageNum) { ...}
 
     private boolean hasTextLayerCoverage(BoundingBoxDto region, List<TextBlock> textBlocks,
-                                          float pageWidth, float pageHeight) { ... }
+                                         float pageWidth, float pageHeight) { ...}
+
     private String mergeRegions(List<TextBlock> textBlocks,
-                                 OcrResultDto ocrResult,
-                                 LayoutDetectionDto layout,
-                                 float pageWidth, float pageHeight) { ... }
+                                OcrResultDto ocrResult,
+                                LayoutDetectionDto layout,
+                                float pageWidth, float pageHeight) { ...}
 }
 ```
 
@@ -959,16 +974,18 @@ temperature: 0.0
 
 ## System
 
-You are a document parsing assistant specializing in Government of Bangladesh procurement documents. Your task is to reconstruct a structured table from OCR-extracted text that originated from a scanned PDF page.
+You are a document parsing assistant specializing in Government of Bangladesh procurement documents. Your task is to
+reconstruct a structured table from OCR-extracted text that originated from a scanned PDF page.
 
-The OCR text may have minor recognition errors. Apply domain knowledge to correct obvious errors (e.g., "0" vs "O", missing spaces).
+The OCR text may have minor recognition errors. Apply domain knowledge to correct obvious errors (e.g., "0" vs "O",
+missing spaces).
 
 ## Instructions
 
 1. Analyze the OCR text below and determine if it contains tabular data.
 2. If yes, identify:
-   - The column headers (first row of the table, or inferred from context)
-   - All data rows
+    - The column headers (first row of the table, or inferred from context)
+    - All data rows
 3. Return a JSON object exactly as specified below. Do not include any text outside the JSON block.
 4. If the text does not appear to be a table, return `{"headers": [], "rows": []}`.
 5. Do not invent data. Only extract what is present in the OCR text.
@@ -1040,7 +1057,7 @@ public class ScannedTableReconstructor {
     private final LlmAdapter llmAdapter;
     private final ObjectMapper objectMapper;
 
-    public ScannedTableReconstructor(LlmAdapter llmAdapter, ObjectMapper objectMapper) { ... }
+    public ScannedTableReconstructor(LlmAdapter llmAdapter, ObjectMapper objectMapper) { ...}
 
     /**
      * @param ocrText raw OCR text from a page
@@ -1049,13 +1066,16 @@ public class ScannedTableReconstructor {
      * @return Optional.empty() if text is not tabular or LLM fails
      */
     public Optional<TableExtractionResult> reconstructTable(
-            String ocrText, int pageNum, double ocrPageConfidence) { ... }
+        String ocrText, int pageNum, double ocrPageConfidence) { ...}
 
-    private boolean looksLikeTable(String text) { ... }
-    private String buildPrompt(String ocrText) { ... }
+    private boolean looksLikeTable(String text) { ...}
+
+    private String buildPrompt(String ocrText) { ...}
+
     private TableExtractionResult parseResponse(String llmJson, int pageNum,
-                                                  double ocrPageConfidence) { ... }
-    private List<TableCell> buildGrid(List<String> headers, List<List<String>> rows) { ... }
+                                                double ocrPageConfidence) { ...}
+
+    private List<TableCell> buildGrid(List<String> headers, List<List<String>> rows) { ...}
 }
 ```
 
@@ -1155,10 +1175,10 @@ public class ExtractTextNode implements NodeAction<ExtractionState> {
     private final ColumnDetector columnDetector;
 
     @Override
-    public ExtractionState execute(ExtractionState state) { ... }
+    public ExtractionState execute(ExtractionState state) { ...}
 
     private String extractTextForPage(PDDocument doc, int pageNum,
-                                       PageClass pageClass) { ... }
+                                      PageClass pageClass) { ...}
 }
 ```
 

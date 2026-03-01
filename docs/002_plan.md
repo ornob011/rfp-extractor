@@ -126,7 +126,7 @@ Use enums for closed vocabularies that appear in APIs, persistence models, or ru
 free-text or open-ended extracted content.
 
 - Enums required for bounded values: `JobStatus`, `PageClassification`, `RuleSeverity`, `RuleStatus`,
-  `ArtifactFileType`, `RiskImpact`, provider identifiers.
+  `ArtifactFileType`, `RiskImpact`, `UserRole`, provider identifiers.
 - Keep as `string`: clause text, descriptions, recommendations, notes, URLs, and other natural-language output.
 - New contracts must not introduce `string` for a value set that is known and finite at design time.
 
@@ -1458,11 +1458,16 @@ propagated.
 
 - [ ] `SecurityConfig.java` — JWT-based authentication (`spring-boot-starter-oauth2-resource-server` or custom JWT
   filter)
-- [ ] Roles: `ROLE_ANALYST` (upload + view own docs), `ROLE_ADMIN` (view all + manage rule packs), `ROLE_AUDITOR` (view
-  only)
+- [ ] `UserRole` enum used end-to-end (`ANALYST`, `ADMIN`, `AUDITOR`) — no role `String` contracts in service/domain
+  APIs
+- [ ] Roles: `ROLE_ANALYST` (upload + view own docs), `ROLE_ADMIN` (view all + manage rule packs), `ROLE_AUDITOR`
+  (view only)
 - [ ] `@PreAuthorize` annotations on all service methods
 - [ ] Document-level ownership: each job record stores `createdByUserId`. ANALYST can only access their own jobs. ADMIN
   and AUDITOR can access all.
+- [ ] Public auth flow endpoints: `POST /api/v1/auth/signup`, `POST /api/v1/auth/login`,
+  `POST /api/v1/auth/refresh`, `POST /api/v1/auth/logout`
+- [ ] Refresh-token lifecycle: short-lived access token + persisted, revocable, rotating refresh token
 
 **User Audit Trail** (fixes SEC-01)
 
@@ -1497,8 +1502,9 @@ propagated.
 
 **Frontend**
 
-- [ ] `LoginPage.tsx` — JWT login form
+- [ ] `SignupPage.tsx` + `LoginPage.tsx` — public signup and JWT login forms
 - [ ] Route guards in React Router — redirect to login if no JWT
+- [ ] Axios response interceptor refreshes access token on 401 once, then retries original request
 - [ ] `AdminPage.tsx` — rule pack management, user list (ADMIN only)
 
 ---

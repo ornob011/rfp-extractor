@@ -107,6 +107,7 @@ File: `rfp-service/src/main/java/com/dsi/rfp/adapter/extraction/HeadingStrategy.
 package com.dsi.rfp.adapter.extraction;
 
 import com.dsi.rfp.domain.model.HeadingCandidate;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -173,6 +174,7 @@ import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocume
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -185,7 +187,7 @@ public class BookmarkHeadingStrategy implements HeadingStrategy {
 
     @Override
     public List<HeadingCandidate> detectHeadings(Path pdfPath, PdfDocumentLoader loader)
-            throws IOException {
+        throws IOException {
         List<HeadingCandidate> results = new ArrayList<>();
         try (PDDocument doc = Loader.loadPDF(pdfPath.toFile())) {
             PDDocumentOutline outline = doc.getDocumentCatalog().getDocumentOutline();
@@ -198,20 +200,22 @@ public class BookmarkHeadingStrategy implements HeadingStrategy {
     }
 
     @Override
-    public String strategyName() { return "BookmarkHeadingStrategy"; }
+    public String strategyName() {
+        return "BookmarkHeadingStrategy";
+    }
 
     private void traverseOutline(PDOutlineItem item, int level,
-                                  List<HeadingCandidate> results) {
+                                 List<HeadingCandidate> results) {
         while (item != null) {
             String title = item.getTitle();
             if (title != null && !title.isBlank()) {
                 results.add(HeadingCandidate.builder()
-                    .text(title.strip())
-                    .level(Math.min(level, 6))
-                    .pageNumber(resolvePageNumber(item))
-                    .startY(0.0f)
-                    .detectedBy(strategyName())
-                    .build());
+                                            .text(title.strip())
+                                            .level(Math.min(level, 6))
+                                            .pageNumber(resolvePageNumber(item))
+                                            .startY(0.0f)
+                                            .detectedBy(strategyName())
+                                            .build());
             }
             if (item.hasChildren()) {
                 traverseOutline(item.getFirstChild(), level + 1, results);
@@ -238,14 +242,19 @@ Class: `BookmarkHeadingStrategyTest`
 Create test PDF fixtures using PDFBox `PDDocumentOutline` in `@BeforeAll`.
 
 ```java
+
 @Test
 void shouldReturnEmptyWhenPdfHasNoOutline()
+
 @Test
 void shouldReturnLevelOneForTopLevelBookmarks()
+
 @Test
 void shouldReturnLevelTwoForNestedBookmarks()
+
 @Test
 void shouldSkipBookmarksWithBlankTitles()
+
 @Test
 void shouldCapLevelAtSix()
 ```
@@ -279,6 +288,7 @@ Then an empty list is returned
 File: `rfp-service/src/main/java/com/dsi/rfp/adapter/extraction/HeadingStyleStrategy.java`:
 
 ```java
+
 @Slf4j
 @Component
 @Order(2)
@@ -289,7 +299,7 @@ public class HeadingStyleStrategy implements HeadingStrategy {
 
     @Override
     public List<HeadingCandidate> detectHeadings(Path pdfPath, PdfDocumentLoader loader)
-            throws IOException {
+        throws IOException {
         Map<String, FontInfo> fontMap = loader.loadFontMetadata(pdfPath);
         List<HeadingCandidate> results = new ArrayList<>();
 
@@ -307,11 +317,13 @@ public class HeadingStyleStrategy implements HeadingStrategy {
     }
 
     @Override
-    public String strategyName() { return "HeadingStyleStrategy"; }
+    public String strategyName() {
+        return "HeadingStyleStrategy";
+    }
 
     private List<HeadingCandidate> findTextWithFont(Path pdfPath, PdfDocumentLoader loader,
-                                                     String targetFont, int level)
-            throws IOException {
+                                                    String targetFont, int level)
+        throws IOException {
         List<HeadingCandidate> results = new ArrayList<>();
         int pageCount = loader.getPageCount(pdfPath);
         for (int i = 0; i < pageCount; i++) {
@@ -338,16 +350,16 @@ public class HeadingStyleStrategy implements HeadingStrategy {
     }
 
     private HeadingCandidate buildCandidate(String text, int level, int page,
-                                             float y, String font, float fontSize) {
+                                            float y, String font, float fontSize) {
         return HeadingCandidate.builder()
-            .text(text.strip())
-            .level(level)
-            .pageNumber(page)
-            .startY(y)
-            .fontName(font)
-            .fontSize(fontSize)
-            .detectedBy(strategyName())
-            .build();
+                               .text(text.strip())
+                               .level(level)
+                               .pageNumber(page)
+                               .startY(y)
+                               .fontName(font)
+                               .fontSize(fontSize)
+                               .detectedBy(strategyName())
+                               .build();
     }
 }
 ```
@@ -388,6 +400,7 @@ Then it must start with \d at beginning of line (^ anchor) to match
 File: `rfp-service/src/main/java/com/dsi/rfp/adapter/extraction/NumberedHeadingStrategy.java`:
 
 ```java
+
 @Slf4j
 @Component
 @Order(3)
@@ -409,7 +422,7 @@ public class NumberedHeadingStrategy implements HeadingStrategy {
 
     @Override
     public List<HeadingCandidate> detectHeadings(Path pdfPath, PdfDocumentLoader loader)
-            throws IOException {
+        throws IOException {
         List<HeadingCandidate> results = new ArrayList<>();
         int pageCount = loader.getPageCount(pdfPath);
         for (int pageIdx = 0; pageIdx < pageCount; pageIdx++) {
@@ -423,7 +436,9 @@ public class NumberedHeadingStrategy implements HeadingStrategy {
     }
 
     @Override
-    public String strategyName() { return "NumberedHeadingStrategy"; }
+    public String strategyName() {
+        return "NumberedHeadingStrategy";
+    }
 
     private void detectInLine(String line, int pageIdx, List<HeadingCandidate> results) {
         if (line.isBlank()) return;
@@ -456,12 +471,12 @@ public class NumberedHeadingStrategy implements HeadingStrategy {
 
     private HeadingCandidate buildCandidate(String text, int level, int pageIdx) {
         return HeadingCandidate.builder()
-            .text(text)
-            .level(level)
-            .pageNumber(pageIdx)
-            .startY(0.0f)
-            .detectedBy(strategyName())
-            .build();
+                               .text(text)
+                               .level(level)
+                               .pageNumber(pageIdx)
+                               .startY(0.0f)
+                               .detectedBy(strategyName())
+                               .build();
     }
 }
 ```
@@ -474,20 +489,28 @@ class NumberedHeadingStrategyTest {
 
     @Test
     void shouldDetectLevelOneForSingleDotPrefix()
+
     @Test
     void shouldDetectLevelTwoForTwoDotPrefix()
+
     @Test
     void shouldDetectLevelThreeForThreeDotPrefix()
+
     @Test
     void shouldDetectSectionKeywordAsLevelOne()
+
     @Test
     void shouldDetectPartKeywordAsLevelOne()
+
     @Test
     void shouldDetectChapterAsLevelOne()
+
     @Test
     void shouldIgnoreBlankLines()
+
     @Test
     void shouldIgnoreMidSentenceNumbers()
+
     @Test
     void shouldDetectBanglaStartingUppercaseAfterNumber()
 }
@@ -524,6 +547,7 @@ Then an empty list is returned
 File: `rfp-service/src/main/java/com/dsi/rfp/adapter/extraction/BanglaHeadingStrategy.java`:
 
 ```java
+
 @Slf4j
 @Component
 @Order(4)
@@ -549,7 +573,7 @@ public class BanglaHeadingStrategy implements HeadingStrategy {
 
     @Override
     public List<HeadingCandidate> detectHeadings(Path pdfPath, PdfDocumentLoader loader)
-            throws IOException {
+        throws IOException {
         List<HeadingCandidate> results = new ArrayList<>();
         int pageCount = loader.getPageCount(pdfPath);
         for (int pageIdx = 0; pageIdx < pageCount; pageIdx++) {
@@ -565,7 +589,9 @@ public class BanglaHeadingStrategy implements HeadingStrategy {
     }
 
     @Override
-    public String strategyName() { return "BanglaHeadingStrategy"; }
+    public String strategyName() {
+        return "BanglaHeadingStrategy";
+    }
 
     private void detectInLine(String line, int pageIdx, List<HeadingCandidate> results) {
         if (line.isBlank()) return;
@@ -580,8 +606,8 @@ public class BanglaHeadingStrategy implements HeadingStrategy {
 
     private HeadingCandidate buildCandidate(String text, int level, int pageIdx) {
         return HeadingCandidate.builder()
-            .text(text).level(level).pageNumber(pageIdx)
-            .startY(0.0f).detectedBy(strategyName()).build();
+                               .text(text).level(level).pageNumber(pageIdx)
+                               .startY(0.0f).detectedBy(strategyName()).build();
     }
 }
 ```
@@ -592,14 +618,19 @@ public class BanglaHeadingStrategy implements HeadingStrategy {
 class BanglaHeadingStrategyTest {
     @Test
     void shouldDetectAdhyayAsLevelOne()
+
     @Test
     void shouldDetectDharaAsLevelTwo()
+
     @Test
     void shouldDetectAnuchchhedAsLevelThree()
+
     @Test
     void shouldNotDetectEnglishTextAsBanglaHeading()
+
     @Test
     void shouldHandleBanglaNumerals()
+
     @Test
     void shouldHandleMixedBanglaAndAsciiNumerals()
 }
@@ -637,6 +668,7 @@ Then an empty list is returned
 File: `rfp-service/src/main/java/com/dsi/rfp/adapter/extraction/FontSizeHeadingStrategy.java`:
 
 ```java
+
 @Slf4j
 @Component
 @Order(5)
@@ -647,7 +679,7 @@ public class FontSizeHeadingStrategy implements HeadingStrategy {
 
     @Override
     public List<HeadingCandidate> detectHeadings(Path pdfPath, PdfDocumentLoader loader)
-            throws IOException {
+        throws IOException {
         int pageCount = loader.getPageCount(pdfPath);
         List<TextBlock> allBlocks = collectAllBlocks(pdfPath, loader, pageCount);
         if (allBlocks.isEmpty()) return List.of();
@@ -656,17 +688,19 @@ public class FontSizeHeadingStrategy implements HeadingStrategy {
         log.debug("FontSizeHeadingStrategy: medianFontSize={}", medianFontSize);
 
         return allBlocks.stream()
-            .filter(block -> isHeadingCandidate(block, medianFontSize))
-            .map(block -> buildCandidate(block, medianFontSize))
-            .filter(c -> !c.getText().isBlank())
-            .collect(java.util.stream.Collectors.toList());
+                        .filter(block -> isHeadingCandidate(block, medianFontSize))
+                        .map(block -> buildCandidate(block, medianFontSize))
+                        .filter(c -> !c.getText().isBlank())
+                        .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
-    public String strategyName() { return "FontSizeHeadingStrategy"; }
+    public String strategyName() {
+        return "FontSizeHeadingStrategy";
+    }
 
     private List<TextBlock> collectAllBlocks(Path pdfPath, PdfDocumentLoader loader,
-                                              int pageCount) throws IOException {
+                                             int pageCount) throws IOException {
         List<TextBlock> all = new ArrayList<>();
         for (int i = 0; i < pageCount; i++) {
             all.addAll(loader.loadPageBoundingBoxes(pdfPath, i));
@@ -676,10 +710,10 @@ public class FontSizeHeadingStrategy implements HeadingStrategy {
 
     private float computeMedianFontSize(List<TextBlock> blocks) {
         List<Float> sizes = blocks.stream()
-            .map(TextBlock::getFontSize)
-            .filter(s -> s > 0)
-            .sorted()
-            .collect(java.util.stream.Collectors.toList());
+                                  .map(TextBlock::getFontSize)
+                                  .filter(s -> s > 0)
+                                  .sorted()
+                                  .collect(java.util.stream.Collectors.toList());
         if (sizes.isEmpty()) return 10.0f;
         return sizes.get(sizes.size() / 2);
     }
@@ -695,14 +729,14 @@ public class FontSizeHeadingStrategy implements HeadingStrategy {
         float delta = block.getFontSize() - medianSize;
         int level = fontDeltaToLevel(delta);
         return HeadingCandidate.builder()
-            .text(block.getText().strip())
-            .level(level)
-            .pageNumber((int) block.getY())  // approximation: y used as page proxy
-            .startY(block.getY())
-            .fontName(block.getFontName())
-            .fontSize(block.getFontSize())
-            .detectedBy(strategyName())
-            .build();
+                               .text(block.getText().strip())
+                               .level(level)
+                               .pageNumber((int) block.getY())  // approximation: y used as page proxy
+                               .startY(block.getY())
+                               .fontName(block.getFontName())
+                               .fontSize(block.getFontSize())
+                               .detectedBy(strategyName())
+                               .build();
     }
 
     private int fontDeltaToLevel(float delta) {
@@ -756,6 +790,7 @@ Then it is NOT returned (exceeds max length)
 File: `rfp-service/src/main/java/com/dsi/rfp/adapter/extraction/AllCapsHeadingStrategy.java`:
 
 ```java
+
 @Slf4j
 @Component
 @Order(6)
@@ -766,7 +801,7 @@ public class AllCapsHeadingStrategy implements HeadingStrategy {
 
     @Override
     public List<HeadingCandidate> detectHeadings(Path pdfPath, PdfDocumentLoader loader)
-            throws IOException {
+        throws IOException {
         List<HeadingCandidate> results = new ArrayList<>();
         int pageCount = loader.getPageCount(pdfPath);
         for (int pageIdx = 0; pageIdx < pageCount; pageIdx++) {
@@ -778,20 +813,22 @@ public class AllCapsHeadingStrategy implements HeadingStrategy {
     }
 
     @Override
-    public String strategyName() { return "AllCapsHeadingStrategy"; }
+    public String strategyName() {
+        return "AllCapsHeadingStrategy";
+    }
 
     private void detectAllCapsInLines(String[] lines, int pageIdx,
-                                       List<HeadingCandidate> results) {
+                                      List<HeadingCandidate> results) {
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i].strip();
             if (isAllCapsHeading(line, lines, i)) {
                 results.add(HeadingCandidate.builder()
-                    .text(line)
-                    .level(1)
-                    .pageNumber(pageIdx)
-                    .startY(0.0f)
-                    .detectedBy(strategyName())
-                    .build());
+                                            .text(line)
+                                            .level(1)
+                                            .pageNumber(pageIdx)
+                                            .startY(0.0f)
+                                            .detectedBy(strategyName())
+                                            .build());
             }
         }
     }
@@ -805,8 +842,8 @@ public class AllCapsHeadingStrategy implements HeadingStrategy {
 
     private boolean isAllUppercase(String line) {
         return line.chars()
-            .filter(Character::isLetter)
-            .allMatch(Character::isUpperCase);
+                   .filter(Character::isLetter)
+                   .allMatch(Character::isUpperCase);
     }
 
     private boolean isSurroundedByBlanks(String[] lines, int index) {
@@ -851,6 +888,7 @@ Then level=2 HeadingCandidate is returned (indentation of 2 spaces → child)
 File: `rfp-service/src/main/java/com/dsi/rfp/adapter/extraction/TocDetector.java`:
 
 ```java
+
 @Slf4j
 @Component
 public class TocDetector {
@@ -871,7 +909,7 @@ public class TocDetector {
      * @throws IOException if PDF cannot be read
      */
     public Optional<List<HeadingCandidate>> findToc(Path pdfPath, PdfDocumentLoader loader)
-            throws IOException {
+        throws IOException {
         int pageCount = Math.min(loader.getPageCount(pdfPath), SCAN_PAGE_LIMIT);
         for (int i = 0; i < pageCount; i++) {
             String pageText = loader.loadPageText(pdfPath, i);
@@ -895,12 +933,12 @@ public class TocDetector {
                 if (text != null && !text.isBlank()) {
                     int level = computeLevelFromIndent(indent);
                     entries.add(HeadingCandidate.builder()
-                        .text(text.strip())
-                        .level(level)
-                        .pageNumber(pageIdx)
-                        .startY(0.0f)
-                        .detectedBy("TocDetector")
-                        .build());
+                                                .text(text.strip())
+                                                .level(level)
+                                                .pageNumber(pageIdx)
+                                                .startY(0.0f)
+                                                .detectedBy("TocDetector")
+                                                .build());
                 }
             }
         }
@@ -922,19 +960,25 @@ public class TocDetector {
 
 ```java
 class TocDetectorTest {
-    @Mock PdfDocumentLoader loader;
+    @Mock
+    PdfDocumentLoader loader;
     private TocDetector detector;
 
     @Test
     void shouldReturnEmptyWhenNoTocPage()
+
     @Test
     void shouldReturnPresentWhenDottedLeaderTocDetected()
+
     @Test
     void shouldReturnPresentWhenSpacedTocDetected()
+
     @Test
     void shouldComputeLevelOneForUnindentedEntry()
+
     @Test
     void shouldComputeLevelTwoForTwoSpaceIndentedEntry()
+
     @Test
     void shouldReturnEmptyWhenFewerThanEightTocLines()
 }
@@ -993,6 +1037,7 @@ package com.dsi.rfp.domain.model;
 
 import lombok.Builder;
 import lombok.Data;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -1005,7 +1050,7 @@ public class Section {
     private int pageStart;
     private int pageEnd;
     @Builder.Default
-    private List<Section> children = new java.util.ArrayList<>();
+    private final List<Section> children = new java.util.ArrayList<>();
     private SectionConfidence confidence;
 }
 ```
@@ -1013,7 +1058,9 @@ public class Section {
 File: `rfp-core/src/main/java/com/dsi/rfp/domain/model/SectionConfidence.java`:
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class SectionConfidence {
     private double score;    // 0.0 to 1.0
     private String method;   // strategy name that detected this section
@@ -1031,6 +1078,7 @@ import com.dsi.rfp.domain.model.SectionConfidence;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
@@ -1055,7 +1103,7 @@ public class SectionSegmenter {
      * @throws IOException if PDF cannot be read
      */
     public List<Section> segment(Path pdfPath, PdfDocumentLoader loader, int totalPages)
-            throws IOException {
+        throws IOException {
 
         Optional<List<HeadingCandidate>> tocResult = tocDetector.findToc(pdfPath, loader);
         if (tocResult.isPresent()) {
@@ -1078,14 +1126,14 @@ public class SectionSegmenter {
     }
 
     private List<Section> buildSectionTree(List<HeadingCandidate> candidates,
-                                            int totalPages,
-                                            String method,
-                                            double confidence) {
+                                           int totalPages,
+                                           String method,
+                                           double confidence) {
         // Sort candidates by pageNumber then startY
         List<HeadingCandidate> sorted = candidates.stream()
-            .sorted(Comparator.comparingInt(HeadingCandidate::getPageNumber)
-                .thenComparingDouble(HeadingCandidate::getStartY))
-            .toList();
+                                                  .sorted(Comparator.comparingInt(HeadingCandidate::getPageNumber)
+                                                                    .thenComparingDouble(HeadingCandidate::getStartY))
+                                                  .toList();
 
         List<Section> roots = new ArrayList<>();
         Deque<Section> stack = new ArrayDeque<>();
@@ -1094,16 +1142,16 @@ public class SectionSegmenter {
             HeadingCandidate c = sorted.get(i);
             int pageEnd = computePageEnd(sorted, i, totalPages);
             Section section = Section.builder()
-                .id(UUID.randomUUID())
-                .title(c.getText())
-                .level(c.getLevel())
-                .pageStart(c.getPageNumber())
-                .pageEnd(pageEnd)
-                .confidence(SectionConfidence.builder()
-                    .score(confidence)
-                    .method(method)
-                    .build())
-                .build();
+                                     .id(UUID.randomUUID())
+                                     .title(c.getText())
+                                     .level(c.getLevel())
+                                     .pageStart(c.getPageNumber())
+                                     .pageEnd(pageEnd)
+                                     .confidence(SectionConfidence.builder()
+                                                                  .score(confidence)
+                                                                  .method(method)
+                                                                  .build())
+                                     .build();
 
             placeInHierarchy(section, stack, roots);
         }
@@ -1148,11 +1196,15 @@ Class: `SectionSegmenterTest`
 Mocks: All `HeadingStrategy` instances (mocked), `TocDetector` (mocked), `PdfDocumentLoader` (mocked).
 
 ```java
+
 @ExtendWith(MockitoExtension.class)
 class SectionSegmenterTest {
-    @Mock TocDetector tocDetector;
-    @Mock BookmarkHeadingStrategy bookmarkStrategy;
-    @Mock NumberedHeadingStrategy numberedStrategy;
+    @Mock
+    TocDetector tocDetector;
+    @Mock
+    BookmarkHeadingStrategy bookmarkStrategy;
+    @Mock
+    NumberedHeadingStrategy numberedStrategy;
     // ...
     private SectionSegmenter segmenter;
 
@@ -1164,18 +1216,25 @@ class SectionSegmenterTest {
 
     @Test
     void shouldUseTocWhenTocDetectorFindsResult()
+
     @Test
     void shouldUseBookmarkStrategyBeforeNumberedWhenBothPresent()
+
     @Test
     void shouldSkipStrategyWhenFewerThanThreeHeadingsReturned()
+
     @Test
     void shouldReturnEmptyWhenAllStrategiesProduceFewHeadings()
+
     @Test
     void shouldBuildChildSectionsWhenLevel2FollowsLevel1()
+
     @Test
     void shouldComputePageEndAsOneLessThanNextSiblingStart()
+
     @Test
     void shouldAssignUniqueUuidsToAllSections()
+
     @Test
     void shouldSetConfidenceMethodToWinningStrategy()
 }
@@ -1226,6 +1285,7 @@ package com.dsi.rfp.adapter.extraction;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1250,7 +1310,7 @@ public class ClauseIdAssigner {
      * @return the generated clause ID string (never null, never blank)
      */
     public String assignClauseId(String procurementRef, String sectionTitle,
-                                  int sectionIndex, int paragraphIndex) {
+                                 int sectionIndex, int paragraphIndex) {
         String normalizedRef = normalizeRef(procurementRef);
         Optional<String> sectionNumber = extractSectionNumber(sectionTitle);
 
@@ -1277,8 +1337,8 @@ public class ClauseIdAssigner {
     private String normalizeRef(String ref) {
         if (ref == null || ref.isBlank()) return "unknown";
         String normalized = ref.toLowerCase()
-            .replaceAll("\\s+", "-")
-            .replaceAll("[^a-z0-9\\-]", "");
+                               .replaceAll("\\s+", "-")
+                               .replaceAll("[^a-z0-9\\-]", "");
         return normalized.length() > MAX_REF_LENGTH
             ? normalized.substring(0, MAX_REF_LENGTH)
             : normalized;
@@ -1300,7 +1360,9 @@ class ClauseIdAssignerTest {
     private ClauseIdAssigner assigner;
 
     @BeforeEach
-    void setUp() { assigner = new ClauseIdAssigner(); }
+    void setUp() {
+        assigner = new ClauseIdAssigner();
+    }
 
     @Test
     void shouldProduceDeterministicIdForSameInputs() {
@@ -1311,20 +1373,28 @@ class ClauseIdAssignerTest {
 
     @Test
     void shouldNormalizeProcurementRefToLowercase()
+
     @Test
     void shouldReplaceSpacesWithHyphensInRef()
+
     @Test
     void shouldStripNonAlphanumericCharsExceptHyphens()
+
     @Test
     void shouldTruncateRefToTwentyChars()
+
     @Test
     void shouldExtractSectionNumberFromTitlePrefix()
+
     @Test
     void shouldUseFallbackIdWhenSectionHasNoNumericPrefix()
+
     @Test
     void shouldUseFallbackIdWhenSectionTitleIsNull()
+
     @Test
     void shouldProduceDifferentIdsForDifferentParagraphIndexes()
+
     @Test
     void shouldAssignSubClauseIdWithLetterSuffix()
 }
@@ -1370,22 +1440,27 @@ File: `rfp-core/src/main/java/com/dsi/rfp/domain/exception/RfpSchemaLoadExceptio
 
 ```java
 public class RfpSchemaLoadException extends RuntimeException {
-    public RfpSchemaLoadException(String message, Throwable cause) { super(message, cause); }
+    public RfpSchemaLoadException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
 ```
 
 File: `rfp-core/src/main/java/com/dsi/rfp/domain/model/SchemaValidationResult.java`:
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class SchemaValidationResult {
     private boolean valid;
     @Builder.Default
-    private List<String> errors = new java.util.ArrayList<>();
+    private final List<String> errors = new java.util.ArrayList<>();
 
     public static SchemaValidationResult ok() {
         return SchemaValidationResult.builder().valid(true).build();
     }
+
     public static SchemaValidationResult fail(List<String> errors) {
         return SchemaValidationResult.builder().valid(false).errors(errors).build();
     }
@@ -1410,6 +1485,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1455,8 +1531,8 @@ public class RfpSchemaValidator {
             Set<ValidationMessage> messages = jsonSchema.validate(node);
             if (messages.isEmpty()) return SchemaValidationResult.ok();
             List<String> errors = messages.stream()
-                .map(ValidationMessage::getMessage)
-                .collect(Collectors.toList());
+                                          .map(ValidationMessage::getMessage)
+                                          .collect(Collectors.toList());
             return SchemaValidationResult.fail(errors);
         } catch (Exception e) {
             return SchemaValidationResult.fail(List.of("Invalid JSON: " + e.getMessage()));
@@ -1475,326 +1551,948 @@ app.schema.rfp-schema-path=schema/rfp-schema-v1.json
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "rfp-schema-v1",
-  "title": "RFP Extraction Result",
-  "type": "object",
-  "required": ["doc_meta", "sections", "clauses", "tables", "entities", "rule_pack_results", "extraction_state"],
-  "properties": {
-    "doc_meta": {
-      "type": "object",
-      "required": ["procurement_ref"],
-      "properties": {
-        "title": { "type": ["string", "null"] },
-        "procurement_ref": { "type": ["string", "null"] },
-        "issue_date": { "type": ["string", "null"], "format": "date" },
-        "rfp_type": { "type": ["string", "null"] },
-        "source_language": { "type": ["string", "null"] },
-        "extraction_model": { "type": ["string", "null"] },
-        "extraction_timestamp": { "type": ["string", "null"], "format": "date-time" }
-      }
-    },
-    "sections": {
-      "type": "array",
-      "items": { "$ref": "#/definitions/section" }
-    },
-    "clauses": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "text"],
-        "properties": {
-          "id": { "type": "string" },
-          "section_id": { "type": ["string", "null"] },
-          "page_start": { "type": "integer" },
-          "page_end": { "type": "integer" },
-          "text": { "type": "string" },
-          "text_language": { "type": ["string", "null"] },
-          "tags": { "type": "array", "items": { "type": "string" } },
-          "references": { "type": "array", "items": { "type": "string" } },
-          "confidence": { "$ref": "#/definitions/confidence_with_ocr" }
-        }
-      }
-    },
-    "tables": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "section_id": { "type": ["string", "null"] },
-          "clause_id": { "type": ["string", "null"] },
-          "page_start": { "type": "integer" },
-          "page_end": { "type": "integer" },
-          "caption": { "type": ["string", "null"] },
-          "type": { "type": ["string", "null"] },
-          "headers": { "type": "array", "items": { "type": "string" } },
-          "rows": { "type": "array", "items": { "type": "array" } },
-          "grid": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "rfp-schema-v1",
+    "title": "RFP Extraction Result",
+    "type": "object",
+    "required": [
+        "doc_meta",
+        "sections",
+        "clauses",
+        "tables",
+        "entities",
+        "rule_pack_results",
+        "extraction_state"
+    ],
+    "properties": {
+        "doc_meta": {
+            "type": "object",
+            "required": [
+                "procurement_ref"
+            ],
+            "properties": {
+                "title": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "procurement_ref": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "issue_date": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "format": "date"
+                },
+                "rfp_type": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "source_language": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "extraction_model": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "extraction_timestamp": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "format": "date-time"
+                }
+            }
+        },
+        "sections": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "row": { "type": "integer" },
-                "col": { "type": "integer" },
-                "value": { "type": ["string", "null"] },
-                "rowspan": { "type": "integer" },
-                "colspan": { "type": "integer" }
-              }
+                "$ref": "#/definitions/section"
             }
-          },
-          "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
-        }
-      }
-    },
-    "entities": {
-      "type": "object",
-      "properties": {
-        "general": { "$ref": "#/definitions/entities_general" },
-        "submission": { "$ref": "#/definitions/entities_submission" },
-        "financial": { "$ref": "#/definitions/entities_financial" },
-        "ict": { "$ref": "#/definitions/entities_ict" },
-        "staffing": { "$ref": "#/definitions/entities_staffing" },
-        "support": { "$ref": "#/definitions/entities_support" },
-        "evaluation": { "$ref": "#/definitions/entities_evaluation" },
-        "pricing_factors": { "type": "array", "items": { "type": "string" } },
-        "rfp_amendments": { "type": "array" },
-        "other_info": { "type": ["object", "null"] }
-      }
-    },
-    "rule_pack_results": {
-      "type": "object",
-      "properties": {
-        "pack_id": { "type": ["string", "null"] },
-        "pack_version": { "type": ["string", "null"] },
-        "summary": {
-          "type": "object",
-          "properties": {
-            "fatal": { "type": "integer" },
-            "high": { "type": "integer" },
-            "medium": { "type": "integer" },
-            "low": { "type": "integer" },
-            "info": { "type": "integer" }
-          }
         },
-        "findings": {
-          "type": "array",
-          "items": {
+        "clauses": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "text"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "section_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "page_start": {
+                        "type": "integer"
+                    },
+                    "page_end": {
+                        "type": "integer"
+                    },
+                    "text": {
+                        "type": "string"
+                    },
+                    "text_language": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "references": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "confidence": {
+                        "$ref": "#/definitions/confidence_with_ocr"
+                    }
+                }
+            }
+        },
+        "tables": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "section_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "clause_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "page_start": {
+                        "type": "integer"
+                    },
+                    "page_end": {
+                        "type": "integer"
+                    },
+                    "caption": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "headers": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "rows": {
+                        "type": "array",
+                        "items": {
+                            "type": "array"
+                        }
+                    },
+                    "grid": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "row": {
+                                    "type": "integer"
+                                },
+                                "col": {
+                                    "type": "integer"
+                                },
+                                "value": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "rowspan": {
+                                    "type": "integer"
+                                },
+                                "colspan": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    },
+                    "confidence": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                    }
+                }
+            }
+        },
+        "entities": {
             "type": "object",
             "properties": {
-              "rule_id": { "type": "string" },
-              "severity": { "type": "string", "enum": ["FATAL", "HIGH", "MEDIUM", "LOW", "INFO"] },
-              "status": { "type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP"] },
-              "message": { "type": "string" },
-              "evidence": { "type": ["string", "null"] }
+                "general": {
+                    "$ref": "#/definitions/entities_general"
+                },
+                "submission": {
+                    "$ref": "#/definitions/entities_submission"
+                },
+                "financial": {
+                    "$ref": "#/definitions/entities_financial"
+                },
+                "ict": {
+                    "$ref": "#/definitions/entities_ict"
+                },
+                "staffing": {
+                    "$ref": "#/definitions/entities_staffing"
+                },
+                "support": {
+                    "$ref": "#/definitions/entities_support"
+                },
+                "evaluation": {
+                    "$ref": "#/definitions/entities_evaluation"
+                },
+                "pricing_factors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rfp_amendments": {
+                    "type": "array"
+                },
+                "other_info": {
+                    "type": [
+                        "object",
+                        "null"
+                    ]
+                }
             }
-          }
-        }
-      }
-    },
-    "extraction_state": {
-      "type": "object",
-      "properties": {
-        "job_id": { "type": "string" },
-        "doc_completeness_score": { "type": "number", "minimum": 0, "maximum": 1 },
-        "missing_fields": { "type": "array", "items": { "type": "string" } },
-        "manual_review_required": { "type": "array", "items": { "type": "string" } },
-        "page_summary": { "type": "array" }
-      }
-    }
-  },
-  "definitions": {
-    "section": {
-      "type": "object",
-      "required": ["id", "title", "level"],
-      "properties": {
-        "id": { "type": "string", "format": "uuid" },
-        "title": { "type": "string" },
-        "level": { "type": "integer", "minimum": 1, "maximum": 6 },
-        "page_start": { "type": "integer", "minimum": 0 },
-        "page_end": { "type": "integer", "minimum": 0 },
-        "children": { "type": "array", "items": { "$ref": "#/definitions/section" } },
-        "confidence": {
-          "type": "object",
-          "properties": {
-            "score": { "type": "number", "minimum": 0, "maximum": 1 },
-            "method": { "type": "string" }
-          }
-        }
-      }
-    },
-    "confidence_with_ocr": {
-      "type": "object",
-      "properties": {
-        "score": { "type": "number", "minimum": 0, "maximum": 1 },
-        "method": { "type": "string" },
-        "ocr_confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
-      }
-    },
-    "entities_general": {
-      "type": ["object", "null"],
-      "properties": {
-        "client_name": { "type": ["string", "null"] },
-        "submission_deadline": { "type": ["string", "null"] },
-        "issue_date": { "type": ["string", "null"] },
-        "method_of_selection": { "type": ["string", "null"] },
-        "procurement_method": { "type": ["string", "null"] },
-        "project_duration": { "type": ["string", "null"] },
-        "pre_bid_meeting": {
-          "type": ["object", "null"],
-          "properties": {
-            "date": { "type": ["string", "null"] },
-            "venue": { "type": ["string", "null"] }
-          }
         },
-        "contact": {
-          "type": ["object", "null"],
-          "properties": {
-            "name": { "type": ["string", "null"] },
-            "email": { "type": ["string", "null"] },
-            "phone": { "type": ["string", "null"] },
-            "address": { "type": ["string", "null"] }
-          }
-        }
-      }
-    },
-    "entities_submission": {
-      "type": ["object", "null"],
-      "properties": {
-        "guidelines_summary": { "type": ["string", "null"] },
-        "number_of_copies": { "type": ["integer", "null"] },
-        "soft_submission_required": {
-          "type": ["object", "null"],
-          "properties": {
-            "value": { "type": ["boolean", "null"] },
-            "email": { "type": ["string", "null"] }
-          }
-        },
-        "submission_address": { "type": ["string", "null"] }
-      }
-    },
-    "entities_financial": {
-      "type": ["object", "null"],
-      "properties": {
-        "technical_financial_split": {
-          "type": ["object", "null"],
-          "properties": {
-            "technical_weight": { "type": ["number", "null"] },
-            "financial_weight": { "type": ["number", "null"] }
-          }
-        },
-        "performance_security": {
-          "type": ["object", "null"],
-          "properties": {
-            "percentage": { "type": ["number", "null"] },
-            "type": { "type": ["string", "null"] }
-          }
-        },
-        "bank_guarantee": {
-          "type": ["object", "null"],
-          "properties": {
-            "required": { "type": ["boolean", "null"] },
-            "details": { "type": ["string", "null"] }
-          }
-        },
-        "payment_terms": { "type": ["string", "null"] },
-        "reimbursable_expenses": { "type": ["string", "null"] },
-        "bid_validity_period": { "type": ["string", "null"] }
-      }
-    },
-    "entities_ict": {
-      "type": ["object", "null"],
-      "properties": {
-        "total_users": { "type": ["integer", "null"] },
-        "concurrent_users": { "type": ["integer", "null"] },
-        "programming_language_preference": { "type": ["string", "null"] },
-        "system_language": { "type": ["string", "null"] },
-        "architecture": { "type": ["string", "null"] },
-        "tech_stack": { "type": ["string", "null"] },
-        "database": { "type": ["string", "null"] },
-        "hosting": {
-          "type": ["object", "null"],
-          "properties": {
-            "type": { "type": ["string", "null"] },
-            "details": { "type": ["string", "null"] }
-          }
-        },
-        "data_migration_required": {
-          "type": ["object", "null"],
-          "properties": {
-            "value": { "type": ["boolean", "null"] },
-            "details": { "type": ["string", "null"] }
-          }
-        },
-        "legacy_system": { "type": ["string", "null"] },
-        "hardware_requirements": { "type": ["string", "null"] },
-        "integrations": { "type": "array", "items": { "type": "string" } },
-        "mobile_app_required": {
-          "type": ["object", "null"],
-          "properties": {
-            "value": { "type": ["boolean", "null"] },
-            "platforms": { "type": "array", "items": { "type": "string" } }
-          }
-        },
-        "ui_mock_required": { "type": ["boolean", "null"] },
-        "presentation_required": { "type": ["boolean", "null"] },
-        "gantt_chart_required": { "type": ["boolean", "null"] },
-        "e_governance_compliance": {
-          "type": ["object", "null"],
-          "properties": {
-            "required": { "type": ["boolean", "null"] },
-            "framework": { "type": ["string", "null"] }
-          }
-        }
-      }
-    },
-    "entities_staffing": {
-      "type": ["object", "null"],
-      "properties": {
-        "staff_months": { "type": ["number", "null"] },
-        "onsite_resource_requirements": { "type": ["string", "null"] },
-        "marking_criteria": { "type": ["string", "null"] }
-      }
-    },
-    "entities_support": {
-      "type": ["object", "null"],
-      "properties": {
-        "training": {
-          "type": ["object", "null"],
-          "properties": {
-            "value": { "type": ["boolean", "null"] },
-            "duration": { "type": ["string", "null"] }
-          }
-        },
-        "support_maintenance": {
-          "type": ["object", "null"],
-          "properties": {
-            "value": { "type": ["boolean", "null"] },
-            "period": { "type": ["string", "null"] },
-            "sla": { "type": ["string", "null"] }
-          }
-        },
-        "warranty_period": { "type": ["string", "null"] }
-      }
-    },
-    "entities_evaluation": {
-      "type": ["object", "null"],
-      "properties": {
-        "criteria": {
-          "type": "array",
-          "items": {
+        "rule_pack_results": {
             "type": "object",
             "properties": {
-              "name": { "type": "string" },
-              "weight": { "type": ["number", "null"] }
+                "pack_id": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "pack_version": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "summary": {
+                    "type": "object",
+                    "properties": {
+                        "fatal": {
+                            "type": "integer"
+                        },
+                        "high": {
+                            "type": "integer"
+                        },
+                        "medium": {
+                            "type": "integer"
+                        },
+                        "low": {
+                            "type": "integer"
+                        },
+                        "info": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "findings": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "rule_id": {
+                                "type": "string"
+                            },
+                            "severity": {
+                                "type": "string",
+                                "enum": [
+                                    "FATAL",
+                                    "HIGH",
+                                    "MEDIUM",
+                                    "LOW",
+                                    "INFO"
+                                ]
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "PASS",
+                                    "FAIL",
+                                    "WARN",
+                                    "SKIP"
+                                ]
+                            },
+                            "message": {
+                                "type": "string"
+                            },
+                            "evidence": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        }
+                    }
+                }
             }
-          }
         },
-        "eligibility_summary": { "type": ["string", "null"] },
-        "scope_summary": { "type": ["string", "null"] }
-      }
+        "extraction_state": {
+            "type": "object",
+            "properties": {
+                "job_id": {
+                    "type": "string"
+                },
+                "doc_completeness_score": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                },
+                "missing_fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "manual_review_required": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "page_summary": {
+                    "type": "array"
+                }
+            }
+        }
+    },
+    "definitions": {
+        "section": {
+            "type": "object",
+            "required": [
+                "id",
+                "title",
+                "level"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 6
+                },
+                "page_start": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "page_end": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/section"
+                    }
+                },
+                "confidence": {
+                    "type": "object",
+                    "properties": {
+                        "score": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                        },
+                        "method": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "confidence_with_ocr": {
+            "type": "object",
+            "properties": {
+                "score": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                },
+                "method": {
+                    "type": "string"
+                },
+                "ocr_confidence": {
+                    "type": [
+                        "number",
+                        "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 1
+                }
+            }
+        },
+        "entities_general": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "client_name": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "submission_deadline": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "issue_date": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "method_of_selection": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "procurement_method": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "project_duration": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "pre_bid_meeting": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "date": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "venue": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "contact": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "name": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "email": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "phone": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "address": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "entities_submission": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "guidelines_summary": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "number_of_copies": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "soft_submission_required": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "value": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        },
+                        "email": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "submission_address": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "entities_financial": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "technical_financial_split": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "technical_weight": {
+                            "type": [
+                                "number",
+                                "null"
+                            ]
+                        },
+                        "financial_weight": {
+                            "type": [
+                                "number",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "performance_security": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "percentage": {
+                            "type": [
+                                "number",
+                                "null"
+                            ]
+                        },
+                        "type": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "bank_guarantee": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "required": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        },
+                        "details": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "payment_terms": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "reimbursable_expenses": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "bid_validity_period": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "entities_ict": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "total_users": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "concurrent_users": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "programming_language_preference": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "system_language": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "architecture": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "tech_stack": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "database": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "hosting": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "type": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "details": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "data_migration_required": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "value": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        },
+                        "details": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "legacy_system": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "hardware_requirements": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "integrations": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "mobile_app_required": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "value": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        },
+                        "platforms": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "ui_mock_required": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "presentation_required": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "gantt_chart_required": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "e_governance_compliance": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "required": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        },
+                        "framework": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "entities_staffing": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "staff_months": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "onsite_resource_requirements": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "marking_criteria": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "entities_support": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "training": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "value": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        },
+                        "duration": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "support_maintenance": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "value": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        },
+                        "period": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "sla": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "warranty_period": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "entities_evaluation": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "criteria": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "weight": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "eligibility_summary": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "scope_summary": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        }
     }
-  }
 }
 ```
 
@@ -1814,10 +2512,13 @@ class RfpSchemaValidatorTest {
 
     @Test
     void shouldReturnValidWhenRfpJsonConformsToSchema()
+
     @Test
     void shouldReturnInvalidWhenRequiredFieldMissing()
+
     @Test
     void shouldReturnInvalidWhenJsonIsMalformed()
+
     @Test
     void shouldReturnAllValidationErrors()
 }
@@ -1870,11 +2571,14 @@ ground-truth compatibility remains supported but is not part of Sprint 3 exit cr
 # Ground Truth Dataset
 
 ## Directory Structure
-- testdata/pdfs/         — raw PDF files (gitignored)
+
+- testdata/pdfs/ — raw PDF files (gitignored)
 - testdata/ground-truth/ — JSON annotations (committed)
 
 ## Sourcing PDFs
+
 PDFs must be obtained from:
+
 1. CPTU (Central Procurement Technical Unit) Bangladesh: https://cptu.gov.bd/
 2. Client-provided RFP archives.
 3. IMED (Implementation Monitoring and Evaluation Division): https://imed.gov.bd/
@@ -1883,9 +2587,11 @@ Store PDFs as testdata/pdfs/{doc-id}.pdf (e.g., cptu-2024-ict-001.pdf).
 PDFs are gitignored — annotators must share via Google Drive or S3.
 
 ## Annotation Format
+
 See sample-annotation-template.json for the schema.
 
 ## Target
+
 - 15 PDF documents total
 - 5 fully annotated (sections + entities)
 - 10 partially annotated (sections only)
@@ -1895,51 +2601,66 @@ See sample-annotation-template.json for the schema.
 
 ```json
 {
-  "doc_id": "cptu-2024-ict-001",
-  "pdf_filename": "cptu-2024-ict-001.pdf",
-  "annotator": "name@example.com",
-  "annotation_date": "2025-06-01",
-  "sections": [
-    {
-      "title": "1. Background",
-      "level": 1,
-      "page_start": 1,
-      "page_end": 3,
-      "children": []
-    },
-    {
-      "title": "2. Scope of Work",
-      "level": 1,
-      "page_start": 4,
-      "page_end": 12,
-      "children": [
+    "doc_id": "cptu-2024-ict-001",
+    "pdf_filename": "cptu-2024-ict-001.pdf",
+    "annotator": "name@example.com",
+    "annotation_date": "2025-06-01",
+    "sections": [
         {
-          "title": "2.1 Technical Requirements",
-          "level": 2,
-          "page_start": 4,
-          "page_end": 8,
-          "children": []
+            "title": "1. Background",
+            "level": 1,
+            "page_start": 1,
+            "page_end": 3,
+            "children": []
+        },
+        {
+            "title": "2. Scope of Work",
+            "level": 1,
+            "page_start": 4,
+            "page_end": 12,
+            "children": [
+                {
+                    "title": "2.1 Technical Requirements",
+                    "level": 2,
+                    "page_start": 4,
+                    "page_end": 8,
+                    "children": []
+                }
+            ]
         }
-      ]
-    }
-  ],
-  "entities": {
-    "submission_deadline": "2025-08-15T17:00:00+06:00",
-    "client_name": "Ministry of ICT, Bangladesh",
-    "procurement_ref": "CPTU-2024-ICT-001"
-  },
-  "tables": [
-    {
-      "page": 7,
-      "headers": ["Item", "Quantity", "Unit Price (BDT)"],
-      "rows": [
-        ["Laptop", "10", "85000"],
-        ["Server", "2", "450000"]
-      ]
-    }
-  ],
-  "expected_rule_failures": ["BD-ICT-001", "BD-ICT-014"],
-  "notes": "Add any annotator notes here. Use null (not omit) for entity fields absent from this document."
+    ],
+    "entities": {
+        "submission_deadline": "2025-08-15T17:00:00+06:00",
+        "client_name": "Ministry of ICT, Bangladesh",
+        "procurement_ref": "CPTU-2024-ICT-001"
+    },
+    "tables": [
+        {
+            "page": 7,
+            "headers": [
+                "Item",
+                "Quantity",
+                "Unit Price (BDT)"
+            ],
+            "rows": [
+                [
+                    "Laptop",
+                    "10",
+                    "85000"
+                ],
+                [
+                    "Server",
+                    "2",
+                    "450000"
+                ]
+            ]
+        }
+    ],
+    "expected_rule_failures": [
+        "BD-ICT-001",
+        "BD-ICT-014"
+    ],
+    "notes": "Add any annotator notes here. Use null (not omit) for entity fields absent from this document."
 }
 ```
 
@@ -1957,6 +2678,7 @@ package com.dsi.rfp.adapter.extraction.evaluation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1998,13 +2720,14 @@ public class GroundTruthLoader {
 **File: `rfp-core/src/main/java/com/dsi/rfp/domain/model/GroundTruthAnnotation.java`** (or in evaluation package):
 
 ```java
+
 @Data
 public class GroundTruthAnnotation {
     @JsonProperty("doc_id")
     private String docId;
     @JsonProperty("pdf_filename")
     private String pdfFilename;
-    private List<AnnotatedSection> sections = new ArrayList<>();
+    private final List<AnnotatedSection> sections = new ArrayList<>();
     private final Map<String, Object> entities = new HashMap<>();
 }
 
@@ -2012,8 +2735,10 @@ public class GroundTruthAnnotation {
 class AnnotatedSection {
     private String title;
     private int level;
-    @JsonProperty("page_start") private int pageStart;
-    @JsonProperty("page_end") private int pageEnd;
+    @JsonProperty("page_start")
+    private int pageStart;
+    @JsonProperty("page_end")
+    private int pageEnd;
     private final List<AnnotatedSection> children = new ArrayList<>();
 }
 ```
@@ -2028,6 +2753,7 @@ import com.dsi.rfp.domain.model.GroundTruthAnnotation;
 import com.dsi.rfp.domain.model.Section;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 
 @Slf4j
@@ -2081,7 +2807,7 @@ public class SectionExtractionEvaluator {
 
     private boolean isMatch(Section extracted, AnnotatedSection truth) {
         boolean titleMatch = extracted.getTitle().strip()
-            .equalsIgnoreCase(truth.getTitle().strip());
+                                      .equalsIgnoreCase(truth.getTitle().strip());
         boolean pageMatch = Math.abs(extracted.getPageStart() - truth.getPageStart())
             <= PAGE_PROXIMITY_TOLERANCE;
         return titleMatch && pageMatch;
@@ -2113,18 +2839,25 @@ public class SectionExtractionEvaluator {
 class SectionExtractionEvaluatorTest {
     @Test
     void shouldReturnOneWhenExtractedMatchesAllGroundTruth()
+
     @Test
     void shouldReturnZeroWhenNoMatchesFound()
+
     @Test
     void shouldTolerateOnePageDifferenceInPageStart()
+
     @Test
     void shouldNotMatchWhenPageDifferenceExceedsTolerance()
+
     @Test
     void shouldReturnZeroWhenExtractedListIsEmpty()
+
     @Test
     void shouldMatchCaseInsensitively()
+
     @Test
     void shouldReturnTrueForMeetsThresholdWhenF1AbovePoint8()
+
     @Test
     void shouldReturnFalseForMeetsThresholdWhenF1BelowPoint8()
 }
@@ -2196,40 +2929,41 @@ Then children are shown/hidden
 Update `GET /api/v1/rfp/result/{jobId}` in `RfpController`:
 
 ```java
+
 @GetMapping("/result/{jobId}")
 public ResponseEntity<Map<String, Object>> getResult(@PathVariable UUID jobId) {
     // Sprint 3: return sections from job state
     return jobService.findById(jobId)
-        .map(job -> {
-            // Parse sectionsJson from job, return basic result
+                     .map(job -> {
+                         // Parse sectionsJson from job, return basic result
             ...
-        })
-        .orElse(ResponseEntity.notFound().build());
+                     })
+                     .orElse(ResponseEntity.notFound().build());
 }
 ```
 
 File: `rfp-frontend/src/components/SectionTree.tsx`:
 
 ```tsx
-import { useState } from 'react';
-import { Section } from '../types/rfp';
+import {useState} from 'react';
+import {Section} from '../types/rfp';
 
 interface SectionTreeProps {
     sections: Section[];
     depth?: number;
 }
 
-export function SectionTree({ sections, depth = 0 }: SectionTreeProps) {
+export function SectionTree({sections, depth = 0}: SectionTreeProps) {
     return (
         <ul className={`space-y-1 ${depth > 0 ? 'ml-4 mt-1' : ''}`}>
             {sections.map((section) => (
-                <SectionNode key={section.id} section={section} depth={depth} />
+                <SectionNode key={section.id} section={section} depth={depth}/>
             ))}
         </ul>
     );
 }
 
-function SectionNode({ section, depth }: { section: Section; depth: number }) {
+function SectionNode({section, depth}: { section: Section; depth: number }) {
     const [expanded, setExpanded] = useState(depth === 0);
     const hasChildren = section.children && section.children.length > 0;
     const confidence = section.confidence?.score ?? 0;
@@ -2257,7 +2991,7 @@ function SectionNode({ section, depth }: { section: Section; depth: number }) {
                 </span>
             </div>
             {expanded && hasChildren && (
-                <SectionTree sections={section.children} depth={depth + 1} />
+                <SectionTree sections={section.children} depth={depth + 1}/>
             )}
         </li>
     );
@@ -2267,25 +3001,25 @@ function SectionNode({ section, depth }: { section: Section; depth: number }) {
 File: `rfp-frontend/src/pages/ResultPage.tsx` (updated):
 
 ```tsx
-import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { SectionTree } from '../components/SectionTree';
-import { getRfpResult } from '../api/rfpClient';
+import {useParams} from 'react-router-dom';
+import {useQuery} from '@tanstack/react-query';
+import {useState} from 'react';
+import {SectionTree} from '../components/SectionTree';
+import {getRfpResult} from '../api/rfpClient';
 
 export function ResultPage() {
-    const { jobId } = useParams<{ jobId: string }>();
+    const {jobId} = useParams<{ jobId: string }>();
     const [activeTab, setActiveTab] = useState<'sections' | 'entities' | 'tables'>('sections');
-    const { data } = useQuery({
+    const {data} = useQuery({
         queryKey: ['rfpResult', jobId],
         queryFn: () => getRfpResult(jobId!),
         enabled: !!jobId,
     });
 
     const tabs = [
-        { key: 'sections', label: 'Sections' },
-        { key: 'entities', label: 'Entities' },
-        { key: 'tables', label: 'Tables' },
+        {key: 'sections', label: 'Sections'},
+        {key: 'entities', label: 'Entities'},
+        {key: 'tables', label: 'Tables'},
     ] as const;
 
     return (
@@ -2312,7 +3046,7 @@ export function ResultPage() {
             </div>
 
             {activeTab === 'sections' && data?.sections && (
-                <SectionTree sections={data.sections} />
+                <SectionTree sections={data.sections}/>
             )}
             {activeTab === 'entities' && (
                 <p className="text-gray-500">Entity extraction — implemented in Sprint 4.</p>
@@ -2462,16 +3196,16 @@ Expected output:
 
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "title": "1. Background",
-  "level": 1,
-  "pageStart": 1,
-  "pageEnd": 4,
-  "children": [],
-  "confidence": {
-    "score": 0.95,
-    "method": "BookmarkHeadingStrategy"
-  }
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "title": "1. Background",
+    "level": 1,
+    "pageStart": 1,
+    "pageEnd": 4,
+    "children": [],
+    "confidence": {
+        "score": 0.95,
+        "method": "BookmarkHeadingStrategy"
+    }
 }
 ```
 

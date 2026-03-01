@@ -105,7 +105,10 @@ public enum ArtifactFileType {
     DOCX, XLSX, HTML
 }
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ClarificationQuestion {
     private String id;             // UUID
     private String questionText;
@@ -116,7 +119,10 @@ public class ClarificationQuestion {
     private String source;         // "rule:BD-ICT-001" or "entity:submission_deadline"
 }
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AmbiguityItem {
     private String id;
     private RuleSeverity severity;
@@ -127,7 +133,10 @@ public class AmbiguityItem {
     private String recommendedAction;
 }
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ComplianceItem {
     private String id;
     private String requirement;
@@ -136,7 +145,10 @@ public class ComplianceItem {
     private boolean mandatory;
 }
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RiskItem {
     private String id;
     private String riskDescription;
@@ -146,7 +158,10 @@ public class RiskItem {
     private String owner;          // default: "Bid Team"
 }
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class BidClarityPack {
     private UUID jobId;
     private Instant generatedAt;
@@ -156,7 +171,10 @@ public class BidClarityPack {
     private List<RiskItem> riskItems;
 }
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ArtifactMetadata {
     private UUID jobId;
     private String filename;
@@ -169,7 +187,9 @@ public class ArtifactMetadata {
 // ArtifactPort.java
 public interface ArtifactPort {
     ArtifactMetadata storeArtifact(UUID jobId, String filename, byte[] content);
+
     List<ArtifactMetadata> listArtifacts(UUID jobId);
+
     byte[] loadArtifact(UUID jobId, String filename);
 }
 ```
@@ -211,7 +231,9 @@ Then a CONTRADICTION_RESOLUTION trigger is produced
 **Interfaces / Contracts:**
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class ClarificationTrigger {
     private QuestionType type;
     private String clauseId;
@@ -230,7 +252,9 @@ public class ClarificationQuestionTrigger {
         RfpDocument doc, RulePackResults results, ExtractionState state);
 
     private List<ClarificationTrigger> fromRuleFindings(RulePackResults results);
+
     private List<ClarificationTrigger> fromLowConfidenceEntities(ExtractionState state);
+
     private List<ClarificationTrigger> fromContradictions(RfpDocument doc);
 }
 ```
@@ -280,6 +304,7 @@ Then the result is capped at 30, prioritising by priority ascending
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -291,6 +316,7 @@ public class ClarificationQuestionsGenerator {
         RfpDocument doc);
 
     private ClarificationQuestion questionFromTrigger(ClarificationTrigger trigger, RfpDocument doc);
+
     private List<ClarificationQuestion> deduplicate(List<ClarificationQuestion> questions);
 }
 ```
@@ -335,6 +361,7 @@ And questions are numbered with source references [Section X.Y, Page N]
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @RequiredArgsConstructor
 public class ClarificationQuestionsDocxWriter {
@@ -342,7 +369,9 @@ public class ClarificationQuestionsDocxWriter {
     public byte[] write(List<ClarificationQuestion> questions, RfpDocument doc);
 
     private void addHeader(XWPFDocument docx, RfpDocument doc);
+
     private void addQuestion(XWPFDocument docx, int index, ClarificationQuestion q);
+
     private void addFooter(XWPFDocument docx);
 }
 ```
@@ -390,12 +419,14 @@ And FATAL rows have a red fill, HIGH rows orange
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 public class AmbiguityRegisterXlsxWriter {
 
     public byte[] write(List<AmbiguityItem> items);
 
     private void applyRowColor(XSSFRow row, RuleSeverity severity, XSSFWorkbook wb);
+
     private XSSFCellStyle createColorStyle(XSSFWorkbook wb, IndexedColors color);
 }
 ```
@@ -439,6 +470,7 @@ Then the Mandatory column shows "Yes" and Status column is blank (for bid team t
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 public class ComplianceChecklistXlsxWriter {
 
@@ -484,6 +516,7 @@ Then the Mitigation Suggestion column contains the LLM-generated text
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -538,6 +571,7 @@ Then the confidence bar has red styling (class "conf-low")
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -602,6 +636,7 @@ Then a list of 3 ArtifactMetadata objects is returned with correct filenames
 **Interfaces / Contracts:**
 
 ```java
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -619,6 +654,7 @@ public class LocalArtifactStorageAdapter implements ArtifactPort {
     public byte[] loadArtifact(UUID jobId, String filename);
 
     private Path artifactDir(UUID jobId);
+
     private String detectFileType(String filename);
 }
 ```
@@ -659,16 +695,19 @@ Then 5 ArtifactMetadata objects are returned
 **Interfaces / Contracts:**
 
 ```java
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class ArtifactApplicationService {
 
     public BidClarityPack generateAll(UUID jobId, RfpDocument doc,
-        ExtractionState state, RulePackResults results);
+                                      ExtractionState state, RulePackResults results);
 
     private List<AmbiguityItem> buildAmbiguityItems(RulePackResults results, RfpDocument doc);
+
     private List<RiskItem> buildRiskItems(RulePackResults results, RfpDocument doc);
+
     private List<ComplianceItem> buildComplianceItems(RulePackResults results, RfpDocument doc);
 }
 ```
