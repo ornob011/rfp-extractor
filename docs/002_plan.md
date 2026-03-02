@@ -145,7 +145,7 @@ the sprint is closed.
 |--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Service / class size** | No class > 250 lines. If it grows beyond that, split it into focused collaborators.                                                                                                                                                                                                           |
 | **Method size**          | No method > 20 lines. Extract sub-steps into private methods with descriptive names.                                                                                                                                                                                                          |
-| **Method parameters**    | No method with > 3 parameters. Group into a request/config object beyond that.                                                                                                                                                                                                                |
+| **Method parameters**    | No method with > 3 parameters. Group into a request/config object beyond that. For methods/constructors/calls with 2+ args, place each argument on a separate line.                                                                                                                           |
 | **Naming**               | Names must state intent. `extractSubmissionDeadline()` not `process()`. No abbreviations except universally known ones (`id`, `url`, `pdf`).                                                                                                                                                  |
 | **Comments**             | Comments explain *why*, not *what*. Self-documenting code is preferred. No commented-out dead code.                                                                                                                                                                                           |
 | **Magic values**         | No inline magic strings or numbers. Use named constants or `application.properties` keys.                                                                                                                                                                                                     |
@@ -153,8 +153,67 @@ the sprint is closed.
 | **No utility dumps**     | No `Utils.java` / `Helper.java` catch-alls. Group utilities into specific, named classes: `ClauseIdNormalizer`, `BanglaNumericParser`.                                                                                                                                                        |
 | **Return early**         | Use guard clauses at the top of methods. Avoid deep nesting (`if → if → if`). Max nesting depth: 2.                                                                                                                                                                                           |
 | **No null returns**      | Return `Optional<T>` for values that may be absent. Never return `null` from a public method.                                                                                                                                                                                                 |
+| **Null checks**          | Use library null/blank checks. Java examples must use `Objects.isNull` / `Objects.nonNull` and `StringUtils.hasText`; do not use raw `== null`, `!= null`, or `.isBlank()` chains in business logic examples.                                                                                 |
 | **Exceptions**           | Throw specific exceptions (`DocumentEncryptedException`, `OcrUnavailableException`). Do not use `catch (Exception e)` in sample code. Route errors through a global exception handler (for Spring: `@RestControllerAdvice` + typed `@ExceptionHandler` methods) that returns `ProblemDetail`. |
 | **No SneakyThrows**      | `@SneakyThrows` is forbidden. Use explicit `throws` declarations and let typed exceptions propagate to the exception handler.                                                                                                                                                                 |
+| **Logging**              | Full project logging must use structured, industry-grade pattern with stable keys: `event`, `component`, `status`, `jobId`, `durationMs`, `errorCode`, `traceId`, `spanId`. Avoid free-form log-only messages in examples.                                                                    |
+
+---
+
+### 1.1 Required Example Pattern (Full Project)
+
+All examples in this project must follow the patterns below.
+
+**Java structured logging example:**
+
+```java
+log.info(
+    "event=extraction.complete component=ExtractionPipelineService status=SUCCESS jobId={} durationMs={} errorCode={} traceId={} spanId={}",
+    jobId,
+    durationMs,
+    "NONE",
+    MDC.get("traceId"),
+    MDC.
+
+get("spanId")
+);
+```
+
+**Java null-check pattern example:**
+
+```java
+if(Objects.isNull(rawResponse) ||!StringUtils.
+
+hasText(rawResponse)){
+    return Optional.
+
+empty();
+}
+    if(Objects.
+
+nonNull(metadata) &&Objects.
+
+nonNull(metadata.getProcurementRef())){
+    // continue
+    }
+```
+
+**Method argument formatting example:**
+
+```java
+return ResponseEntity.status(status)
+    .
+
+header("Retry-After","30")
+    .
+
+body(
+    ProblemDetail.forStatusAndDetail(
+        status,
+    detail
+    )
+    );
+```
 
 ---
 

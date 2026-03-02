@@ -398,7 +398,7 @@ public class LlmProviderProperties {
         private String baseUrl = "https://openrouter.ai/api/v1";
         private String apiKey;                        // required if provider=openrouter
         private String model = "google/gemini-2.0-flash-001";
-        private String modelJudge = "google/gemini-2.5-pro-preview-06-05";
+        private final String modelJudge = "google/gemini-2.5-pro-preview-06-05";
     }
 
     @Data
@@ -416,7 +416,6 @@ File: `rfp-service/src/main/resources/application.properties` — key entries:
 # Server
 server.port=8080
 spring.application.name=rfp-service
-
 # LLM Provider
 app.llm.provider=openrouter
 app.llm.openrouter.base-url=https://openrouter.ai/api/v1
@@ -431,21 +430,16 @@ app.llm.max-tokens=4096
 app.llm.chunk-size-tokens=3500
 app.llm.timeout-seconds=30
 app.llm.rate-limit-per-minute=60
-
 # Async
 app.async.core-pool-size=2
 app.async.max-pool-size=4
 app.async.queue-capacity=20
-
 # Upload
 app.upload.max-size-mb=100
-
 # Storage
 app.storage.base-path=/tmp/rfp-storage
-
 # OCR Sidecar
 app.ocr.sidecar-url=http://localhost:8000
-
 # Database (local defaults)
 spring.datasource.url=jdbc:postgresql://localhost:5432/rfpdb
 spring.datasource.username=${POSTGRES_USER:rfpuser}
@@ -453,14 +447,11 @@ spring.datasource.password=${POSTGRES_PASSWORD:rfppass}
 spring.datasource.driver-class-name=org.postgresql.Driver
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
-
 # Redis
 spring.data.redis.url=${REDIS_URL:redis://localhost:6379}
-
 # Actuator
 management.endpoints.web.exposure.include=health,info,prometheus,metrics
 management.endpoint.health.show-details=always
-
 # Resilience4j (overridden in LlmResilienceConfig programmatically, but defaults here for reference)
 resilience4j.retry.instances.llm-retry.max-attempts=3
 resilience4j.circuitbreaker.instances.llm-cb.sliding-window-size=10
@@ -649,7 +640,7 @@ public class LlmProviderConfig {
 
 @PostConstruct
 void validateConfiguration() {
-    log.info("LLM provider configured: provider={}, model={}",
+    log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO LLM provider configured: provider={}, model={}",
         props.getProvider(),
         "openrouter".equals(props.getProvider())
             ? props.getOpenrouter().getModel()
@@ -787,14 +778,14 @@ public class LlmResilienceConfig {
 
 ```java
 RetryConfig config = RetryConfig.custom()
-                                .maxAttempts(3)
-                                .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(
-                                    Duration.ofSeconds(1),   // initial interval
-                                    2.0,                     // multiplier
-                                    0.3                      // randomization factor (jitter)
-                                ))
-                                .retryOnException(e -> !(e instanceof LlmResponseParseException))
-                                .build();
+    .maxAttempts(3)
+    .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(
+        Duration.ofSeconds(1),   // initial interval
+        2.0,                     // multiplier
+        0.3                      // randomization factor (jitter)
+    ))
+    .retryOnException(e -> !(e instanceof LlmResponseParseException))
+    .build();
 return retryRegistry.
 
 retry(LLM_RETRY, config);
@@ -807,14 +798,14 @@ unparseable. Only `LlmUnavailableException` and transient IO errors should retry
 
 ```java
 CircuitBreakerConfig config = CircuitBreakerConfig.custom()
-                                                  .failureRateThreshold(50.0f)
-                                                  .slidingWindowType(SlidingWindowType.COUNT_BASED)
-                                                  .slidingWindowSize(10)
-                                                  .waitDurationInOpenState(Duration.ofSeconds(30))
-                                                  .permittedNumberOfCallsInHalfOpenState(3)
-                                                  .recordExceptions(LlmUnavailableException.class, java.io.IOException.class,
-                                                      java.util.concurrent.TimeoutException.class)
-                                                  .build();
+    .failureRateThreshold(50.0f)
+    .slidingWindowType(SlidingWindowType.COUNT_BASED)
+    .slidingWindowSize(10)
+    .waitDurationInOpenState(Duration.ofSeconds(30))
+    .permittedNumberOfCallsInHalfOpenState(3)
+    .recordExceptions(LlmUnavailableException.class, java.io.IOException.class,
+        java.util.concurrent.TimeoutException.class)
+    .build();
 return cbRegistry.
 
 circuitBreaker(LLM_CB, config);
@@ -824,10 +815,10 @@ circuitBreaker(LLM_CB, config);
 
 ```java
 RateLimiterConfig config = RateLimiterConfig.custom()
-                                            .limitForPeriod(props.getRateLimitPerMinute())
-                                            .limitRefreshPeriod(Duration.ofMinutes(1))
-                                            .timeoutDuration(Duration.ofSeconds(10))
-                                            .build();
+    .limitForPeriod(props.getRateLimitPerMinute())
+    .limitRefreshPeriod(Duration.ofMinutes(1))
+    .timeoutDuration(Duration.ofSeconds(10))
+    .build();
 return rlRegistry.
 
 rateLimiter(LLM_RL, config);
@@ -837,9 +828,9 @@ rateLimiter(LLM_RL, config);
 
 ```java
 TimeLimiterConfig config = TimeLimiterConfig.custom()
-                                            .timeoutDuration(Duration.ofSeconds(props.getTimeoutSeconds()))
-                                            .cancelRunningFuture(true)
-                                            .build();
+    .timeoutDuration(Duration.ofSeconds(props.getTimeoutSeconds()))
+    .cancelRunningFuture(true)
+    .build();
 return tlRegistry.
 
 timeLimiter(LLM_TIMEOUT, config);
@@ -1129,10 +1120,10 @@ public <T> Optional<T> extractStructured(String systemPrompt,
 ```java
 private String callLlmRaw(String systemPrompt, String userContent) {
     return chatClient.prompt()
-                     .system(systemPrompt)
-                     .user(userContent)
-                     .call()
-                     .content();
+        .system(systemPrompt)
+        .user(userContent)
+        .call()
+        .content();
 }
 ```
 
@@ -1140,8 +1131,8 @@ private String callLlmRaw(String systemPrompt, String userContent) {
 
 ```java
 private <T> Optional<T> parseResponse(String rawResponse, Class<T> responseType) {
-    if (rawResponse == null || rawResponse.isBlank()) {
-        log.warn("LLM returned empty response for type={}", responseType.getSimpleName());
+    if (Objects.isNull(rawResponse) || !StringUtils.hasText(rawResponse)) {
+        log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN LLM returned empty response for type={}", responseType.getSimpleName());
         return Optional.empty();
     }
     // Strip markdown code fences if present
@@ -1168,10 +1159,10 @@ private void logLlmCall(String operation, String model,
                         long startMs, boolean success, String failReason) {
     long latencyMs = System.currentTimeMillis() - startMs;
     if (success) {
-        log.info("LLM_CALL op={} model={} provider={} latencyMs={} status=SUCCESS",
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO LLM_CALL op={} model={} provider={} latencyMs={} status=SUCCESS",
             operation, model, props.getProvider(), latencyMs);
     } else {
-        log.warn("LLM_CALL op={} model={} provider={} latencyMs={} status=FAIL reason={}",
+        log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN LLM_CALL op={} model={} provider={} latencyMs={} status=FAIL reason={}",
             operation, model, props.getProvider(), latencyMs, failReason);
     }
     // Micrometer counter
@@ -1292,10 +1283,10 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("OCR sidecar starting up")
+    logger.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO OCR sidecar starting up")
     app.state.ocr_service = OcrService()
     yield
-    logger.info("OCR sidecar shutting down")
+    logger.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO OCR sidecar shutting down")
 
 app = FastAPI(title="RFP OCR Sidecar", version="1.0.0", lifespan=lifespan)
 

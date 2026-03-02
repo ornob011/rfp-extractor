@@ -189,10 +189,10 @@ public class BookmarkHeadingStrategy implements HeadingStrategy {
         List<HeadingCandidate> results = new ArrayList<>();
         try (PDDocument doc = Loader.loadPDF(pdfPath.toFile())) {
             PDDocumentOutline outline = doc.getDocumentCatalog().getDocumentOutline();
-            if (outline == null) return results;
+            if (Objects.isNull(outline)) return results;
             traverseOutline(outline.getFirstChild(), 1, results);
         }
-        log.debug("BookmarkHeadingStrategy: found {} headings in {}",
+        log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG BookmarkHeadingStrategy: found {} headings in {}",
             results.size(), pdfPath.getFileName());
         return results;
     }
@@ -202,9 +202,9 @@ public class BookmarkHeadingStrategy implements HeadingStrategy {
 
     private void traverseOutline(PDOutlineItem item, int level,
                                   List<HeadingCandidate> results) {
-        while (item != null) {
+        while (Objects.nonNull(item)) {
             String title = item.getTitle();
-            if (title != null && !title.isBlank()) {
+            if (Objects.nonNull(title) && StringUtils.hasText(title)) {
                 results.add(HeadingCandidate.builder()
                     .text(title.strip())
                     .level(Math.min(level, 6))
@@ -233,14 +233,19 @@ Class: `BookmarkHeadingStrategyTest`
 Create test PDF fixtures using PDFBox `PDDocumentOutline` in `@BeforeAll`.
 
 ```java
+
 @Test
 void shouldReturnEmptyWhenPdfHasNoOutline()
+
 @Test
 void shouldReturnLevelOneForTopLevelBookmarks()
+
 @Test
 void shouldReturnLevelTwoForNestedBookmarks()
+
 @Test
 void shouldSkipBookmarksWithBlankTitles()
+
 @Test
 void shouldCapLevelAtSix()
 ```
@@ -421,7 +426,7 @@ public class NumberedHeadingStrategy implements HeadingStrategy {
     public String strategyName() { return "NumberedHeadingStrategy"; }
 
     private void detectInLine(String line, int pageIdx, List<HeadingCandidate> results) {
-        if (line.isBlank()) return;
+        if (!StringUtils.hasText(line)) return;
 
         Matcher numbered = NUMBERED_PATTERN.matcher(line);
         if (numbered.matches()) {
@@ -469,20 +474,28 @@ class NumberedHeadingStrategyTest {
 
     @Test
     void shouldDetectLevelOneForSingleDotPrefix()
+
     @Test
     void shouldDetectLevelTwoForTwoDotPrefix()
+
     @Test
     void shouldDetectLevelThreeForThreeDotPrefix()
+
     @Test
     void shouldDetectSectionKeywordAsLevelOne()
+
     @Test
     void shouldDetectPartKeywordAsLevelOne()
+
     @Test
     void shouldDetectChapterAsLevelOne()
+
     @Test
     void shouldIgnoreBlankLines()
+
     @Test
     void shouldIgnoreMidSentenceNumbers()
+
     @Test
     void shouldDetectBanglaStartingUppercaseAfterNumber()
 }
@@ -554,7 +567,7 @@ public class BanglaHeadingStrategy implements HeadingStrategy {
                 detectInLine(line.strip(), pageIdx, results);
             }
         }
-        log.debug("BanglaHeadingStrategy: found {} Bangla headings in {}",
+        log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG BanglaHeadingStrategy: found {} Bangla headings in {}",
             results.size(), pdfPath.getFileName());
         return results;
     }
@@ -563,7 +576,7 @@ public class BanglaHeadingStrategy implements HeadingStrategy {
     public String strategyName() { return "BanglaHeadingStrategy"; }
 
     private void detectInLine(String line, int pageIdx, List<HeadingCandidate> results) {
-        if (line.isBlank()) return;
+        if (!StringUtils.hasText(line)) return;
         if (CHAPTER_PATTERN.matcher(line).matches()) {
             results.add(buildCandidate(line, 1, pageIdx));
         } else if (DHARA_PATTERN.matcher(line).matches()) {
@@ -587,14 +600,19 @@ public class BanglaHeadingStrategy implements HeadingStrategy {
 class BanglaHeadingStrategyTest {
     @Test
     void shouldDetectAdhyayAsLevelOne()
+
     @Test
     void shouldDetectDharaAsLevelTwo()
+
     @Test
     void shouldDetectAnuchchhedAsLevelThree()
+
     @Test
     void shouldNotDetectEnglishTextAsBanglaHeading()
+
     @Test
     void shouldHandleBanglaNumerals()
+
     @Test
     void shouldHandleMixedBanglaAndAsciiNumerals()
 }
@@ -648,12 +666,12 @@ public class FontSizeHeadingStrategy implements HeadingStrategy {
         if (allBlocks.isEmpty()) return List.of();
 
         float medianFontSize = computeMedianFontSize(allBlocks);
-        log.debug("FontSizeHeadingStrategy: medianFontSize={}", medianFontSize);
+        log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG FontSizeHeadingStrategy: medianFontSize={}", medianFontSize);
 
         return allBlocks.stream()
             .filter(block -> isHeadingCandidate(block, medianFontSize))
             .map(block -> buildCandidate(block, medianFontSize))
-            .filter(c -> !c.getText().isBlank())
+            .filter(c -> StringUtils.hasText(c.getText()))
             .collect(java.util.stream.Collectors.toList());
     }
 
@@ -681,9 +699,9 @@ public class FontSizeHeadingStrategy implements HeadingStrategy {
 
     private boolean isHeadingCandidate(TextBlock block, float medianSize) {
         return block.getFontSize() > (medianSize + HEADING_FONT_SIZE_DELTA)
-            && block.getText() != null
+            && Objects.nonNull(block.getText())
             && block.getText().length() <= MAX_HEADING_LENGTH
-            && !block.getText().isBlank();
+            && StringUtils.hasText(block.getText());
     }
 
     private HeadingCandidate buildCandidate(TextBlock block, float medianSize) {
@@ -792,7 +810,7 @@ public class AllCapsHeadingStrategy implements HeadingStrategy {
     }
 
     private boolean isAllCapsHeading(String line, String[] lines, int index) {
-        if (line.isBlank()) return false;
+        if (!StringUtils.hasText(line)) return false;
         if (line.length() < MIN_LENGTH || line.length() > MAX_LENGTH) return false;
         if (!isAllUppercase(line)) return false;
         return isSurroundedByBlanks(lines, index);
@@ -805,8 +823,8 @@ public class AllCapsHeadingStrategy implements HeadingStrategy {
     }
 
     private boolean isSurroundedByBlanks(String[] lines, int index) {
-        boolean prevBlank = index == 0 || lines[index - 1].isBlank();
-        boolean nextBlank = index == lines.length - 1 || lines[index + 1].isBlank();
+        boolean prevBlank = index == 0 || !StringUtils.hasText(lines[index - 1]);
+        boolean nextBlank = index == lines.length - 1 || !StringUtils.hasText(lines[index + 1]);
         return prevBlank && nextBlank;
     }
 }
@@ -873,7 +891,7 @@ public class TocDetector {
             String[] lines = pageText.split("\\r?\\n");
             List<HeadingCandidate> candidates = extractTocEntries(lines, i);
             if (candidates.size() >= TOC_LINE_THRESHOLD) {
-                log.info("TOC detected on page {} with {} entries", i + 1, candidates.size());
+                log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO TOC detected on page {} with {} entries", i + 1, candidates.size());
                 return Optional.of(candidates);
             }
         }
@@ -885,9 +903,9 @@ public class TocDetector {
         for (String line : lines) {
             Matcher m = TOC_LINE_PATTERN.matcher(line);
             if (m.matches()) {
-                String indent = m.group(1) != null ? m.group(1) : m.group(4);
-                String text = m.group(2) != null ? m.group(2) : m.group(5);
-                if (text != null && !text.isBlank()) {
+                String indent = Objects.nonNull(m.group(1)) ? m.group(1) : m.group(4);
+                String text = Objects.nonNull(m.group(2)) ? m.group(2) : m.group(5);
+                if (Objects.nonNull(text) && StringUtils.hasText(text)) {
                     int level = computeLevelFromIndent(indent);
                     entries.add(HeadingCandidate.builder()
                         .text(text.strip())
@@ -903,7 +921,7 @@ public class TocDetector {
     }
 
     private int computeLevelFromIndent(String indent) {
-        if (indent == null) return 1;
+        if (Objects.isNull(indent)) return 1;
         int spaces = indent.length();
         if (spaces == 0) return 1;
         if (spaces <= 2) return 2;
@@ -917,19 +935,25 @@ public class TocDetector {
 
 ```java
 class TocDetectorTest {
-    @Mock PdfDocumentLoader loader;
+    @Mock
+    PdfDocumentLoader loader;
     private TocDetector detector;
 
     @Test
     void shouldReturnEmptyWhenNoTocPage()
+
     @Test
     void shouldReturnPresentWhenDottedLeaderTocDetected()
+
     @Test
     void shouldReturnPresentWhenSpacedTocDetected()
+
     @Test
     void shouldComputeLevelOneForUnindentedEntry()
+
     @Test
     void shouldComputeLevelTwoForTwoSpaceIndentedEntry()
+
     @Test
     void shouldReturnEmptyWhenFewerThanEightTocLines()
 }
@@ -1008,7 +1032,9 @@ public class Section {
 File: `rfp-core/src/main/java/com/dsi/rfp/domain/model/SectionConfidence.java`:
 
 ```java
-@Data @Builder
+
+@Data
+@Builder
 public class SectionConfidence {
     private double score;    // 0.0 to 1.0
     private String method;   // strategy name that detected this section
@@ -1060,14 +1086,14 @@ public class SectionSegmenter {
         for (HeadingStrategy strategy : strategies) {
             List<HeadingCandidate> candidates = strategy.detectHeadings(pdfPath, loader);
             if (candidates.size() >= MIN_HEADINGS_TO_USE_STRATEGY) {
-                log.info("SectionSegmenter using strategy={} with {} candidates",
+                log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO SectionSegmenter using strategy={} with {} candidates",
                     strategy.strategyName(), candidates.size());
                 double confidence = computeConfidence(strategy, candidates.size());
                 return buildSectionTree(candidates, totalPages, strategy.strategyName(), confidence);
             }
         }
 
-        log.warn("SectionSegmenter: no strategy produced {} headings — returning empty",
+        log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN SectionSegmenter: no strategy produced {} headings — returning empty",
             MIN_HEADINGS_TO_USE_STRATEGY);
         return List.of();
     }
@@ -1252,7 +1278,7 @@ public class ClauseIdAssigner {
         if (sectionNumber.isPresent()) {
             return normalizedRef + ":" + sectionNumber.get() + ":P" + paragraphIndex;
         } else {
-            log.warn("ClauseIdAssigner: using fallback ID for section without numeric prefix: " +
+            log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN ClauseIdAssigner: using fallback ID for section without numeric prefix: " +
                 "procRef={} sectionTitle={}", procurementRef, sectionTitle);
             return normalizedRef + ":S" + (sectionIndex + 1) + ":P" + paragraphIndex;
         }
@@ -1270,7 +1296,7 @@ public class ClauseIdAssigner {
     }
 
     private String normalizeRef(String ref) {
-        if (ref == null || ref.isBlank()) return "unknown";
+        if (Objects.isNull(ref) || !StringUtils.hasText(ref)) return "unknown";
         String normalized = ref.toLowerCase()
             .replaceAll("\\s+", "-")
             .replaceAll("[^a-z0-9\\-]", "");
@@ -1280,7 +1306,7 @@ public class ClauseIdAssigner {
     }
 
     private Optional<String> extractSectionNumber(String sectionTitle) {
-        if (sectionTitle == null) return Optional.empty();
+        if (Objects.isNull(sectionTitle)) return Optional.empty();
         Matcher m = SECTION_NUMBER_PATTERN.matcher(sectionTitle.strip());
         if (m.matches()) return Optional.of(m.group(1));
         return Optional.empty();
@@ -1430,7 +1456,7 @@ public class RfpSchemaValidator {
         InputStream schemaStream = Files.newInputStream(path);
         JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
         jsonSchema = factory.getSchema(schemaStream);
-        log.info("RFP JSON Schema loaded successfully from {}", schemaPath);
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO RFP JSON Schema loaded successfully from {}", schemaPath);
     }
 
     /**
@@ -2044,7 +2070,7 @@ public class SectionExtractionEvaluator {
 
         if (precision + recall == 0) return 0.0;
         double f1 = 2 * precision * recall / (precision + recall);
-        log.info("F1 evaluation: docId={} precision={:.3f} recall={:.3f} f1={:.3f}",
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO F1 evaluation: docId={} precision={:.3f} recall={:.3f} f1={:.3f}",
             truth.getDocId(), precision, recall, f1);
         return f1;
     }
@@ -2099,18 +2125,25 @@ public class SectionExtractionEvaluator {
 class SectionExtractionEvaluatorTest {
     @Test
     void shouldReturnOneWhenExtractedMatchesAllGroundTruth()
+
     @Test
     void shouldReturnZeroWhenNoMatchesFound()
+
     @Test
     void shouldTolerateOnePageDifferenceInPageStart()
+
     @Test
     void shouldNotMatchWhenPageDifferenceExceedsTolerance()
+
     @Test
     void shouldReturnZeroWhenExtractedListIsEmpty()
+
     @Test
     void shouldMatchCaseInsensitively()
+
     @Test
     void shouldReturnTrueForMeetsThresholdWhenF1AbovePoint8()
+
     @Test
     void shouldReturnFalseForMeetsThresholdWhenF1BelowPoint8()
 }

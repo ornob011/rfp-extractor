@@ -184,9 +184,9 @@ public class ExtractionState {
 
     public static ExtractionState initial(String jobId, String documentPath) {
         return ExtractionState.builder()
-                              .jobId(jobId)
-                              .documentPath(documentPath)
-                              .build();
+            .jobId(jobId)
+            .documentPath(documentPath)
+            .build();
     }
 }
 ```
@@ -301,7 +301,7 @@ public final class ConfidenceRouter {
 
     public static boolean anyFieldBelowThreshold(ExtractionState state) {
         return state.getConfidenceMap().values().stream()
-                    .anyMatch(score -> score < LOW_CONFIDENCE_THRESHOLD);
+            .anyMatch(score -> score < LOW_CONFIDENCE_THRESHOLD);
     }
 }
 ```
@@ -329,7 +329,9 @@ public final class ConfidenceRouter {
   map with entry `< 0.6`
 - `shouldRouteToRulePackWhenAllFieldsAboveThreshold()` — all entries `>= 0.6` → returns false
 
-**Observability:** `log.info("graph=ExtractionGraph compiled nodes={}", nodeCount)` at startup.
+**Observability:**
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO graph=ExtractionGraph compiled nodes={}", nodeCount)`
+at startup.
 
 **Story Points:** 5
 
@@ -418,9 +420,15 @@ public class ExtractionOrchestrationService {
 
 **Observability:**
 
-- `log.info("extraction.start jobId={} documentPath={}", jobId, documentPath)` before graph invocation
-- `log.info("extraction.complete jobId={} durationMs={}", jobId, elapsed)` on success
-- `log.error("extraction.failed jobId={} error={}", jobId, e.getMessage())` on failure
+-
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO extraction.start jobId={} documentPath={}", jobId, documentPath)`
+before graph invocation
+-
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO extraction.complete jobId={} durationMs={}", jobId, elapsed)`
+on success
+-
+`log.error("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=ERROR extraction.failed jobId={} error={}", jobId, e.getMessage())`
+on failure
 - Micrometer counter: `rfp.extraction.started`, `rfp.extraction.completed`, `rfp.extraction.failed`
 
 **Story Points:** 5
@@ -489,7 +497,7 @@ public class ValidateNode implements NodeAction<ExtractionState> {
         if (!Files.exists(doc)) {
             throw new IllegalStateException("Document not found: " + state.getDocumentPath());
         }
-        log.info("validate.ok jobId={} path={}", state.getJobId(), state.getDocumentPath());
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO validate.ok jobId={} path={}", state.getJobId(), state.getDocumentPath());
         return Map.of(); // no state mutation needed
     }
 }
@@ -540,8 +548,12 @@ public class RfpDocumentAssembler {
 
 **Observability:**
 
-- `log.info("node.start node={} jobId={}", nodeName, jobId)` at entry of each non-trivial node
-- `log.info("node.complete node={} jobId={} items={}", nodeName, jobId, resultCount)` at exit
+-
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO node.start node={} jobId={}", nodeName, jobId)`
+at entry of each non-trivial node
+-
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO node.complete node={} jobId={} items={}", nodeName, jobId, resultCount)`
+at exit
 - Redis key pattern: `job:{jobId}:currentNode` updated at each node entry for progress tracking
 
 **Story Points:** 8
@@ -643,8 +655,10 @@ public class DocumentChunkingService {
 
 **Observability:**
 
-- `log.info("chunking.complete jobId={} chunkCount={} totalTokens={}", jobId, chunks.size(), totalTokens)` — note: jobId
-  passed as optional context param
+-
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO chunking.complete jobId={} chunkCount={} totalTokens={}", jobId, chunks.size(), totalTokens)` —
+note: jobId
+passed as optional context param
 
 **Story Points:** 3
 
@@ -771,9 +785,12 @@ public abstract class BaseEntityExtractor {
 
 **Observability:**
 
-- `log.debug("entity.extract.start extractor={} jobId={} chunkCount={}", className, jobId, chunks.size())`
-- `log.warn("entity.parse.failed extractor={} jobId={} chunk={}", className, jobId, chunkIndex)`
-- `log.info("entity.extract.done extractor={} jobId={} fields={}", className, jobId, resultSize)`
+-
+`log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG entity.extract.start extractor={} jobId={} chunkCount={}", className, jobId, chunks.size())`
+-
+`log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN entity.parse.failed extractor={} jobId={} chunk={}", className, jobId, chunkIndex)`
+-
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO entity.extract.done extractor={} jobId={} fields={}", className, jobId, resultSize)`
 
 **Story Points:** 5
 
@@ -835,8 +852,8 @@ public class GeneralEntityExtractor extends BaseEntityExtractor {
     @Override
     protected void validateFields(Map<String, Object> parsed) {
         REQUIRED_FIELDS.stream()
-                       .filter(f -> !parsed.containsKey(f))
-                       .forEach(f -> log.warn("entity.field.missing extractor=General field={}", f));
+            .filter(f -> !parsed.containsKey(f))
+            .forEach(f -> log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN entity.field.missing extractor=General field={}", f));
     }
 
     @Override
@@ -1119,8 +1136,10 @@ public class EntityExtractor {
 
 **Observability:**
 
-- `log.info("entity.extractAll.start jobId={}", state.getJobId())`
-- `log.info("entity.extractAll.done jobId={} fields={}", state.getJobId(), merged.size())`
+-
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO entity.extractAll.start jobId={}", state.getJobId())`
+-
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO entity.extractAll.done jobId={} fields={}", state.getJobId(), merged.size())`
 - Micrometer timer: `rfp.entity.extraction.duration` tagged `extractor=general|submission|...`
 
 **Story Points:** 5
@@ -1195,7 +1214,7 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
         double completeness = computeCompleteness(scores);
         scores.put("doc_completeness_score", completeness);
 
-        log.info("confidence.score jobId={} completeness={} lowConfFields={}",
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO confidence.score jobId={} completeness={} lowConfFields={}",
             state.getJobId(), completeness, lowConfQueue);
         return Map.of("confidenceMap", scores, "lowConfidenceQueue", lowConfQueue);
     }
@@ -1207,7 +1226,7 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
     }
 
     private double scoreValue(Object value) {
-        if (value == null) return 0.0;
+        if (Objects.isNull(value)) return 0.0;
         String str = value.toString().strip();
         if (str.isEmpty()) return 0.0;
         if (str.length() < 5) return 0.5;  // present but low-quality (very short)
@@ -1216,8 +1235,8 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
 
     private double computeCompleteness(Map<String, Double> scores) {
         long nonNull = CRITICAL_FIELDS.stream()
-                                      .filter(f -> scores.getOrDefault(f, 0.0) > 0.0)
-                                      .count();
+            .filter(f -> scores.getOrDefault(f, 0.0) > 0.0)
+            .count();
         return (double) nonNull / CRITICAL_FIELDS.size();
     }
 }
@@ -1245,7 +1264,9 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
 
 **Observability:**
 
-- `log.info("confidence.score jobId={} completeness={:.2f} lowConfFields={}",...)` on every invocation
+-
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO confidence.score jobId={} completeness={:.2f} lowConfFields={}",...)`
+on every invocation
 - Redis key `job:{jobId}:confidence` storing completeness score as `HSET` field
 
 **Story Points:** 5

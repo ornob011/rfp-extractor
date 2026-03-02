@@ -287,7 +287,7 @@ programmatically (PDFBox API) with known line coordinates drawn via `PDPageConte
 **Observability:**
 
 ```java
-log.debug("[LatticeTableExtractor] Page={} hLines={} vLines={} cells={}",
+log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG [LatticeTableExtractor] Page={} hLines={} vLines={} cells={}",
           pageNum, hLines.size(),vLines.
 
 size(),grid.
@@ -389,7 +389,7 @@ Mock `loader.loadPageBoundingBoxes` to return hand-crafted `TextBlock` lists wit
 **Observability:**
 
 ```java
-log.debug("[StreamTableExtractor] Page={} columnBoundaries={} rows={} cells={}",
+log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG [StreamTableExtractor] Page={} columnBoundaries={} rows={} cells={}",
           pageNum, boundaries.size(),rows.
 
 size(),grid.
@@ -562,7 +562,7 @@ Mock both sub-extractors. Verify interaction counts.
 **Observability:**
 
 ```java
-log.info("[TableExtractor] JobId={} totalPages={} digitalPages={} tablesFound={}",
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [TableExtractor] JobId={} totalPages={} digitalPages={} tablesFound={}",
          jobId, totalPages, digitalCount, tables.size());
 ```
 
@@ -675,7 +675,7 @@ Build `TableExtractionResult` objects with known grids. Do not mock Levenshtein 
 **Observability:**
 
 ```java
-log.info("[TableContinuationDetector] Merged tables: pageStart={} pageEnd={} signals=[adjacent={}, noFooter={}, sameHeaders={}]",
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [TableContinuationDetector] Merged tables: pageStart={} pageEnd={} signals=[adjacent={}, noFooter={}, sameHeaders={}]",
          prev.getPageStart(),next.
 
 getPageEnd(),signal1,signal2,signal3);
@@ -854,7 +854,7 @@ Mock all three collaborators. Assert `state.tables` and `state.errors` contents.
 **Observability:**
 
 ```java
-log.info("[ExtractTablesNode] JobId={} rawTables={} afterMerge={} withSectionLinks={}",
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [ExtractTablesNode] JobId={} rawTables={} afterMerge={} withSectionLinks={}",
          state.jobId, rawTables.size(),mergedTables.
 
 size(),linkedWithSections);

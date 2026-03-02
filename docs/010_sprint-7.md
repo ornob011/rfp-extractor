@@ -132,7 +132,7 @@ private List<String> lowConfidenceQueue = new ArrayList<>();
 private int totalRepairIterations = 0;
 
 @Builder.Default
-private List<RepairLogEntry> repairLog = new ArrayList<>();
+private final List<RepairLogEntry> repairLog = new ArrayList<>();
 
 @Builder.Default
 private final List<String> manualReviewRequired = new ArrayList<>();
@@ -223,7 +223,8 @@ Scenario: Any component, attempt >= 3
 // rfp-service/.../adapter/extraction/RepairDecisionTable.java
 public final class RepairDecisionTable {
 
-    private RepairDecisionTable() {}  // utility class — no instantiation
+    private RepairDecisionTable() {
+    }  // utility class — no instantiation
 
     /**
      * Determines the repair strategy for a low-confidence component.
@@ -236,9 +237,9 @@ public final class RepairDecisionTable {
      * @return RepairStrategy — never null
      */
     public static RepairStrategy getStrategy(String componentId,
-                                              String componentType,
-                                              String confidenceSource,
-                                              int attemptNumber) { ... }
+                                             String componentType,
+                                             String confidenceSource,
+                                             int attemptNumber) { ...}
 }
 ```
 
@@ -305,16 +306,19 @@ temperature: 0.0
 
 ## System
 
-You are a document structure analyst specializing in Government of Bangladesh procurement documents (RFPs, ToRs, and tenders). Your task is to identify the major section structure of a document from a partial text excerpt.
+You are a document structure analyst specializing in Government of Bangladesh procurement documents (RFPs, ToRs, and
+tenders). Your task is to identify the major section structure of a document from a partial text excerpt.
 
 ## Instructions
 
 1. Read the document text below carefully.
-2. Identify all major sections and subsections. A section is typically introduced by a numbered heading (e.g., "1.", "1.1", "Section 1"), an ALL-CAPS heading, or a bold heading phrase.
+2. Identify all major sections and subsections. A section is typically introduced by a numbered heading (e.g., "1.", "
+   1.1", "Section 1"), an ALL-CAPS heading, or a bold heading phrase.
 3. For each section you identify, provide:
-   - The section title (exact text as it appears in the document)
-   - The hierarchical level (1 = top-level chapter, 2 = subsection, 3 = sub-subsection)
-   - The approximate page number where the section starts (estimate from the text if page numbers are visible; otherwise use 0)
+    - The section title (exact text as it appears in the document)
+    - The hierarchical level (1 = top-level chapter, 2 = subsection, 3 = sub-subsection)
+    - The approximate page number where the section starts (estimate from the text if page numbers are visible;
+      otherwise use 0)
 4. Return ONLY the JSON object below. Do not include any explanation or markdown fences.
 5. If you cannot identify any sections, return `{"sections": []}`.
 6. Limit your response to the 20 most significant sections.
@@ -401,23 +405,25 @@ public class LlmSectionSegmentFallback {
     private static final int DEDUP_LEVENSHTEIN_THRESHOLD = 3;
 
     public LlmSectionSegmentFallback(LlmAdapter llmAdapter,
-                                      DocumentChunkingService chunkingService,
-                                      ObjectMapper objectMapper) { ... }
+                                     DocumentChunkingService chunkingService,
+                                     ObjectMapper objectMapper) { ...}
 
     /**
      * Returns true when the fallback should run.
      */
-    public boolean shouldFire(ExtractionState state) { ... }
+    public boolean shouldFire(ExtractionState state) { ...}
 
     /**
      * Calls LLM, parses response, merges with existing sections.
      * Mutates state.sections. Never throws.
      */
-    public void execute(ExtractionState state) { ... }
+    public void execute(ExtractionState state) { ...}
 
-    private String buildFirstPagesText(ExtractionState state) { ... }
-    private List<Section> parseLlmResponse(String llmJson) { ... }
-    private boolean isDuplicate(Section candidate, List<Section> existing) { ... }
+    private String buildFirstPagesText(ExtractionState state) { ...}
+
+    private List<Section> parseLlmResponse(String llmJson) { ...}
+
+    private boolean isDuplicate(Section candidate, List<Section> existing) { ...}
 }
 ```
 
@@ -472,9 +478,13 @@ Mock `LlmAdapter`. Build `ExtractionState` with specific `sections`, `pageTexts`
 **Observability:**
 
 ```java
-log.info("[LlmSectionSegmentFallback] Fired: existingSections={} llmSuggestedNew={} totalAfterMerge={}",
-    existingCount, newCount, state.getSections().size());
-log.error("[LlmSectionSegmentFallback] LLM call failed; sections unchanged: {}", e.getMessage());
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [LlmSectionSegmentFallback] Fired: existingSections={} llmSuggestedNew={} totalAfterMerge={}",
+         existingCount, newCount, state.getSections().
+
+size());
+    log.
+
+error("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=ERROR [LlmSectionSegmentFallback] LLM call failed; sections unchanged: {}",e.getMessage());
 ```
 
 **Story Points:** 8
@@ -551,25 +561,30 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
     );
 
     private static final Map<String, Double> SECTION_STRATEGY_CONFIDENCE = Map.of(
-        "bookmark",       0.95,
-        "heading_style",  0.90,
-        "numbered",       0.85,
-        "bangla",         0.85,
-        "font_size",      0.70,
-        "caps",           0.55,
-        "llm",            0.75
+        "bookmark", 0.95,
+        "heading_style", 0.90,
+        "numbered", 0.85,
+        "bangla", 0.85,
+        "font_size", 0.70,
+        "caps", 0.55,
+        "llm", 0.75
     );
 
     @Override
-    public ExtractionState execute(ExtractionState state) { ... }
+    public ExtractionState execute(ExtractionState state) { ...}
 
-    private void scoreEntities(ExtractionState state) { ... }
-    private void scoreSections(ExtractionState state) { ... }
-    private void scoreTables(ExtractionState state) { ... }
-    private void computeDocCompleteness(ExtractionState state) { ... }
-    private double entityScore(Object entityValue, Double llmConfidence) { ... }
+    private void scoreEntities(ExtractionState state) { ...}
+
+    private void scoreSections(ExtractionState state) { ...}
+
+    private void scoreTables(ExtractionState state) { ...}
+
+    private void computeDocCompleteness(ExtractionState state) { ...}
+
+    private double entityScore(Object entityValue, Double llmConfidence) { ...}
+
     private void enqueue(String componentId, String componentType, String source,
-                          double score, ExtractionState state) { ... }
+                         double score, ExtractionState state) { ...}
 }
 ```
 
@@ -596,8 +611,8 @@ private final double docCompletenessScore = 0.0;
         - Call `enqueue(path, "entity", "llm", score, state)`.
 
 2. `entityScore(entityValue, llmConfidence)`:
-    - If `entityValue == null` → `0.0`.
-    - If `llmConfidence != null && llmConfidence < 0.7` → `0.5`.
+    - If `Objects.isNull(entityValue)` → `0.0`.
+    - If `Objects.nonNull(llmConfidence) && llmConfidence < 0.7` → `0.5`.
     - Else → `1.0`.
 
 3. `scoreSections(state)`:
@@ -649,11 +664,14 @@ No mocking needed — pure computation on hand-built `ExtractionState`.
 **Observability:**
 
 ```java
-log.info("[ScoreConfidenceNode] JobId={} entitiesScored={} sectionsScored={} tablesScored={} " +
-    "lowConfidenceQueue={} manualReview={} docCompleteness={}",
-    state.jobId, entityCount, sectionCount, tableCount,
-    state.lowConfidenceQueue.size(), state.manualReviewRequired.size(),
-    state.docCompletenessScore);
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [ScoreConfidenceNode] JobId={} entitiesScored={} sectionsScored={} tablesScored={} "+
+             "lowConfidenceQueue={} manualReview={} docCompleteness={}",
+         state.jobId, entityCount, sectionCount, tableCount,
+         state.lowConfidenceQueue.size(),state.manualReviewRequired.
+
+size(),
+
+state.docCompletenessScore);
 ```
 
 **Story Points:** 13
@@ -734,25 +752,32 @@ public class RepairLoopNode implements NodeAction<ExtractionState> {
     private static final int HIGH_DPI_FOR_RETRY = 450;
 
     public RepairLoopNode(SectionSegmenter sectionSegmenter,
-                           TableExtractor tableExtractor,
-                           ScannedPageExtractor scannedPageExtractor,
-                           ScannedTableReconstructor scannedTableReconstructor,
-                           EntityExtractionOrchestrator entityOrchestrator,
-                           LlmSectionSegmentFallback llmSectionFallback) { ... }
+                          TableExtractor tableExtractor,
+                          ScannedPageExtractor scannedPageExtractor,
+                          ScannedTableReconstructor scannedTableReconstructor,
+                          EntityExtractionOrchestrator entityOrchestrator,
+                          LlmSectionSegmentFallback llmSectionFallback) { ...}
 
     @Override
-    public ExtractionState execute(ExtractionState state) { ... }
+    public ExtractionState execute(ExtractionState state) { ...}
 
     private void executeStrategy(String componentId, RepairStrategy strategy,
-                                  int attemptNumber, ExtractionState state) { ... }
-    private void retrySectionSegmentation(String componentId, int attempt, ExtractionState state) { ... }
-    private void switchTableMode(String componentId, ExtractionState state) { ... }
-    private void retryScannedTableHigherDpi(String componentId, ExtractionState state) { ... }
-    private void widenEntityContext(String componentId, ExtractionState state) { ... }
-    private double rescoreComponent(String componentId, ExtractionState state) { ... }
-    private int countPreviousAttempts(List<RepairLogEntry> repairLog, String componentId) { ... }
+                                 int attemptNumber, ExtractionState state) { ...}
+
+    private void retrySectionSegmentation(String componentId, int attempt, ExtractionState state) { ...}
+
+    private void switchTableMode(String componentId, ExtractionState state) { ...}
+
+    private void retryScannedTableHigherDpi(String componentId, ExtractionState state) { ...}
+
+    private void widenEntityContext(String componentId, ExtractionState state) { ...}
+
+    private double rescoreComponent(String componentId, ExtractionState state) { ...}
+
+    private int countPreviousAttempts(List<RepairLogEntry> repairLog, String componentId) { ...}
+
     private RepairLogEntry buildLogEntry(String componentId, RepairStrategy strategy,
-                                          int attempt, double before, double after, String reason) { ... }
+                                         int attempt, double before, double after, String reason) { ...}
 }
 ```
 
@@ -764,14 +789,17 @@ public class RepairLoopNode implements NodeAction<ExtractionState> {
 public ExtractionState execute(ExtractionState state) {
     if (state.getLowConfidenceQueue().isEmpty()) return state;
     if (state.getTotalRepairIterations() >= MAX_TOTAL_ITERATIONS) {
-        log.warn("[RepairLoopNode] Repair hard stop reached: totalIterations={}", MAX_TOTAL_ITERATIONS);
+        log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN [RepairLoopNode] Repair hard stop reached: totalIterations={}", MAX_TOTAL_ITERATIONS);
         return state;
     }
     String componentId = state.getLowConfidenceQueue().remove(0);
     int attemptNumber = countPreviousAttempts(state.getRepairLog(), componentId) + 1;
     double before = state.getConfidenceMap().getOrDefault(componentId, 0.0);
     RepairableComponent comp = state.getRepairableComponents().get(componentId);
-    if (comp == null) { state.getManualReviewRequired().add(componentId); return state; }
+    if (Objects.isNull(comp)) {
+        state.getManualReviewRequired().add(componentId);
+        return state;
+    }
     if (attemptNumber > MAX_RETRIES_PER_ITEM) {
         state.getManualReviewRequired().add(componentId);
         state.getRepairLog().add(buildLogEntry(componentId, NO_OP, attemptNumber, before, before, "max retries exhausted"));
@@ -866,10 +894,14 @@ Mock all collaborators. Build `ExtractionState` for each test case.
 **Observability:**
 
 ```java
-log.info("[RepairLoopNode] JobId={} componentId={} type={} strategy={} attempt={} before={} after={} queueRemaining={}",
-    state.jobId, componentId, comp.componentType, strategy, attemptNumber,
-    String.format("%.3f", before), String.format("%.3f", after),
-    state.lowConfidenceQueue.size());
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [RepairLoopNode] JobId={} componentId={} type={} strategy={} attempt={} before={} after={} queueRemaining={}",
+         state.jobId, componentId, comp.componentType, strategy, attemptNumber,
+         String.format("%.3f", before),String.
+
+format("%.3f",after),
+    state.lowConfidenceQueue.
+
+size());
 ```
 
 **Story Points:** 21
@@ -920,13 +952,17 @@ public class ExtractionStateRedisSerializer {
     private static final Duration TTL = Duration.ofHours(2);
 
     public ExtractionStateRedisSerializer(ObjectMapper objectMapper,
-                                           StringRedisTemplate redisTemplate) { ... }
+                                          StringRedisTemplate redisTemplate) { ...}
 
-    public void save(String jobId, ExtractionState state) { ... }
-    public Optional<ExtractionState> load(String jobId) { ... }
-    public void delete(String jobId) { ... }
+    public void save(String jobId, ExtractionState state) { ...}
 
-    private String key(String jobId) { return KEY_PREFIX + jobId; }
+    public Optional<ExtractionState> load(String jobId) { ...}
+
+    public void delete(String jobId) { ...}
+
+    private String key(String jobId) {
+        return KEY_PREFIX + jobId;
+    }
 }
 ```
 
@@ -967,7 +1003,7 @@ Use `EmbeddedRedis` (testcontainers or embedded-redis) or mock `StringRedisTempl
 **Observability:**
 
 ```java
-log.debug("[ExtractionStateRedisSerializer] Saved state for jobId={} size={}bytes ttl=2h", jobId, json.length());
+log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG [ExtractionStateRedisSerializer] Saved state for jobId={} size={}bytes ttl=2h",jobId, json.length());
 ```
 
 **Story Points:** 5
@@ -1014,9 +1050,11 @@ Scenario: Format summary
 @Service
 public class RepairAuditService {
 
-    public String formatEntry(RepairLogEntry entry) { ... }
-    public String formatSummary(ExtractionState state) { ... }
-    public List<String> formatAll(List<RepairLogEntry> entries) { ... }
+    public String formatEntry(RepairLogEntry entry) { ...}
+
+    public String formatSummary(ExtractionState state) { ...}
+
+    public List<String> formatAll(List<RepairLogEntry> entries) { ...}
 }
 ```
 
@@ -1081,11 +1119,12 @@ Scenario: Status response shows empty repairEvents for COMPLETED job with no rep
 ```java
 // rfp-service/.../adapter/api/dto/RepairEventDto.java
 public record RepairEventDto(
-    String componentId,
-    int attempt,
-    String strategy,
-    String result  // "IMPROVED" | "NOT IMPROVED" | "MAX_RETRIES"
-) {}
+        String componentId,
+        int attempt,
+        String strategy,
+        String result  // "IMPROVED" | "NOT IMPROVED" | "MAX_RETRIES"
+    ) {
+}
 
 // rfp-service/.../adapter/api/dto/JobStatusDto.java
 // Add to existing JobStatusDto:
@@ -1161,20 +1200,20 @@ Scenario: JobStatusPage shows live repair counter
 ```typescript
 // rfp-frontend/src/components/AuditPanel.tsx
 interface RepairEvent {
-  componentId: string;
-  attempt: number;
-  strategy: string;
-  result: 'IMPROVED' | 'NOT IMPROVED' | 'MAX_RETRIES';
+    componentId: string;
+    attempt: number;
+    strategy: string;
+    result: 'IMPROVED' | 'NOT IMPROVED' | 'MAX_RETRIES';
 }
 
 interface AuditPanelProps {
-  repairEvents: RepairEvent[];
-  totalRepairIterations: number;
+    repairEvents: RepairEvent[];
+    totalRepairIterations: number;
 }
 
-export function AuditPanel({ repairEvents, totalRepairIterations }: AuditPanelProps): JSX.Element {
-  const [open, setOpen] = useState(false);
-  // ...
+export function AuditPanel({repairEvents, totalRepairIterations}: AuditPanelProps): JSX.Element {
+    const [open, setOpen] = useState(false);
+    // ...
 }
 ```
 

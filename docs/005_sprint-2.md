@@ -256,7 +256,7 @@ public class DocumentValidationService {
 
     private ValidationResult checkForXfa(PDDocument doc) {
         PDAcroForm acroForm = doc.getDocumentCatalog().getAcroForm();
-        if (acroForm != null && acroForm.getXFA() != null) {
+        if (Objects.nonNull(acroForm) && Objects.nonNull(acroForm.getXFA())) {
             return ValidationResult.fail("XFA_FORM",
                 "PDF contains XFA form which cannot be processed. " +
                     "Please export as a standard PDF.");
@@ -819,7 +819,7 @@ public class PageClassifier {
 
     private int computeTotalCharCount(List<TextBlock> textBlocks) {
         return textBlocks.stream()
-            .mapToInt(tb -> tb.getText() != null ? tb.getText().length() : 0)
+            .mapToInt(tb -> Objects.nonNull(tb.getText()) ? tb.getText().length() : 0)
             .sum();
     }
 }
@@ -957,7 +957,7 @@ public class PageClassificationService {
             results.add(result);
             int progress = computeProgress(i + 1, pageCount);
             jobStatePort.updateProgress(jobId, progress);
-            log.debug("Page {}/{} classified as {}", i + 1, pageCount,
+            log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG Page {}/{} classified as {}", i + 1, pageCount,
                 result.getClassification());
         }
 
@@ -982,7 +982,7 @@ public class PageClassificationService {
         long digital = results.stream().filter(r -> r.getClassification().name().equals("DIGITAL")).count();
         long scanned = results.stream().filter(r -> r.getClassification().name().equals("SCANNED")).count();
         long mixed = results.stream().filter(r -> r.getClassification().name().equals("MIXED")).count();
-        log.info("Classification summary: jobId={} total={} DIGITAL={} SCANNED={} MIXED={}",
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO Classification summary: jobId={} total={} DIGITAL={} SCANNED={} MIXED={}",
             jobId, results.size(), digital, scanned, mixed);
     }
 }
@@ -1184,7 +1184,7 @@ public class RedisJobStateRepository implements JobStatePort {
     public void save(ExtractionJob job) {
         String key = buildKey(job.getJobId());
         redisTemplate.opsForValue().set(key, job, TTL);
-        log.debug("Saved job {} to Redis with TTL 24h", job.getJobId());
+        log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG Saved job {} to Redis with TTL 24h", job.getJobId());
     }
 
     @Override
@@ -1215,9 +1215,9 @@ public class RedisJobStateRepository implements JobStatePort {
     @Override
     public List<ExtractionJob> findAll() {
         Set<String> keys = redisTemplate.keys(KEY_PREFIX + "*");
-        if (keys == null || keys.isEmpty()) return List.of();
+        if (Objects.isNull(keys) || keys.isEmpty()) return List.of();
         List<ExtractionJob> values = redisTemplate.opsForValue().multiGet(new ArrayList<>(keys));
-        if (values == null) return List.of();
+        if (Objects.isNull(values)) return List.of();
         return values.stream().filter(Objects::nonNull).toList();
     }
 
@@ -1385,7 +1385,7 @@ public class LocalFileStorageAdapter implements FileStoragePort {
         Files.createDirectories(dir);
         Path target = dir.resolve(sanitizeFilename(filename));
         Files.write(target, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        log.info("Stored file: jobId={} filename={} bytes={}", jobId, filename, content.length);
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO Stored file: jobId={} filename={} bytes={}", jobId, filename, content.length);
         return target;
     }
 
@@ -1625,7 +1625,7 @@ public class RfpSubmissionService {
         ExtractionJob job = createJob(jobId, file.getOriginalFilename(), fileBytes.length);
         jobStatePort.save(job);
         pipelineService.runAsync(jobId, storedPath);
-        log.info("Job submitted: jobId={} file={} size={}KB",
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO Job submitted: jobId={} file={} size={}KB",
             jobId, file.getOriginalFilename(), fileBytes.length / 1024);
         return SubmitResponse.builder()
             .jobId(jobId.toString())
@@ -1702,8 +1702,8 @@ public class RfpJobService {
             .jobId(job.getJobId().toString())
             .status(job.getStatus().name())
             .progress(job.getProgress())
-            .submittedAt(job.getSubmittedAt() != null ? job.getSubmittedAt().toString() : null)
-            .completedAt(job.getCompletedAt() != null ? job.getCompletedAt().toString() : null)
+            .submittedAt(Objects.nonNull(job.getSubmittedAt()) ? job.getSubmittedAt().toString() : null)
+            .completedAt(Objects.nonNull(job.getCompletedAt()) ? job.getCompletedAt().toString() : null)
             .errorMessage(job.getErrorMessage())
             .originalFilename(job.getOriginalFilename())
             .pageCount(job.getPageCount())
@@ -1741,7 +1741,7 @@ public class ExtractionPipelineService {
      */
     @Async("rfpTaskExecutor")
     public void runAsync(UUID jobId, Path documentPath) {
-        log.info("Pipeline starting: jobId={}", jobId);
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO Pipeline starting: jobId={}", jobId);
         jobStatePort.updateStatus(jobId, JobStatus.RUNNING);
         var classifications = pageClassificationService.classifyAllPages(documentPath, jobId);
         int pageCount = classifications.size();
@@ -1751,7 +1751,7 @@ public class ExtractionPipelineService {
             jobStatePort.save(job);
         });
         jobStatePort.updateStatus(jobId, JobStatus.COMPLETED);
-        log.info("Pipeline completed (page classification only): jobId={} pages={}",
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO Pipeline completed (page classification only): jobId={} pages={}",
             jobId, pageCount);
     }
 }
@@ -1777,10 +1777,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ProblemDetail> handleResponseStatus(ResponseStatusException ex) {
-        log.warn("Request failed: status={} reason={}", ex.getStatusCode(), ex.getReason());
+        log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN Request failed: status={} reason={}", ex.getStatusCode(), ex.getReason());
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
             ex.getStatusCode(),
-            ex.getReason() != null ? ex.getReason() : "Unknown error"
+            Objects.nonNull(ex.getReason()) ? ex.getReason() : "Unknown error"
         );
         problem.setTitle("Request Failed");
         return ResponseEntity.status(ex.getStatusCode()).body(problem);

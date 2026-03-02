@@ -473,7 +473,7 @@ correctness verified manually in demo script.
 **Observability:**
 
 ```java
-log.info("[RulePackLoader] Loaded pack: id={}, version={}, rules={}",pack.getId(),pack.
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [RulePackLoader] Loaded pack: id={}, version={}, rules={}",pack.getId(),pack.
 
 getVersion(),pack.
 
@@ -1218,25 +1218,25 @@ public class RfpTypeClassifier {
             bestType = RfpType.UNKNOWN;
         }
 
-        log.info("[RfpTypeClassifier] Classified document={} as type={} score={}",
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [RfpTypeClassifier] Classified document={} as type={} score={}",
             doc.getJobId(), bestType, bestScore);
         return bestType;
     }
 
     private String buildSearchText(RfpDocument doc) {
         StringBuilder sb = new StringBuilder();
-        if (doc.getMetadata() != null) {
+        if (Objects.nonNull(doc.getMetadata())) {
             appendIfPresent(sb, doc.getMetadata().getTitle());
             appendIfPresent(sb, doc.getMetadata().getProcurementMethod());
         }
-        if (doc.getEntities() != null) {
+        if (Objects.nonNull(doc.getEntities())) {
             appendIfPresent(sb, doc.getEntities().getScopeOfWork());
         }
         return sb.toString();
     }
 
     private void appendIfPresent(StringBuilder sb, String value) {
-        if (value != null && !value.isBlank()) {
+        if (Objects.nonNull(value) && StringUtils.hasText(value)) {
             sb.append(" ").append(value);
         }
     }
@@ -1353,14 +1353,14 @@ public class RulePackAdminService {
     private final RulePackLoader rulePackLoader;
 
     public List<RulePackSummaryDto> listLoadedPacks() {
-        log.info("[RulePackAdminService] Listing loaded rule packs");
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [RulePackAdminService] Listing loaded rule packs");
         return rulePackLoader.getAllPackSummaries();
     }
 
     public ReloadResultDto reloadAll() {
-        log.info("[RulePackAdminService] Manual reload triggered");
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [RulePackAdminService] Manual reload triggered");
         List<String> reloadedIds = rulePackLoader.reloadAll();
-        log.info("[RulePackAdminService] Reloaded packs: {}", reloadedIds);
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [RulePackAdminService] Reloaded packs: {}", reloadedIds);
         return new ReloadResultDto(reloadedIds, Instant.now());
     }
 }
@@ -1518,13 +1518,13 @@ public class AdminRulePackController {
 
     @GetMapping
     public ResponseEntity<List<RulePackSummaryDto>> listRulePacks() {
-        log.info("[AdminRulePackController] GET /api/v1/admin/rule-packs");
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [AdminRulePackController] GET /api/v1/admin/rule-packs");
         return ResponseEntity.ok(rulePackAdminService.listLoadedPacks());
     }
 
     @PostMapping("/reload")
     public ResponseEntity<ReloadResultDto> reloadRulePacks() {
-        log.info("[AdminRulePackController] POST /api/v1/admin/rule-packs/reload");
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [AdminRulePackController] POST /api/v1/admin/rule-packs/reload");
         return ResponseEntity.ok(rulePackAdminService.reloadAll());
     }
 }
