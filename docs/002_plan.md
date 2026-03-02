@@ -418,6 +418,21 @@ app.llm.chunk-size-tokens=3500
 A `LlmProviderConfig` Spring `@Configuration` class reads `app.llm.provider` and registers the correct Spring AI
 `ChatClient` and LangChain4J `ChatLanguageModel` beans. All services depend on the interface, not a concrete provider.
 
+### Deployment Mode: OpenRouter vs. Ollama
+
+| Mode                        | Provider          | Data leaves network?                 | Use for                                                |
+|-----------------------------|-------------------|--------------------------------------|--------------------------------------------------------|
+| Development / pilot         | OpenRouter        | Yes (to OpenRouter → upstream model) | Local dev, demo, evaluation                            |
+| GOB production (air-gapped) | Ollama on-premise | **No**                               | Any client with data sovereignty / air-gap requirement |
+| GOB production (OpenRouter) | OpenRouter        | Yes                                  | **Not permitted** — refutes air-gap claim              |
+
+**Rule:** `app.llm.provider=openrouter` is for **development and evaluation only**. Any GOB client
+who cites data sovereignty or air-gap requirements **must** be deployed with `app.llm.provider=ollama`
+running on DSI's own GPU hardware. The architecture is one config flag away — no code changes needed.
+
+The `doc_meta.extraction_model` field in the output JSON records which provider and model was used,
+satisfying audit trail requirements regardless of deployment mode.
+
 ---
 
 ## Project Structure
