@@ -63,8 +63,9 @@
   `LlmResponseParseException` → 502, `NoSuchFileException` → 404.
 - **`JobStateAsyncExceptionHandler`** — implements `AsyncUncaughtExceptionHandler`; marks the job FAILED in Redis when
   an `@Async` void method throws. Replaces the placeholder log-only handler added in Sprint 1 `AsyncConfig`.
-- Updated React frontend: `UploadPage` wires to real API; `JobStatusPage` polls every 3s showing progress bar and status
-  badge.
+- Updated React frontend: `UploadPage` wires to real API and redirects to `/jobs` on success; `JobStatusPage` polls
+  every 3s showing progress bar and status badge; `JobsListPage` lists all submitted jobs with status badge, filename,
+  submitted timestamp, and "View" link to `/job/{uuid}`.
 - At least 30 unit tests covering validation, classification, and job state.
 
 ---
@@ -2140,11 +2141,14 @@ void shouldReturnAllJobsFromPort()
 
 ### Epic 6 — Frontend Update
 
-#### Story 6.1 — Wire UploadPage and Add Polling JobStatusPage
+#### Story 6.1 — Wire UploadPage, Add Polling JobStatusPage, and Add JobsListPage
 
 **Description:**
-Update `UploadPage.tsx` to call the real API. Create a functional `JobStatusPage.tsx` with React Query polling every 3
-seconds, showing a progress bar, status badge with color coding, and per-page classification placeholder.
+Update `UploadPage.tsx` to call the real API and redirect to `/jobs` on success. Create `JobsListPage.tsx` as the
+home/landing page, calling `GET /api/v1/rfp/jobs` and listing all submitted jobs sorted by `submittedAt` descending
+with a status badge, filename, submitted timestamp, and "View" link. Create `JobStatusPage.tsx` with React Query
+polling every 3 seconds, showing a progress bar, status badge with color coding, and per-page classification
+placeholder.
 
 **Acceptance Criteria:**
 
@@ -2152,7 +2156,13 @@ seconds, showing a progress bar, status badge with color coding, and per-page cl
 Given the upload page
 When a PDF is selected and submitted
 Then POST /api/v1/rfp/submit is called
-And on success, the user is navigated to /job/{jobId}
+And on success, the user is navigated to /jobs (the jobs list page)
+
+Given the jobs list page
+When the page renders
+Then GET /api/v1/rfp/jobs is called
+And all jobs are listed sorted by submittedAt descending
+And each row shows: filename, status badge, submitted timestamp, and a "View" link to /job/{uuid}
 
 Given the job status page for a RUNNING job
 When the page renders
@@ -2176,10 +2186,10 @@ And errorMessage is displayed below the progress bar
 File: `rfp-frontend/src/pages/JobStatusPage.tsx`:
 
 ```tsx
-import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { getJobStatus } from '../api/rfpClient';
-import { JobStatusResponse } from '../types/rfp';
+import {useParams, Link} from 'react-router-dom';
+import {useQuery} from '@tanstack/react-query';
+import {getJobStatus} from '../api/rfpClient';
+import {JobStatusResponse} from '../types/rfp';
 
 const STATUS_COLORS: Record<string, string> = {
     QUEUED: 'bg-gray-100 text-gray-700',
@@ -2190,9 +2200,9 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function JobStatusPage() {
-    const { jobId } = useParams<{ jobId: string }>();
+    const {jobId} = useParams<{ jobId: string }>();
 
-    const { data, error } = useQuery<JobStatusResponse>({
+    const {data, error} = useQuery<JobStatusResponse>({
         queryKey: ['jobStatus', jobId],
         queryFn: () => getJobStatus(jobId!),
         refetchInterval: (data) =>
@@ -2222,7 +2232,7 @@ export function JobStatusPage() {
                 <div className="w-full bg-gray-200 rounded-full h-3">
                     <div
                         className="bg-blue-500 h-3 rounded-full transition-all duration-500"
-                        style={{ width: `${data.progress}%` }}
+                        style={{width: `${data.progress}%`}}
                     />
                 </div>
             </div>
@@ -2257,14 +2267,133 @@ export function JobStatusPage() {
 Update `rfp-frontend/src/main.tsx` to wrap App with `QueryClientProvider`:
 
 ```tsx
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
-        <App />
+        <App/>
     </QueryClientProvider>
 );
+```
+
+File: `rfp-frontend/src/pages/JobsListPage.tsx`:
+
+```tsx
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { listJobs } from '../api/rfpClient';
+import { JobStatusResponse } from '../types/rfp';
+
+const STATUS_COLORS: Record<string, string> = {
+    QUEUED: 'bg-gray-100 text-gray-700',
+    RUNNING: 'bg-yellow-100 text-yellow-700',
+    COMPLETED: 'bg-green-100 text-green-700',
+    FAILED: 'bg-red-100 text-red-700',
+    PARTIAL: 'bg-orange-100 text-orange-700',
+};
+
+export function JobsListPage() {
+    const { data, error } = useQuery<JobStatusResponse[]>({
+        queryKey: ['jobs'],
+        queryFn: listJobs,
+    });
+
+    if (error) return <div className="p-8 text-red-600">Failed to load jobs.</div>;
+    if (!data) return <div className="p-8 text-gray-500">Loading...</div>;
+
+    const sorted = [...data].sort(
+        (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+    );
+
+    return (
+        <div className="max-w-4xl mx-auto p-8">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">Submitted Jobs</h1>
+                <Link
+                    to="/upload"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                >
+                    + New Upload
+                </Link>
+            </div>
+
+            {sorted.length === 0 && (
+                <p className="text-gray-500">No jobs submitted yet.</p>
+            )}
+
+            <ul className="space-y-3">
+                {sorted.map((job) => {
+                    const colorClass = STATUS_COLORS[job.status] ?? 'bg-gray-100 text-gray-700';
+                    return (
+                        <li
+                            key={job.jobId}
+                            className="flex items-center justify-between border rounded-lg p-4 bg-white shadow-sm"
+                        >
+                            <div>
+                                <p className="font-medium text-gray-800">{job.filename ?? job.jobId}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                    {job.submittedAt ? new Date(job.submittedAt).toLocaleString() : '—'}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
+                                    {job.status}
+                                </span>
+                                <Link
+                                    to={`/job/${job.jobId}`}
+                                    className="text-blue-600 hover:underline text-sm"
+                                >
+                                    View →
+                                </Link>
+                            </div>
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
+    );
+}
+```
+
+Add `/jobs` route and update upload redirect in `rfp-frontend/src/App.tsx`:
+
+```tsx
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { UploadPage } from './pages/UploadPage';
+import { JobsListPage } from './pages/JobsListPage';
+import { JobStatusPage } from './pages/JobStatusPage';
+
+export function App() {
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<Navigate to="/jobs" replace />} />
+                <Route path="/upload" element={<UploadPage />} />
+                <Route path="/jobs" element={<JobsListPage />} />
+                <Route path="/job/:jobId" element={<JobStatusPage />} />
+            </Routes>
+        </BrowserRouter>
+    );
+}
+```
+
+`UploadPage` navigates to `/jobs` (not `/job/{uuid}`) after a successful submit:
+
+```tsx
+// Inside UploadPage.tsx — on successful POST response:
+navigate('/jobs');
+```
+
+Add `listJobs()` to `rfp-frontend/src/api/rfpClient.ts`:
+
+```ts
+export async function listJobs(): Promise<JobStatusResponse[]> {
+    const res = await fetch('/api/v1/rfp/jobs');
+    if (!res.ok) throw new Error('Failed to fetch jobs');
+    return res.json();
+}
 ```
 
 **Dependencies:** Stories 5.1 (API endpoints exist).
@@ -2330,18 +2459,23 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 ---
 
-### PR 3: `feat/sprint2-frontend` — UploadPage Wired + JobStatusPage Polling
+### PR 3: `feat/sprint2-frontend` — UploadPage Wired + JobsListPage + JobStatusPage Polling
 
 **Contains:**
 
-- Updated `UploadPage.tsx` with real API call.
+- Updated `UploadPage.tsx` with real API call (redirects to `/jobs` on success).
+- `JobsListPage.tsx` — home/landing page listing all submitted jobs.
 - `JobStatusPage.tsx` with React Query polling.
+- Updated `App.tsx` with `/jobs` route and root redirect.
 - `QueryClientProvider` added to `main.tsx`.
-- `rfpClient.ts` with `getJobStatus()` function.
+- `rfpClient.ts` with `getJobStatus()` and `listJobs()` functions.
 - Updated `JobStatusResponse` TypeScript type.
 
 **Review Checklist:**
 
+- [ ] `JobsListPage` shows all jobs from `GET /api/v1/rfp/jobs` sorted by `submittedAt` descending.
+- [ ] Each row has: filename, status badge, submitted time, and "View" link to `/job/{uuid}`.
+- [ ] `UploadPage` redirects to `/jobs` after successful submit (not directly to `/job/{uuid}`).
 - [ ] Polling stops when status is COMPLETED or FAILED.
 - [ ] Status badge colors match design spec (green=COMPLETED, yellow=RUNNING, red=FAILED).
 - [ ] Error state displayed when `errorMessage` is non-null.
@@ -2508,6 +2642,8 @@ INFO  Classification summary: jobId=3fa85f64... total=23 DIGITAL=18 SCANNED=3 MI
 - [ ] `RedisJobStateRepository` sets TTL to exactly 24 hours — verified by unit test with Mockito argument captor.
 - [ ] `ExtractionPipelineService` sets job status to FAILED (not RUNNING) on any unhandled exception — verified by unit
   test.
+- [ ] End-to-end browser journey verified: upload a PDF → redirected to `/jobs` list → job row visible → click "View"
+  → `JobStatusPage` polls to COMPLETED.
 - [ ] Frontend `JobStatusPage` stops polling when status is COMPLETED — verified by browser network tab showing no more
   requests after completion.
 - [ ] No `@Autowired` field injection in any new class — verified by `grep -r "@Autowired" rfp-service/src/main`.
