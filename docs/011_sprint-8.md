@@ -23,8 +23,13 @@
 - Sprint 7 is merged and green on CI (`mvn clean verify` passes).
 - `ExtractionGraph` compiles with `RunRulePackNode` wired as a stub returning empty `RulePackResults`.
 - `ExtractionState.rulePackResults` field exists and is nullable.
-- `LlmAdapter.judgeSnippet(String prompt, String snippet)` → `LlmJudgmentResult` is implemented and
-  Resilience4j-wrapped (Sprint 1 contract).
+- `LlmAdapter.judgeSnippet(String prompt, String snippet)` must be **updated this sprint** to return
+  `LlmJudgmentResult` (replacing the `Optional<String>` signature defined in Sprint 1).
+  Add `LlmJudgmentResult` to `rfp-core` domain model, update `LlmAdapter`, and update all existing
+  callers before wiring `LlmJudgmentChecker`.
+  <!-- FIX [J]: Sprint 1 defined judgeSnippet() → Optional<String>. Sprint 8 needs a
+       structured return type. This sprint must explicitly deliver the breaking change and
+       migrate callers — it was not clearly called out as a deliverable. -->
 - `FinalizeNode` assembles `RfpDocument` and serialises to JSON (Sprint 4).
 - `RfpJsonSchemaValidator` loads `classpath:schema/rfp-schema-v1.json` (Sprint 3).
 - `io.burt:jmespath-java` and `networknt:json-schema-validator` on classpath (Sprint 1 POM).
@@ -36,29 +41,31 @@
 
 ## 2) Deliverables
 
-| #    | Deliverable                       | Type             | Location                                              |
-|------|-----------------------------------|------------------|-------------------------------------------------------|
-| D-01 | `RulePackDefinition` domain model | Java class       | `rfp-core/.../domain/model/RulePackDefinition.java`   |
-| D-02 | `RuleDefinition` domain model     | Java class       | `rfp-core/.../domain/model/RuleDefinition.java`       |
-| D-03 | `RuleSeverity` enum               | Java enum        | `rfp-core/.../domain/model/RuleSeverity.java`         |
-| D-04 | `CheckType` enum                  | Java enum        | `rfp-core/.../domain/model/CheckType.java`            |
-| D-05 | `RfpType` enum                    | Java enum        | `rfp-core/.../domain/model/RfpType.java`              |
-| D-06 | `RuleStatus` enum                 | Java enum        | `rfp-core/.../domain/model/RuleStatus.java`           |
-| D-07 | `RuleFinding` (updated)           | Java class       | `rfp-core/.../domain/model/RuleFinding.java`          |
-| D-08 | `RulePackResults` (updated)       | Java class       | `rfp-core/.../domain/model/RulePackResults.java`      |
-| D-09 | `RulePackPort` port interface     | Java interface   | `rfp-core/.../domain/port/RulePackPort.java`          |
-| D-10 | `RulePackLoader`                  | Spring component | `adapter/rulepack/RulePackLoader.java`                |
-| D-11 | `JmesPathEvaluator`               | Spring component | `adapter/rulepack/JmesPathEvaluator.java`             |
-| D-12 | `LlmJudgmentChecker`              | Spring component | `adapter/rulepack/LlmJudgmentChecker.java`            |
-| D-13 | `RulePackRunner`                  | Spring component | `adapter/rulepack/RulePackRunner.java`                |
-| D-14 | `RfpTypeClassifier`               | Spring component | `adapter/rulepack/RfpTypeClassifier.java`             |
-| D-15 | `RunRulePackNode` (full)          | LangGraph4J node | `agent/node/RunRulePackNode.java`                     |
-| D-16 | `bd-govt-ict-v1.yaml`             | YAML rule pack   | `rules/bd-govt-ict-v1.yaml`                           |
-| D-17 | `rule-schema-v1.json`             | JSON Schema      | `schema/rule-schema-v1.json`                          |
-| D-18 | `rule-judgment-v1.md`             | Prompt file      | `prompts/rule-judgment-v1.md`                         |
-| D-19 | `RulePackRunnerTest`              | JUnit 5          | `rfp-service/src/test/.../RulePackRunnerTest.java`    |
-| D-20 | `RuleDslValidationTest`           | JUnit 5          | `rfp-service/src/test/.../RuleDslValidationTest.java` |
-| D-21 | `RulePackResults.tsx`             | React component  | `rfp-frontend/src/components/RulePackResults.tsx`     |
+| #     | Deliverable                             | Type             | Location                                              |
+|-------|-----------------------------------------|------------------|-------------------------------------------------------|
+| D-00a | `LlmJudgmentResult` domain model        | Java class       | `rfp-core/.../domain/model/LlmJudgmentResult.java`    |
+| D-00b | `LlmAdapter` — `judgeSnippet()` updated | Java class       | `adapter/llm/LlmAdapter.java`                         |
+| D-01  | `RulePackDefinition` domain model       | Java class       | `rfp-core/.../domain/model/RulePackDefinition.java`   |
+| D-02  | `RuleDefinition` domain model           | Java class       | `rfp-core/.../domain/model/RuleDefinition.java`       |
+| D-03  | `RuleSeverity` enum                     | Java enum        | `rfp-core/.../domain/model/RuleSeverity.java`         |
+| D-04  | `CheckType` enum                        | Java enum        | `rfp-core/.../domain/model/CheckType.java`            |
+| D-05  | `RfpType` enum                          | Java enum        | `rfp-core/.../domain/model/RfpType.java`              |
+| D-06  | `RuleStatus` enum                       | Java enum        | `rfp-core/.../domain/model/RuleStatus.java`           |
+| D-07  | `RuleFinding` (updated)                 | Java class       | `rfp-core/.../domain/model/RuleFinding.java`          |
+| D-08  | `RulePackResults` (updated)             | Java class       | `rfp-core/.../domain/model/RulePackResults.java`      |
+| D-09  | `RulePackPort` port interface           | Java interface   | `rfp-core/.../domain/port/RulePackPort.java`          |
+| D-10  | `RulePackLoader`                        | Spring component | `adapter/rulepack/RulePackLoader.java`                |
+| D-11  | `JmesPathEvaluator`                     | Spring component | `adapter/rulepack/JmesPathEvaluator.java`             |
+| D-12  | `LlmJudgmentChecker`                    | Spring component | `adapter/rulepack/LlmJudgmentChecker.java`            |
+| D-13  | `RulePackRunner`                        | Spring component | `adapter/rulepack/RulePackRunner.java`                |
+| D-14  | `RfpTypeClassifier`                     | Spring component | `adapter/rulepack/RfpTypeClassifier.java`             |
+| D-15  | `RunRulePackNode` (full)                | LangGraph4J node | `agent/node/RunRulePackNode.java`                     |
+| D-16  | `bd-govt-ict-v1.yaml`                   | YAML rule pack   | `rules/bd-govt-ict-v1.yaml`                           |
+| D-17  | `rule-schema-v1.json`                   | JSON Schema      | `schema/rule-schema-v1.json`                          |
+| D-18  | `rule-judgment-v1.md`                   | Prompt file      | `prompts/rule-judgment-v1.md`                         |
+| D-19  | `RulePackRunnerTest`                    | JUnit 5          | `rfp-service/src/test/.../RulePackRunnerTest.java`    |
+| D-20  | `RuleDslValidationTest`                 | JUnit 5          | `rfp-service/src/test/.../RuleDslValidationTest.java` |
+| D-21  | `RulePackResults.tsx`                   | React component  | `rfp-frontend/src/components/RulePackResults.tsx`     |
 
 ---
 

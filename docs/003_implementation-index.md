@@ -4,7 +4,7 @@
 **Version:** 1.0
 **Date:** 2026-03-01
 **Sprint Cadence:** 2-week sprints
-**Total Sprints:** 12 (+ separate wishlist track in `docs/wishlist/001_wishlist.md`)
+**Total Sprints:** 12 (+ separate wishlist track in `wishlist/001_wishlist.md`)
 
 ---
 

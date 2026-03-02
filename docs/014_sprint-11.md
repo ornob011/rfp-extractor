@@ -58,10 +58,19 @@
 | D-17 | `PromptInjectionFilter`               | Spring component        | `adapter/security/PromptInjectionFilter.java`              |
 | D-18 | `BanglaEncodingDetector`              | Spring component        | `adapter/extraction/BanglaEncodingDetector.java`           |
 | D-19 | `DataRetentionScheduler`              | Spring component        | `adapter/persistence/DataRetentionScheduler.java`          |
-| D-20 | `GlobalExceptionHandler`              | REST advice             | `adapter/api/GlobalExceptionHandler.java`                  |
-| D-21 | `LoginPage.tsx`                       | React page              | `rfp-frontend/src/pages/LoginPage.tsx`                     |
-| D-22 | `authClient.ts`                       | API module              | `rfp-frontend/src/api/authClient.ts`                       |
-| D-23 | `ProtectedRoute.tsx`                  | React component         | `rfp-frontend/src/components/ProtectedRoute.tsx`           |
+| D-20 | `GlobalExceptionHandler` (extended)   | REST advice (extended)  | `adapter/api/GlobalExceptionHandler.java`                  |
+
+<!-- NOTE: GlobalExceptionHandler was introduced in Sprint 2 per the exception policy.
+     Sprint 11 extends it with security-specific handlers:
+     @ExceptionHandler(AccessDeniedException.class) → 403,
+     @ExceptionHandler(AuthenticationException.class) → 401.
+     Do NOT create a new class here — extend the existing one. -->
+| D-21 | `LoginPage.tsx`                       | React page |
+`rfp-frontend/src/pages/LoginPage.tsx`                     |
+| D-22 | `authClient.ts`                       | API module |
+`rfp-frontend/src/api/authClient.ts`                       |
+| D-23 | `ProtectedRoute.tsx`                  | React component |
+`rfp-frontend/src/components/ProtectedRoute.tsx`           |
 
 ---
 

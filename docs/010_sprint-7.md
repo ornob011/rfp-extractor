@@ -14,8 +14,11 @@ expose repair events in real time, and the React frontend displays them in a col
 ## 1) Entry Criteria
 
 - Sprint 6 is merged and green on CI.
-- `ExtractionState` exists in `rfp-core` with fields `sections`, `tables`, `entities`, `pageClassifications`,
-  `pageTexts`, `pageConfidences`.
+- `ExtractionState` exists in `rfp-service/agent/` (Sprint 4 placed it there; it will move to `rfp-core` once
+  LangGraph4J compatibility is confirmed). Minimum required fields already present from Sprint 4:
+  `sections`, `tables`, `entities`, `pageClassifications`, `confidenceMap`, `repairLog`, `lowConfidenceQueue`.
+  This sprint adds: `pageTexts` (Map<Integer,String> of page-index → extracted text) and
+  `pageConfidences` (Map<Integer,Double> of page-index → OCR confidence score).
 - `ScoreConfidenceNode` has a basic stub (Sprint 4); full implementation is this sprint.
 - `RepairLoopNode` has a basic stub (Sprint 4); full implementation is this sprint.
 - `LangGraph4J` conditional edge exists:
@@ -129,7 +132,7 @@ public class RepairableComponent {
 private List<String> lowConfidenceQueue = new ArrayList<>();
 
 @Builder.Default
-private int totalRepairIterations = 0;
+private final int totalRepairIterations = 0;
 
 @Builder.Default
 private final List<RepairLogEntry> repairLog = new ArrayList<>();

@@ -41,6 +41,12 @@ is fully operational and the `ExtractionGraph` produces a populated `state.table
 | D-12 | `TableViewer.tsx`                    | React component   | `rfp-frontend/src/components/TableViewer.tsx`                  |
 | D-13 | `ResultPage.tsx` — Tables tab        | React update      | `rfp-frontend/src/pages/ResultPage.tsx`                        |
 | D-14 | Unit tests                           | Java test classes | `rfp-service/src/test/java/.../adapter/table/`                 |
+| D-15 | `ExtractionState.tables` type update | Refactor          | `rfp-service/.../agent/ExtractionState.java`                   |
+
+**Breaking Change Note:** `ExtractionState.tables` is typed `List<Table>` in Sprint 4 (placeholder).
+This sprint changes it to `List<TableExtractionResult>`. The placeholder `Table.java` domain model
+is replaced by `TableExtractionResult.java`. Update `ExtractionState`, `FinalizeNode`,
+`RfpDocumentAssembler`, and all tests that reference `state.getTables()`.
 
 ---
 
