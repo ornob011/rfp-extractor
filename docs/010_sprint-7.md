@@ -100,12 +100,28 @@ public enum RepairStrategy {
     NO_OP
 }
 
+// rfp-core/.../domain/model/RepairComponentType.java
+public enum RepairComponentType {
+    SECTION, TABLE, ENTITY
+}
+
+// rfp-core/.../domain/model/ConfidenceSource.java
+public enum ConfidenceSource {
+    HEADING_STYLE,
+    BOOKMARK,
+    LATTICE,
+    STREAM,
+    OCR_LLM_RECONSTRUCT,
+    LLM,
+    UNKNOWN
+}
+
 // rfp-core/.../domain/model/RepairLogEntry.java
 @Data
 @Builder
 public class RepairLogEntry {
     private String componentId;       // matches an entity field path, sectionId, or tableId
-    private String componentType;     // "section" | "table" | "entity"
+    private RepairComponentType componentType;
     private int attemptNumber;
     private RepairStrategy strategy;
     private double beforeConfidence;
@@ -119,8 +135,8 @@ public class RepairLogEntry {
 @Builder
 public class RepairableComponent {
     private String componentId;
-    private String componentType;     // "section" | "table" | "entity"
-    private String confidenceSource;  // "lattice" | "stream" | "ocr_llm_reconstruct" | "bookmark" | "heading_style" | etc.
+    private RepairComponentType componentType;
+    private ConfidenceSource confidenceSource;
     private double currentConfidence;
 }
 ```
@@ -193,31 +209,31 @@ LLM, no I/O — pure decision logic.
 
 ```gherkin
 Scenario: Section, attempt 1
-  When RepairDecisionTable.getStrategy("s-001", "section", "heading_style", 1) is called
+  When RepairDecisionTable.getStrategy("s-001", RepairComponentType.SECTION, ConfidenceSource.HEADING_STYLE, 1) is called
   Then the result is RETRY_SECTION_SEGMENTATION
 
 Scenario: Section, attempt 2
-  When RepairDecisionTable.getStrategy("s-001", "section", "heading_style", 2) is called
+  When RepairDecisionTable.getStrategy("s-001", RepairComponentType.SECTION, ConfidenceSource.HEADING_STYLE, 2) is called
   Then the result is RETRY_SECTION_SEGMENTATION
 
 Scenario: Table with lattice source, attempt 1
-  When RepairDecisionTable.getStrategy("t-001", "table", "lattice", 1) is called
+  When RepairDecisionTable.getStrategy("t-001", RepairComponentType.TABLE, ConfidenceSource.LATTICE, 1) is called
   Then the result is SWITCH_TABLE_MODE
 
 Scenario: Table with stream source, attempt 1
-  When RepairDecisionTable.getStrategy("t-001", "table", "stream", 1) is called
+  When RepairDecisionTable.getStrategy("t-001", RepairComponentType.TABLE, ConfidenceSource.STREAM, 1) is called
   Then the result is SWITCH_TABLE_MODE
 
 Scenario: Table with ocr_llm_reconstruct source, attempt 1
-  When RepairDecisionTable.getStrategy("t-001", "table", "ocr_llm_reconstruct", 1) is called
+  When RepairDecisionTable.getStrategy("t-001", RepairComponentType.TABLE, ConfidenceSource.OCR_LLM_RECONSTRUCT, 1) is called
   Then the result is RETRY_SCANNED_TABLE_OCR_AT_HIGHER_DPI
 
 Scenario: Entity, attempt 1
-  When RepairDecisionTable.getStrategy("e-001", "entity", "llm", 1) is called
+  When RepairDecisionTable.getStrategy("e-001", RepairComponentType.ENTITY, ConfidenceSource.LLM, 1) is called
   Then the result is WIDEN_ENTITY_CONTEXT
 
 Scenario: Any component, attempt >= 3
-  When RepairDecisionTable.getStrategy("x-001", "section", "any", 3) is called
+  When RepairDecisionTable.getStrategy("x-001", RepairComponentType.SECTION, ConfidenceSource.UNKNOWN, 3) is called
   Then the result is NO_OP
 ```
 
@@ -235,14 +251,14 @@ public final class RepairDecisionTable {
      * This is a static decision table. No LLM is involved.
      *
      * @param componentId   unique identifier (for logging only)
-     * @param componentType "section" | "table" | "entity"
+     * @param componentType enum category of the repairable component
      * @param confidenceSource method that produced the current result
      * @param attemptNumber 1-based count of repair attempts already made
      * @return RepairStrategy — never null
      */
     public static RepairStrategy getStrategy(String componentId,
-                                             String componentType,
-                                             String confidenceSource,
+                                             RepairComponentType componentType,
+                                             ConfidenceSource confidenceSource,
                                              int attemptNumber) { ...}
 }
 ```
@@ -250,13 +266,13 @@ public final class RepairDecisionTable {
 **Implementation Plan:**
 
 1. If `attemptNumber >= 3` → return `NO_OP`.
-2. Switch on `componentType`:
-    - `"section"` → `RETRY_SECTION_SEGMENTATION` (for both attempt 1 and 2; attempt 2 will trigger LLM fallback inside
+2. Switch on `componentType` enum:
+    - `SECTION` → `RETRY_SECTION_SEGMENTATION` (for both attempt 1 and 2; attempt 2 will trigger LLM fallback inside
       `RepairLoopNode`).
-    - `"table"`:
-        - `confidenceSource` equals `"ocr_llm_reconstruct"` → `RETRY_SCANNED_TABLE_OCR_AT_HIGHER_DPI`.
+    - `TABLE`:
+        - `confidenceSource == OCR_LLM_RECONSTRUCT` → `RETRY_SCANNED_TABLE_OCR_AT_HIGHER_DPI`.
         - else → `SWITCH_TABLE_MODE` (switch between lattice and stream).
-    - `"entity"` → `WIDEN_ENTITY_CONTEXT`.
+    - `ENTITY` → `WIDEN_ENTITY_CONTEXT`.
     - default → `NO_OP`.
 3. Class body: final, private constructor, single public static method. Under 60 lines.
 
@@ -264,9 +280,9 @@ public final class RepairDecisionTable {
 
 **Risks + Mitigations:**
 
-| Risk                                                    | Mitigation                                                                  |
-|---------------------------------------------------------|-----------------------------------------------------------------------------|
-| New component types added in future sprints not handled | Default branch returns `NO_OP` and logs `WARN("Unknown componentType: {}")` |
+| Risk                                                    | Mitigation                                                                       |
+|---------------------------------------------------------|----------------------------------------------------------------------------------|
+| New component types added in future sprints not handled | Default branch returns `NO_OP` and logs `WARN("Unknown componentType enum: {}")` |
 
 **Test Plan — `RepairDecisionTableTest.java`:**
 
@@ -587,7 +603,7 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
 
     private double entityScore(Object entityValue, Double llmConfidence) { ...}
 
-    private void enqueue(String componentId, String componentType, String source,
+    private void enqueue(String componentId, RepairComponentType componentType, ConfidenceSource source,
                          double score, ExtractionState state) { ...}
 }
 ```
@@ -611,8 +627,8 @@ private final double docCompletenessScore = 0.0;
         - `score = entityScore(entityValue, llmConfidence)`.
         - `state.confidenceMap.put(path, score)`.
         -
-      `state.repairableComponents.put(path, RepairableComponent.builder().componentId(path).componentType("entity").confidenceSource("llm").currentConfidence(score).build())`.
-        - Call `enqueue(path, "entity", "llm", score, state)`.
+      `state.repairableComponents.put(path, RepairableComponent.builder().componentId(path).componentType(RepairComponentType.ENTITY).confidenceSource(ConfidenceSource.LLM).currentConfidence(score).build())`.
+        - Call `enqueue(path, RepairComponentType.ENTITY, ConfidenceSource.LLM, score, state)`.
 
 2. `entityScore(entityValue, llmConfidence)`:
     - If `Objects.isNull(entityValue)` → `0.0`.
@@ -626,7 +642,8 @@ private final double docCompletenessScore = 0.0;
         - `double score = SECTION_STRATEGY_CONFIDENCE.getOrDefault(strategy, 0.6)`.
         - `state.confidenceMap.put(section.getId().toString(), score)`.
         - `state.repairableComponents.put(section.getId().toString(), RepairableComponent.builder()...build())`.
-        - Call `enqueue(section.getId().toString(), "section", strategy, score, state)`.
+        - Call
+          `enqueue(section.getId().toString(), RepairComponentType.SECTION, ConfidenceSource.HEADING_STYLE, score, state)`.
 
 4. `scoreTables(state)`:
     - For each `table` in `state.tables`:
@@ -635,7 +652,8 @@ private final double docCompletenessScore = 0.0;
         - Use `table.confidence.score` directly if it is already within these ranges; otherwise apply the method-based
           floor.
         - `state.confidenceMap.put(table.tableId.toString(), score)`.
-        - Call `enqueue(table.tableId.toString(), "table", table.confidence.method, score, state)`.
+        - Call
+          `enqueue(table.tableId.toString(), RepairComponentType.TABLE, mapConfidenceSource(table.confidence.method), score, state)`.
 
 5. `computeDocCompleteness(state)`:
     - Count how many of `CRITICAL_ENTITY_PATHS` have `confidenceMap.getOrDefault(path, 0.0) > 0.0`.
@@ -1092,7 +1110,7 @@ No mocking — pure string computation.
 #### Story H-1: Extend `GET /api/v1/rfp/status/{jobId}` with repair event fields
 
 **Description:** The job status endpoint now returns additional fields: `repairEvents`, `totalRepairIterations`,
-`lowConfidenceCount`, loaded from `ExtractionStateCheckpointRepository`.
+`lowConfidenceQueueSize`, loaded from `ExtractionStateCheckpointRepository`.
 
 **Acceptance Criteria (Gherkin):**
 
@@ -1103,7 +1121,7 @@ Scenario: Status response includes repair events during repair phase
   Then the response body contains "repairEvents" array with 2 entries
   And each entry has fields: componentId, attempt, strategy, result ("IMPROVED"|"NOT IMPROVED")
   And "totalRepairIterations" equals 2
-  And "lowConfidenceCount" equals the current queue size
+  And "lowConfidenceQueueSize" equals the current queue size
 
 Scenario: Status response shows empty repairEvents for COMPLETED job with no repairs
   Given a job that completed with no low-confidence items
@@ -1116,19 +1134,24 @@ Scenario: Status response shows empty repairEvents for COMPLETED job with no rep
 
 ```java
 // rfp-service/.../adapter/api/dto/RepairEventDto.java
+public enum RepairOutcome {
+    IMPROVED, NOT_IMPROVED, MAX_RETRIES
+}
+
+// rfp-service/.../adapter/api/dto/RepairEventDto.java
 public record RepairEventDto(
-        String componentId,
-        int attempt,
-        String strategy,
-        String result  // "IMPROVED" | "NOT IMPROVED" | "MAX_RETRIES"
-    ) {
+    String componentId,
+    int attempt,
+    String strategy,
+    RepairOutcome result
+) {
 }
 
 // rfp-service/.../adapter/api/dto/JobStatusDto.java
 // Add to existing JobStatusDto:
 //   List<RepairEventDto> repairEvents
 //   int totalRepairIterations
-//   int lowConfidenceCount
+//   int lowConfidenceQueueSize
 ```
 
 **Implementation Plan:**
@@ -1138,7 +1161,7 @@ public record RepairEventDto(
     - If `Optional.present()`: map `state.repairLog` → `List<RepairEventDto>` using `RepairAuditService` result
       categorization.
     - Set `totalRepairIterations = state.totalRepairIterations`.
-    - Set `lowConfidenceCount = state.lowConfidenceQueue.size()`.
+    - Set `lowConfidenceQueueSize = state.lowConfidenceQueue.size()`.
     - If `Optional.empty()`: default all to empty/0.
 
 2. Update `JobStatusDto` record/class with the three new fields (with JSON default of empty array / 0 for backward
@@ -1185,7 +1208,7 @@ Scenario: AuditPanel is collapsed by default
   And a toggle button reads "Show Repair Audit (3 events)"
 
 Scenario: JobStatusPage shows live repair counter
-  Given totalRepairIterations = 5 and lowConfidenceCount = 2
+  Given totalRepairIterations = 5 and lowConfidenceQueueSize = 2
   When JobStatusPage renders the status
   Then "Repair iterations: 5" is visible
   And "Items pending: 2" is visible
@@ -1221,10 +1244,10 @@ export function AuditPanel({repairEvents, totalRepairIterations}: AuditPanelProp
     - Row color: `result === 'IMPROVED' ? 'bg-green-50' : result === 'MAX_RETRIES' ? 'bg-red-50' : 'bg-orange-50'`.
 
 3. **`JobStatusPage.tsx` update:**
-    - Extend React Query poll to also extract `repairEvents`, `totalRepairIterations`, `lowConfidenceCount` from
+    - Extend React Query poll to also extract `repairEvents`, `totalRepairIterations`, `lowConfidenceQueueSize` from
       `/api/v1/rfp/status/{jobId}`.
     - Render `<AuditPanel repairEvents={...} totalRepairIterations={...} />` below the existing status indicator.
-    - Show: `<p>Repair iterations: {totalRepairIterations} | Items pending: {lowConfidenceCount}</p>`.
+    - Show: `<p>Repair iterations: {totalRepairIterations} | Items pending: {lowConfidenceQueueSize}</p>`.
 
 **Story Points:** 5
 
@@ -1328,14 +1351,14 @@ JOB_ID="e5f6a7b8-..."
 
 # Poll every 3 seconds
 for i in {1..10}; do
-  curl -s http://localhost:8080/api/v1/rfp/status/$JOB_ID | jq '{status, totalRepairIterations, lowConfidenceCount, repairEvents: (.repairEvents | length)}'
+  curl -s http://localhost:8080/api/v1/rfp/status/$JOB_ID | jq '{status, totalRepairIterations, lowConfidenceQueueSize, repairEvents: (.repairEvents | length)}'
   sleep 3
 done
 
 # Expected mid-extraction output:
-# {"status":"RUNNING","totalRepairIterations":3,"lowConfidenceCount":2,"repairEvents":3}
+# {"status":"RUNNING","totalRepairIterations":3,"lowConfidenceQueueSize":2,"repairEvents":3}
 # Then eventually:
-# {"status":"COMPLETED","totalRepairIterations":5,"lowConfidenceCount":0,"repairEvents":5}
+# {"status":"COMPLETED","totalRepairIterations":5,"lowConfidenceQueueSize":0,"repairEvents":5}
 ```
 
 ### Step 3: Inspect repair events in final status
@@ -1410,20 +1433,20 @@ curl http://localhost:8080/api/v1/rfp/result/$JOB_ID \
 
 ## 6) Exit Criteria (NON-NEGOTIABLE)
 
-| #     | Criterion                                                                                                       | Measure                                                                                                                   |
-|-------|-----------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| EC-01 | `RepairLoopNode` never exceeds 20 total iterations on any document                                              | `state.totalRepairIterations <= 20` asserted in `RepairLoopNodeTest.shouldReturnStateUnchangedAndWarnWhenHardStopReached` |
-| EC-02 | `RepairDecisionTable` test covers all 8 decision paths                                                          | `RepairDecisionTableTest` has exactly 8 test methods, all passing                                                         |
-| EC-03 | `ScoreConfidenceNode` correctly identifies low-confidence entities on 3 deterministic fixture documents         | Manual check: `confidenceMap` values match expected scores for known entities                                             |
-| EC-04 | `ExtractionState` survives serialize → deserialize round-trip through PostgreSQL checkpoints with no field loss | `ExtractionStateCheckpointRepositoryTest.shouldSaveAndLoadExtractionState` passes with all fields asserted                |
-| EC-05 | Checkpoint retention policy is applied correctly                                                                | `ExtractionStateCheckpointRepositoryTest.shouldExpireAfterTwoHours` passes                                                |
-| EC-06 | `LlmSectionSegmentFallback` deduplicates by Levenshtein < 3 (not exact match)                                   | `LlmSectionSegmentFallbackTest.shouldMergeLlmSectionsDeduplicatingByLevenshtein` passes                                   |
-| EC-07 | `GET /api/v1/rfp/status/{jobId}` returns `repairEvents`, `totalRepairIterations`, `lowConfidenceCount` fields   | `RfpControllerStatusTest.shouldReturnRepairEventsInStatusResponse` passes                                                 |
-| EC-08 | `AuditPanel.tsx` is collapsed by default; toggle opens it                                                       | Code review confirms `useState(false)` initial state                                                                      |
-| EC-09 | All Java unit tests pass with `mvn test`                                                                        | 0 failures                                                                                                                |
-| EC-10 | No class exceeds 250 lines; `RepairLoopNode.execute` is ≤ 20 lines                                              | Manual code review; `execute` method line count verified                                                                  |
-| EC-11 | `RepairAuditService` formats "IMPROVED"/"NOT IMPROVED" label based on before/after confidence delta             | `RepairAuditServiceTest.shouldFormatImprovedEntryWithImprovedLabel` passes                                                |
-| EC-12 | On service restart mid-repair, job can resume from PostgreSQL checkpoint state (manual test)                    | Stop Spring Boot during repair phase, restart, re-poll status — status continues incrementing `totalRepairIterations`     |
+| #     | Criterion                                                                                                         | Measure                                                                                                                   |
+|-------|-------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| EC-01 | `RepairLoopNode` never exceeds 20 total iterations on any document                                                | `state.totalRepairIterations <= 20` asserted in `RepairLoopNodeTest.shouldReturnStateUnchangedAndWarnWhenHardStopReached` |
+| EC-02 | `RepairDecisionTable` test covers all 8 decision paths                                                            | `RepairDecisionTableTest` has exactly 8 test methods, all passing                                                         |
+| EC-03 | `ScoreConfidenceNode` correctly identifies low-confidence entities on 3 deterministic fixture documents           | Manual check: `confidenceMap` values match expected scores for known entities                                             |
+| EC-04 | `ExtractionState` survives serialize → deserialize round-trip through PostgreSQL checkpoints with no field loss   | `ExtractionStateCheckpointRepositoryTest.shouldSaveAndLoadExtractionState` passes with all fields asserted                |
+| EC-05 | Checkpoint retention policy is applied correctly                                                                  | `ExtractionStateCheckpointRepositoryTest.shouldExpireAfterTwoHours` passes                                                |
+| EC-06 | `LlmSectionSegmentFallback` deduplicates by Levenshtein < 3 (not exact match)                                     | `LlmSectionSegmentFallbackTest.shouldMergeLlmSectionsDeduplicatingByLevenshtein` passes                                   |
+| EC-07 | `GET /api/v1/rfp/status/{jobId}` returns `repairEvents`, `totalRepairIterations`, `lowConfidenceQueueSize` fields | `RfpControllerStatusTest.shouldReturnRepairEventsInStatusResponse` passes                                                 |
+| EC-08 | `AuditPanel.tsx` is collapsed by default; toggle opens it                                                         | Code review confirms `useState(false)` initial state                                                                      |
+| EC-09 | All Java unit tests pass with `mvn test`                                                                          | 0 failures                                                                                                                |
+| EC-10 | No class exceeds 250 lines; `RepairLoopNode.execute` is ≤ 20 lines                                                | Manual code review; `execute` method line count verified                                                                  |
+| EC-11 | `RepairAuditService` formats "IMPROVED"/"NOT IMPROVED" label based on before/after confidence delta               | `RepairAuditServiceTest.shouldFormatImprovedEntryWithImprovedLabel` passes                                                |
+| EC-12 | On service restart mid-repair, job can resume from PostgreSQL checkpoint state (manual test)                      | Stop Spring Boot during repair phase, restart, re-poll status — status continues incrementing `totalRepairIterations`     |
 
 ---
 
@@ -1451,12 +1474,11 @@ is a
 serialization in `RepairLogEntry`). If not, add `objectMapper.registerModule(new JavaTimeModule())` in the
 `ObjectMapper` `@Bean` definition in a config class.
 
-**Open Question:** Should `manualReviewRequired` items be surfaced in the final RFP result JSON (the
-`GET /api/v1/rfp/result/{jobId}` response)? Current plan: yes, add a `extractionMetadata.manualReviewRequired` array to
-the result DTO. Confirm with product owner before implementation.
+**Decision:** `manualReviewRequired` is surfaced in the final result API. Add
+`extractionMetadata.manualReviewRequired: string[]` to `GET /api/v1/rfp/result/{jobId}` response DTO.
 
-**Open Question:** Should `ScoreConfidenceNode` expose queue depth in the status API for UI-only visibility? Deferred to
-wishlist (unit-test-only baseline; no Actuator).
+**Decision:** Expose queue depth in the status API for UI visibility as `lowConfidenceQueueSize: int`. This is API-level
+state exposure only (no Actuator/Micrometer dependency).
 
 **Non-Goal:** LLM-based routing of repair strategies. The decision table is permanently static. Adding an LLM-based "
 meta-planner" is explicitly out of scope for this project.

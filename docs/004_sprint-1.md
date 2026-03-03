@@ -397,7 +397,7 @@ storage, async, and upload configuration keys are declared here with sensible de
 ```gherkin
 Given application.properties has app.llm.provider=openrouter
 When RfpApplication starts
-Then LlmProviderProperties.getProvider() returns "openrouter" with no NullPointerException
+Then LlmProviderProperties.getProvider() returns `LlmProvider.OPENROUTER` with no NullPointerException
 
 Given a missing app.llm.openrouter.api-key
 When RfpApplication starts with provider=openrouter
@@ -423,7 +423,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "app.llm")
 public class LlmProviderProperties {
-    private String provider = "openrouter";          // "openrouter" | "ollama"
+    private LlmProvider provider = LlmProvider.OPENROUTER;
     private OpenRouterProps openrouter = new OpenRouterProps();
     private OllamaProps ollama = new OllamaProps();
     private double temperature = 0.0;
@@ -445,6 +445,22 @@ public class LlmProviderProperties {
         private String baseUrl = "http://localhost:11434";
         private final String model = "llama3.1:8b";
         private final String modelJudge = "llama3.1:70b";
+    }
+}
+
+public enum LlmProvider {
+    OPENROUTER("openrouter"),
+    OLLAMA("ollama");
+
+    private final String jsonValue;
+
+    LlmProvider(String jsonValue) {
+        this.jsonValue = jsonValue;
+    }
+
+    @JsonValue
+    public String jsonValue() {
+        return jsonValue;
     }
 }
 ```
@@ -526,7 +542,7 @@ class LlmProviderPropertiesTest {
     @Test
     void shouldReturnDefaultProviderWhenNotConfigured() {
         LlmProviderProperties props = new LlmProviderProperties();
-        assertThat(props.getProvider()).isEqualTo("openrouter");
+        assertThat(props.getProvider()).isEqualTo(LlmProvider.OPENROUTER);
     }
 
     @Test
@@ -700,7 +716,7 @@ class LlmProviderConfigTest {
     @Test
     void shouldThrowWhenOpenRouterApiKeyIsBlankAndProviderIsOpenrouter() {
         LlmProviderProperties props = new LlmProviderProperties();
-        props.setProvider("openrouter");
+        props.setProvider(LlmProvider.OPENROUTER);
         props.getOpenrouter().setApiKey("");
         LlmProviderConfig config = new LlmProviderConfig(props);
         assertThatThrownBy(config::validateConfiguration)
@@ -711,7 +727,7 @@ class LlmProviderConfigTest {
     @Test
     void shouldNotThrowWhenOllamaProviderAndNoApiKey() {
         LlmProviderProperties props = new LlmProviderProperties();
-        props.setProvider("ollama");
+        props.setProvider(LlmProvider.OLLAMA);
         LlmProviderConfig config = new LlmProviderConfig(props);
         assertThatNoException().isThrownBy(config::validateConfiguration);
     }
@@ -1739,10 +1755,31 @@ import lombok.Data;
 @Data
 @Builder
 public class HealthResponse {
-    private String status;         // "UP" | "DEGRADED"
-    private String provider;
+    private HealthStatus status;
+    private LlmProvider provider;
     private String model;
-    private String ocrSidecar;    // "reachable" | "unreachable"
+    private SidecarReachability ocrSidecar;
+}
+
+public enum HealthStatus {
+    UP,
+    DEGRADED
+}
+
+public enum SidecarReachability {
+    REACHABLE("reachable"),
+    UNREACHABLE("unreachable");
+
+    private final String jsonValue;
+
+    SidecarReachability(String jsonValue) {
+        this.jsonValue = jsonValue;
+    }
+
+    @JsonValue
+    public String jsonValue() {
+        return jsonValue;
+    }
 }
 ```
 
@@ -2897,14 +2934,12 @@ correctly. If two `ChatClient` beans are accidentally registered (e.g., autoconf
 `@Primary` to the beans defined in `LlmProviderConfig` and suppress autoconfigured beans via
 `spring.ai.openai.chat.enabled=false` in properties.
 
-**Open Question:** Should the health endpoint make an actual LLM API call (to verify the API key is valid) or just check
-connectivity? In Sprint 1, it only pings the OCR sidecar. LLM key validation happens at startup via `@PostConstruct`. A
-live LLM ping in the health endpoint would consume tokens and add latency. Decision: defer live LLM ping to a separate
-`/api/v1/health/full` endpoint in Sprint 2.
+**Decision:** `GET /api/v1/health` does not make a live LLM API call. It remains a lightweight application health
+endpoint (service status + OCR reachability). LLM key/provider validation is startup-time only. Any deep probe endpoint
+(`GET /api/v1/health/full`) is deferred to wishlist.
 
-**Open Question:** Does the `rfp-frontend` Nginx container need CORS headers? In Docker Compose, the frontend proxies to
-`rfp-service:8080` via Nginx, so CORS headers are not needed. For local `npm run dev`, the Vite proxy handles it.
-Confirm with team before Sprint 2.
+**Decision:** No CORS headers are required in Sprint 1 baseline. In Docker Compose, Nginx proxying keeps calls
+same-origin; in local dev, Vite proxy handles it. CORS policy hardening is deferred to security scope.
 
 **Assumption:** Java virtual threads (`Executors.newVirtualThreadPerTaskExecutor()`) are used in `LlmAdapter` for the
 CompletableFuture supplier. Java 21 supports virtual threads natively. No additional configuration needed beyond JDK 21.

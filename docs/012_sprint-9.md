@@ -2195,10 +2195,8 @@ development and `/api/v1` in production (proxied by Vite/Nginx). The `AdminPage`
 directory with standard unit-test annotations so it runs in normal `mvn test`
 execution. The CI pipeline runs unit tests only.
 
-**Open Question:** Should the admin API return an error code when no packs are loaded (empty application startup)?
-Current implementation returns an empty array with 200. If an empty list is an error condition, return 500 with error
-body. Decision deferred to Sprint 11 after auth/admin concept is solidified.
+**Decision:** The admin API returns HTTP 200 with an empty array when no packs are loaded. Include a descriptive message
+field in the response payload; do not treat empty pack state as server error.
 
-**Open Question:** The WatchService poll interval is hardcoded at 30 seconds in Sprint 8. Should this be configurable
-via `app.rules.watch.poll-interval-seconds`? If yes, add this property in Sprint 9 and set it to 10 seconds in test
-properties to make `RulePackLoaderHotReloadTest` faster.
+**Decision:** WatchService poll interval is configurable via `app.rules.watch.poll-interval-seconds` with default `30`.
+Set it to `10` seconds in test properties to speed `RulePackLoaderHotReloadTest`.

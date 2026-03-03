@@ -863,7 +863,8 @@ interface AuditReportViewerProps {
     - Add "Artifacts" tab → renders `<ArtifactDownload jobId={jobId} />`.
     - Add "Audit Report" tab → renders `<AuditReportViewer jobId={jobId} />`.
 
-**Test Plan:** Frontend unit tests and writer unit tests with fixture assertions.
+**Test Plan:** Backend unit tests only (artifact writer tests + artifact service/controller mapping tests) with fixture
+assertions.
 **Story Points:** 5
 
 ---

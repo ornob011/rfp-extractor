@@ -1415,7 +1415,7 @@ const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({score}) => {
 
 **Test Plan:**
 
-- No frontend unit tests required in this baseline.
+- No UI unit tests required in this baseline.
 - Backend coverage only: add/update unit tests for `GET /api/v1/rfp/result/{jobId}` controller/service mapping and DTO shape.
 
 **Observability:** Client-side only. No server-side observability needed for the component itself.

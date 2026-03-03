@@ -1101,6 +1101,7 @@ public class ScannedTableReconstructor {
     - If headers empty → return degraded result or propagate empty.
     - Call `buildGrid(headers, rows)`.
     - `TableTypeClassifier.classify(headers, "")` → type.
+    - Set `provenance = TableProvenance.SCANNED` for reconstructed tables.
     -
    `confidence = ExtractionConfidence.builder().score(ocrPageConfidence * 0.8).method("ocr_llm_reconstruct").build()`.
     - Return `Optional.of(TableExtractionResult.builder()...build())`.
@@ -1290,7 +1291,10 @@ Scenario: Confidence bar for each page
 **Implementation Plan:**
 
 1. API response type: extend `RfpResultDto` to include `pageDetails: PageDetail[]` where
-   `PageDetail = { pageNum: number; classification: 'DIGITAL' | 'SCANNED' | 'MIXED'; extractionMethod: string; confidence: number }`.
+   `PageDetail = { pageNum: number; classification: PageClassification; extractionMethod: PageExtractionMethod; confidence: number }`
+   and:
+   `PageClassification = DIGITAL | SCANNED | MIXED`
+   `PageExtractionMethod = TEXT_LAYER | OCR | TEXT_PLUS_OCR | OCR_LLM_RECONSTRUCT | OCR_FAILED`.
 2. Java: add `pageDetails` field to the result DTO in `RfpController`/response mapper. Populate from
    `state.pageClassifications` and `state.pageConfidences`.
 3. Frontend: add `PageSummaryTab.tsx` component. Render a `<table>` with columns: Page, Type, Method, Confidence.
@@ -1532,11 +1536,11 @@ does not yet exist on `PdfDocumentLoader`, add it (PDFBox `PDFTextStripper` scop
 it currently only uses the default model, add an overloaded method `extractStructured(String prompt, String modelId)`
 that passes the model ID to OpenRouter.
 
-**Open Question:** Should `ColumnDetector` handle 3-column layouts (some Bangladesh gazette documents)? Current sprint:
-detect only 1 or 2 columns. Log a `WARN` if 3+ potential column gaps are detected so we can revisit in a later sprint.
+**Decision:** `ColumnDetector` supports 1- and 2-column layouts only in Sprint 6. If 3+ column gaps are detected, log
+`WARN` and continue with best-effort 2-column handling.
 
-**Open Question:** Should OCR results be cached per page (by PDF hash + page number) in PostgreSQL to avoid re-OCRing the
-same document on retry? Deferred to Sprint 7 (Repair Loop) where checkpoint persistence of `ExtractionState` is introduced.
+**Decision:** No OCR page-cache is implemented in Sprint 6. Retry/cost optimization is deferred to Sprint 7 checkpoint
+persistence work.
 
 **Non-Goal:** Bangla text segmentation / word segmentation. EasyOCR handles Bangla as a sequence of characters;
 downstream entity extractors receive the raw Bangla text. Dedicated Bangla NLP (morphological analysis) is deferred

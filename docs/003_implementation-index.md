@@ -53,6 +53,34 @@ The system's competitive advantages over off-the-shelf tools (AWS Textract, Azur
 
 ---
 
+## Canonical Enums
+
+Use these enum contracts consistently across sprints and APIs. Do not reintroduce free-form `String` fields for these
+closed vocabularies.
+
+| Enum                   | Values                                                                                                                      | Primary Scope                       |
+|------------------------|-----------------------------------------------------------------------------------------------------------------------------|-------------------------------------|
+| `LlmProvider`          | `OPENROUTER`, `OLLAMA`                                                                                                      | Provider selection + health payload |
+| `HealthStatus`         | `UP`, `DEGRADED`                                                                                                            | `GET /api/v1/health`                |
+| `SidecarReachability`  | `REACHABLE`, `UNREACHABLE`                                                                                                  | `GET /api/v1/health`                |
+| `JobStatus`            | `QUEUED`, `RUNNING`, `COMPLETED`, `FAILED`, `PARTIAL`                                                                       | Job lifecycle                       |
+| `PageClassification`   | `DIGITAL`, `SCANNED`, `MIXED`                                                                                               | Page-level routing/output           |
+| `PageExtractionMethod` | `TEXT_LAYER`, `OCR`, `TEXT_PLUS_OCR`, `OCR_LLM_RECONSTRUCT`, `OCR_FAILED`                                                   | Page-detail reporting               |
+| `TableType`            | `DELIVERABLES`, `EVALUATION`, `PAYMENT`, `STAFFING`, `SCHEDULE`, `OTHER`                                                    | Table semantics                     |
+| `TableProvenance`      | `DIGITAL`, `SCANNED`, `MIXED`                                                                                               | Table origin metadata               |
+| `RepairStrategy`       | `RETRY_SECTION_SEGMENTATION`, `SWITCH_TABLE_MODE`, `RETRY_SCANNED_TABLE_OCR_AT_HIGHER_DPI`, `WIDEN_ENTITY_CONTEXT`, `NO_OP` | Repair routing                      |
+| `RepairComponentType`  | `SECTION`, `TABLE`, `ENTITY`                                                                                                | Repair candidate typing             |
+| `ConfidenceSource`     | `HEADING_STYLE`, `BOOKMARK`, `LATTICE`, `STREAM`, `OCR_LLM_RECONSTRUCT`, `LLM`, `UNKNOWN`                                   | Repair scoring source               |
+| `RepairOutcome`        | `IMPROVED`, `NOT_IMPROVED`, `MAX_RETRIES`                                                                                   | Status repair events                |
+| `UserRole`             | `ANALYST`, `ADMIN`, `AUDITOR`                                                                                               | Security/RBAC                       |
+
+Serialization note:
+
+- API payloads may expose lowercase or specific wire values (for example `openrouter`, `reachable`) via enum
+  serializers (`@JsonValue`). Keep enum types in code, and map wire-format at the serialization boundary.
+
+---
+
 ## Critical Risks and Mitigations
 
 | # | Risk                                                                                                                  | Likelihood | Impact | Mitigation                                                                                                                                                                 |

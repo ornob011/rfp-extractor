@@ -2636,8 +2636,8 @@ Sprint 1. If Sprint 1's `AsyncConfig` was not yet merged, it must be added in PR
 Unindexed full-table scans are unacceptable at scale; repository queries must use indexed lookups and pagination.
 Do not use unbounded `findAll()` in runtime paths that can grow with tenant volume.
 
-**Open Question:** Should the classification results be persisted somewhere (DB) for use in Sprint 3's section
-segmenter? Decision: store `List<PageClassificationResult>` as part of the `ExtractionJob` state. In Sprint 2, add
+**Decision:** Classification results are persisted for downstream sprints. Store `List<PageClassificationResult>` as part
+of the `ExtractionJob` state. In Sprint 2, add
 `pageClassifications` field to `ExtractionJob` as a `Map<Integer, String>` (pageIndex → classificationName). The full
 `PageClassificationResult` details are in-memory only; only the classification label is persisted.
 

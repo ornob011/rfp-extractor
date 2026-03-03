@@ -34,8 +34,8 @@
 
 ## 3) Acceptance Criteria
 
-1. Running `mvn verify` (default profile) passes without any ground-truth dataset.
-2. Running `mvn verify -Pbenchmark` with dataset present executes benchmark suite and publishes a scorecard.
+1. Running `mvn test` (default profile) passes without any ground-truth dataset.
+2. Running `mvn test -Pbenchmark` with dataset present executes benchmark suite and publishes a scorecard.
 3. Missing benchmark dataset under `-Pbenchmark` fails fast with a clear setup error.
 4. No sprint before 13 references benchmark data as a merge blocker.
 

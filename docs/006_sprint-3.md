@@ -3234,7 +3234,8 @@ mvn test -pl rfp-service -Dtest=SectionExtractionEvaluatorTest -Dtest.fixture.pa
 - [ ] `AllCapsHeadingStrategy` rejects lines NOT surrounded by blank lines — verified by unit test.
 - [ ] `GET /api/v1/rfp/result/{jobId}` returns `sections` array with at least 1 element for a typical GOB RFP — verified
   by curl demo.
-- [ ] `SectionTree` component collapse/expand behavior is covered by frontend unit tests.
+- [ ] Backend unit tests cover `SectionTree` data contract generation (`sections` hierarchy shape and ordering) used by
+  the UI.
 - [ ] `testdata/pdfs/` is in `.gitignore` — verified by `git check-ignore testdata/pdfs/`.
 - [ ] No class exceeds 250 lines. No method exceeds 20 lines. Verified during code review.
 - [ ] `rfp-schema-v1.json` allows `null` for all entity fields — verified by submitting an RFP JSON with all entity
@@ -3258,15 +3259,11 @@ or `PDPageDestination` — implement in Sprint 5 if needed.
 `wishlist/001_wishlist.md`. This does not block Sprint 3-12 delivery because fixture-based gates are the
 acceptance baseline.
 
-**Open Question:** Should `SectionSegmenter` merge adjacent identical-level sections that span fewer than 2 lines? E.g.,
-some PDFs emit "SECTION" on one line and "I" on the next. Decision: deferred to Sprint 5 (table extraction) when section
-quality needs to be higher for table-to-section mapping.
+**Decision:** `SectionSegmenter` does not merge adjacent identical-level short sections in Sprint 3. Keep deterministic
+one-heading-per-section behavior now; revisit merge heuristics in Sprint 5 if table-to-section linking quality requires it.
 
-**Open Question:** The `RfpSchemaValidator` loads the schema from a file path configured in `application.properties`. In
-production Docker containers, this path must be inside the container. Should the schema be bundled as a classpath
-resource? Decision: bundle `rfp-schema-v1.json` as a Spring Boot resource in `rfp-service/src/main/resources/schema/`
-and use `ClassPathResource` for loading. Update `RfpSchemaValidator` to try classpath first, then fallback to filesystem
-path.
+**Decision:** Bundle `rfp-schema-v1.json` as a Spring Boot classpath resource in
+`rfp-service/src/main/resources/schema/` and load via `ClassPathResource` first, then fallback to filesystem path.
 
 **Assumption:** The `SectionSegmenter` page range computation for the last section is `totalPages - 1` (the last page
 index, 0-based). This may be off-by-one if the PDF uses 1-based page numbers. The `PdfDocumentLoader.getPageCount()`

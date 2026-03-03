@@ -56,7 +56,7 @@ is replaced by `TableExtractionResult.java`. Update `ExtractionState`, `Finalize
 
 ---
 
-#### Story A-1: Define `TableCell`, `TableType`, `ExtractionConfidence`, and `TableExtractionResult`
+#### Story A-1: Define `TableCell`, `TableType`, `TableProvenance`, `ExtractionConfidence`, and `TableExtractionResult`
 
 **Description:** Introduce all value types needed to represent an extracted table. These live in `rfp-core` (no Spring
 dependencies). Downstream adapters and the agent graph depend on these types.
@@ -77,6 +77,7 @@ Scenario: Build a TableExtractionResult
   Then tableId is a non-null UUID
   And confidence.method is one of "lattice", "stream", "ocr_llm_reconstruct"
   And type is one of the TableType enum values
+  And provenance is one of the TableProvenance enum values
 ```
 
 **Interfaces / Contracts:**
@@ -101,6 +102,11 @@ public enum TableType {
     DELIVERABLES, EVALUATION, PAYMENT, STAFFING, SCHEDULE, OTHER
 }
 
+// rfp-core/.../domain/model/TableProvenance.java
+public enum TableProvenance {
+    DIGITAL, SCANNED, MIXED
+}
+
 // rfp-core/.../domain/model/ExtractionConfidence.java
 @Data
 @Builder
@@ -118,6 +124,7 @@ public class TableExtractionResult {
     private UUID clauseId;        // set by TableSectionLinker; null until linked
     private int pageStart;
     private int pageEnd;
+    private TableProvenance provenance;
     private String caption;
     private TableType type;
     private List<String> headers;
@@ -131,10 +138,12 @@ public class TableExtractionResult {
 1. Create `rfp-core/src/main/java/com/dsi/rfp/domain/model/TableCell.java` — add Lombok `@Data @Builder`, ensure
    `@Builder.Default` on `rowspan` and `colspan`.
 2. Create `rfp-core/src/main/java/com/dsi/rfp/domain/model/TableType.java` — plain enum, no dependencies.
-3. Create `rfp-core/src/main/java/com/dsi/rfp/domain/model/ExtractionConfidence.java` — `@Data @Builder`, two fields.
-4. Create `rfp-core/src/main/java/com/dsi/rfp/domain/model/TableExtractionResult.java` — `@Data @Builder`, import UUID
+3. Create `rfp-core/src/main/java/com/dsi/rfp/domain/model/TableProvenance.java` — plain enum (`DIGITAL`, `SCANNED`,
+   `MIXED`), no dependencies.
+4. Create `rfp-core/src/main/java/com/dsi/rfp/domain/model/ExtractionConfidence.java` — `@Data @Builder`, two fields.
+5. Create `rfp-core/src/main/java/com/dsi/rfp/domain/model/TableExtractionResult.java` — `@Data @Builder`, import UUID
    from `java.util`.
-5. Verify `rfp-core` compiles with `mvn compile -pl rfp-core`.
+6. Verify `rfp-core` compiles with `mvn compile -pl rfp-core`.
 
 **Dependencies:** Lombok on `rfp-core` classpath (already present from Sprint 2).
 
@@ -265,7 +274,7 @@ public class LatticeTableExtractor {
    Delegate type classification to `TableTypeClassifier`.
 
 8. **Return.** Build `TableExtractionResult` with `pageStart = pageNum`, `pageEnd = pageNum`,
-   `tableId = UUID.randomUUID()`.
+   `tableId = UUID.randomUUID()`, `provenance = TableProvenance.DIGITAL`.
 
 **Dependencies:** `PdfDocumentLoader` (Sprint 2), `PDFBox 3.x` on classpath, `TableTypeClassifier` (Story B-3).
 
@@ -370,7 +379,7 @@ public class StreamTableExtractor {
    falls in. Build `TableCell(row=rowIdx, col=colIdx, value=block.text, rowspan=1, colspan=1)`.
 6. **Headers:** first row `isHeader=true`.
 7. **Confidence:** always `ExtractionConfidence.builder().score(0.6).method("stream").build()`.
-8. Return `TableExtractionResult` with `pageStart=pageNum, pageEnd=pageNum, tableId=UUID.randomUUID()`.
+8. Return `TableExtractionResult` with `pageStart=pageNum, pageEnd=pageNum, tableId=UUID.randomUUID(), provenance=TableProvenance.DIGITAL`.
 
 **Dependencies:** `PdfDocumentLoader` (Sprint 2).
 
@@ -921,12 +930,19 @@ export interface ExtractionConfidence {
     method: 'lattice' | 'stream' | 'ocr_llm_reconstruct';
 }
 
+export enum TableProvenance {
+    DIGITAL = 'DIGITAL',
+    SCANNED = 'SCANNED',
+    MIXED = 'MIXED'
+}
+
 export interface TableExtractionResult {
     tableId: string;
     sectionId: string | null;
     clauseId: string | null;
     pageStart: number;
     pageEnd: number;
+    provenance: TableProvenance;
     caption: string | null;
     type: 'DELIVERABLES' | 'EVALUATION' | 'PAYMENT' | 'STAFFING' | 'SCHEDULE' | 'OTHER';
     headers: string[];
@@ -973,7 +989,8 @@ export function TableViewer({table}: TableViewerProps): JSX.Element { ...
 |------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
 | Overlapping grid areas when rowspan+colspan conflict | Sort cells and place them in grid — CSS grid handles overlap gracefully; add `overflow: hidden` on cells |
 
-**Test Plan:** Frontend unit tests with representative table fixtures (including merged cells and badges).
+**Test Plan:** Backend unit tests only. Validate table extraction payload shape (merged cells, captions, confidence
+metadata) with representative fixtures.
 
 **Story Points:** 8
 
@@ -1091,6 +1108,7 @@ curl http://localhost:8080/api/v1/rfp/result/$JOB_ID | jq '.tables[0]'
 #   "sectionId": "a1b2c3d4-...",
 #   "pageStart": 12,
 #   "pageEnd": 13,
+#   "provenance": "DIGITAL",
 #   "caption": "Table 3: Evaluation Criteria",
 #   "type": "EVALUATION",
 #   "headers": ["Criteria", "Weight", "Max Score"],
@@ -1113,13 +1131,13 @@ curl http://localhost:8080/api/v1/rfp/result/$JOB_ID \
 # Expected: array of tables where pageStart < pageEnd (multi-page merges)
 ```
 
-### Step 5: Verify frontend renders
+### Step 5: Verify table payload contract (backend)
 
-Run frontend unit tests for `TableViewer` fixture rendering. Verify:
+Validate backend result payload for table rendering contract. Verify:
 
-- Tables listed with caption and type badge.
-- Merged cells map to correct span props in rendered output.
-- Confidence badge shows method and score bar.
+- Tables include caption and type in `/api/v1/rfp/result/{jobId}` JSON.
+- Merged-cell metadata (`rowSpan`/`colSpan`) is present where applicable.
+- Confidence metadata and method fields are populated.
 
 ---
 
@@ -1157,12 +1175,12 @@ must be updated.
 **Assumption:** `apache-commons-text` is already a transitive dependency via Spring Boot or LangChain4J. If not, add
 `org.apache.commons:commons-text:1.12.0` explicitly to `rfp-service/pom.xml`.
 
-**Open Question:** Should `TableViewer.tsx` support horizontal scrolling for tables wider than the viewport? Current
-plan: add `overflow-x: auto` on the container. Confirm with UX before implementation.
+**Decision:** `TableViewer.tsx` must support horizontal scrolling for wide tables using `overflow-x: auto` on the table
+container.
 
-**Open Question:** Should tables extracted from MIXED pages (text layer + OCR) be tagged with a different
-`confidence.method`? Currently they use the same lattice/stream methods since they run on the text layer. Revisit in
-Sprint 6 when `MixedPageExtractor` is introduced.
+**Decision:** Add explicit table provenance tagging via `TableProvenance` enum (`DIGITAL`, `SCANNED`, `MIXED`). Keep
+`confidence.method` tied to extraction technique (`lattice`, `stream`, `ocr_llm_reconstruct`) and do not overload it for
+page-type provenance.
 
 **Non-Goal:** Scanned-page table extraction (OCR → LLM reconstruction) is Sprint 6. `ExtractTablesNode` explicitly skips
 SCANNED pages and stores empty list for those pages.
