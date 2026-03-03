@@ -11,14 +11,19 @@
   skeleton (upload page only), and a Docker Compose stack tying all five services together.
 - Provide the prompt file infrastructure and the first prompt placeholder so that Sprint 4 can drop in real content with
   zero structural work.
+- **Establish the complete, durable PostgreSQL schema** (all JPA entities, all enums, all repositories) so that every
+  subsequent sprint can write analysis state to PostgreSQL without any entity-mapping work. This is foundational
+  infrastructure — nothing deferred to later sprints. Redis is removed from the stack entirely; PostgreSQL is the
+  single source of truth for all job state.
 
 **Non-goals:**
 
 - PDF parsing, text extraction, or any OCR logic (Sprint 2/6).
 - Section segmentation, entity extraction, or any agent graph (Sprints 3/4).
-- Authentication, authorization, or JWT filters (Sprint 11).
+- Authentication, authorization, or JWT filters (Sprint 11). Spring Security is NOT wired in Sprint 1 — `UserEntity`
+  is a plain JPA entity with no security integration until Sprint 11.
 - Rule packs or artifact generation (Sprints 8/10).
-- Database schema migrations or JPA entity creation beyond confirming DataSource connectivity (Sprint 2+).
+- Redis — removed from the stack. No `RedisJobStateRepository`, no `RedisConfig`, no `spring-boot-starter-data-redis`.
 
 ---
 
@@ -33,7 +38,7 @@
 - Git repository initialized at project root (`rfp-extractor/`).
 - No prior sprint artifacts — this is the first sprint.
 - A `.env` file at project root populated from `.env.example` with at minimum `OPENROUTER_API_KEY`,
-  `POSTGRES_PASSWORD=rfppass`, `POSTGRES_DB=rfpdb`, `POSTGRES_USER=rfpuser`, `REDIS_URL=redis://redis:6379`.
+  `POSTGRES_PASSWORD=rfppass`, `POSTGRES_DB=rfpdb`, `POSTGRES_USER=rfpuser`.
 
 ---
 
@@ -46,9 +51,45 @@
 - `GET /api/v1/health` returning provider name, model, and OCR reachability.
 - Python FastAPI at `rfp-python-ocr/` with `GET /health` responding `{"status":"ok","version":"1.0.0"}`.
 - React frontend at `rfp-frontend/` with upload page skeleton compiled by Vite.
-- `docker-compose.yml` with health checks on all five services.
+- `docker-compose.yml` with health checks on all **four** services (postgres, rfp-python-ocr, rfp-service,
+  rfp-frontend).
+  Redis is NOT in the stack.
 - `prompts/` directory with `README.md` and `prompts/entity-general-v1.md` placeholder.
 - CI (`mvn verify`) passes with zero test failures (at least 10 unit tests covering LlmAdapter and LlmResilienceConfig).
+
+**New in this plan — DB Schema deliverables (D-27 through D-43):**
+
+Enums (`rfp-core/.../domain/model/`):
+
+| #    | Deliverable         | Values                                                                                                                                                        |
+|------|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| D-27 | `AnalysisStatus`    | `QUEUED`, `RUNNING`, `COMPLETED`, `FAILED`, `PARTIAL`                                                                                                         |
+| D-28 | `ExecutionStatus`   | `PENDING`, `RUNNING`, `COMPLETED`, `FAILED`, `CANCELLED`                                                                                                      |
+| D-29 | `TerminationReason` | `SUCCESS`, `ERROR`, `TIMEOUT`, `MAX_REPAIRS_EXCEEDED`, `USER_CANCELLED`                                                                                       |
+| D-30 | `AgentStepType`     | `VALIDATE`, `CLASSIFY_PAGES`, `EXTRACT_TEXT`, `SEGMENT_SECTIONS`, `EXTRACT_TABLES`, `EXTRACT_ENTITIES`, `SCORE_CONFIDENCE`, `REPAIR`, `RUN_RULES`, `FINALIZE` |
+| D-31 | `StepOutcome`       | `SUCCESS`, `SKIPPED`, `FAILED`                                                                                                                                |
+
+JPA Entities (`rfp-service/.../adapter/persistence/entity/`):
+
+| #    | Deliverable            | Table               |
+|------|------------------------|---------------------|
+| D-32 | `DocumentEntity`       | `documents`         |
+| D-33 | `AnalysisJobEntity`    | `analysis_jobs`     |
+| D-34 | `AnalysisResultEntity` | `analysis_results`  |
+| D-35 | `AgentExecutionEntity` | `agent_executions`  |
+| D-36 | `AgentStepEntity`      | `agent_steps`       |
+| D-37 | `UserAuditEntity`      | `user_audit_events` |
+
+Spring Data JPA Repositories (`rfp-service/.../adapter/persistence/`):
+
+| #    | Repository                 | Key query methods                                                   |
+|------|----------------------------|---------------------------------------------------------------------|
+| D-38 | `DocumentRepository`       | `findBySha256Checksum`, `findByUploadedBy`                          |
+| D-39 | `AnalysisJobRepository`    | `findByDocumentId`, `findBySubmittedByAndStatus`, `findAllByStatus` |
+| D-40 | `AnalysisResultRepository` | `findByAnalysisJobId`                                               |
+| D-41 | `AgentExecutionRepository` | `findByAnalysisJobId`                                               |
+| D-42 | `AgentStepRepository`      | `findByExecutionIdOrderBySequence`                                  |
+| D-43 | `UserAuditRepository`      | `findByUserIdOrderByCreatedAtDesc`, `findAllOrderByCreatedAtDesc`   |
 
 ---
 
@@ -267,7 +308,6 @@ File: `rfp-extractor/rfp-service/pom.xml`
 - Depends on `rfp-core`
 - Full dependency list:
     - `spring-boot-starter-web`
-    - `spring-boot-starter-data-redis`
     - `spring-boot-starter-data-jpa`
     - `spring-boot-starter-actuator`
     - `spring-boot-starter-security`
@@ -405,7 +445,7 @@ public class LlmProviderProperties {
     @Data
     public static class OllamaProps {
         private String baseUrl = "http://localhost:11434";
-        private String model = "llama3.1:8b";
+        private final String model = "llama3.1:8b";
         private final String modelJudge = "llama3.1:70b";
     }
 }
@@ -448,8 +488,6 @@ spring.datasource.password=${POSTGRES_PASSWORD:rfppass}
 spring.datasource.driver-class-name=org.postgresql.Driver
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
-# Redis
-spring.data.redis.url=${REDIS_URL:redis://localhost:6379}
 # Actuator
 management.endpoints.web.exposure.include=health,info,prometheus,metrics
 management.endpoint.health.show-details=always
@@ -465,7 +503,6 @@ File: `rfp-service/src/main/resources/application-docker.properties`:
 spring.datasource.url=jdbc:postgresql://postgres:5432/rfpdb
 app.ocr.sidecar-url=http://rfp-python-ocr:8000
 app.storage.base-path=/app/rfp-storage
-spring.data.redis.url=redis://redis:6379
 ```
 
 **Implementation Plan:**
@@ -779,14 +816,14 @@ public class LlmResilienceConfig {
 
 ```java
 RetryConfig config = RetryConfig.custom()
-    .maxAttempts(3)
-    .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(
-        Duration.ofSeconds(1),   // initial interval
-        2.0,                     // multiplier
-        0.3                      // randomization factor (jitter)
-    ))
-    .retryOnException(e -> !(e instanceof LlmResponseParseException))
-    .build();
+                                .maxAttempts(3)
+                                .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(
+                                    Duration.ofSeconds(1),   // initial interval
+                                    2.0,                     // multiplier
+                                    0.3                      // randomization factor (jitter)
+                                ))
+                                .retryOnException(e -> !(e instanceof LlmResponseParseException))
+                                .build();
 return retryRegistry.
 
 retry(LLM_RETRY, config);
@@ -799,14 +836,14 @@ unparseable. Only `LlmUnavailableException` and transient IO errors should retry
 
 ```java
 CircuitBreakerConfig config = CircuitBreakerConfig.custom()
-    .failureRateThreshold(50.0f)
-    .slidingWindowType(SlidingWindowType.COUNT_BASED)
-    .slidingWindowSize(10)
-    .waitDurationInOpenState(Duration.ofSeconds(30))
-    .permittedNumberOfCallsInHalfOpenState(3)
-    .recordExceptions(LlmUnavailableException.class, java.io.IOException.class,
-        java.util.concurrent.TimeoutException.class)
-    .build();
+                                                  .failureRateThreshold(50.0f)
+                                                  .slidingWindowType(SlidingWindowType.COUNT_BASED)
+                                                  .slidingWindowSize(10)
+                                                  .waitDurationInOpenState(Duration.ofSeconds(30))
+                                                  .permittedNumberOfCallsInHalfOpenState(3)
+                                                  .recordExceptions(LlmUnavailableException.class, java.io.IOException.class,
+                                                      java.util.concurrent.TimeoutException.class)
+                                                  .build();
 return cbRegistry.
 
 circuitBreaker(LLM_CB, config);
@@ -816,10 +853,10 @@ circuitBreaker(LLM_CB, config);
 
 ```java
 RateLimiterConfig config = RateLimiterConfig.custom()
-    .limitForPeriod(props.getRateLimitPerMinute())
-    .limitRefreshPeriod(Duration.ofMinutes(1))
-    .timeoutDuration(Duration.ofSeconds(10))
-    .build();
+                                            .limitForPeriod(props.getRateLimitPerMinute())
+                                            .limitRefreshPeriod(Duration.ofMinutes(1))
+                                            .timeoutDuration(Duration.ofSeconds(10))
+                                            .build();
 return rlRegistry.
 
 rateLimiter(LLM_RL, config);
@@ -829,9 +866,9 @@ rateLimiter(LLM_RL, config);
 
 ```java
 TimeLimiterConfig config = TimeLimiterConfig.custom()
-    .timeoutDuration(Duration.ofSeconds(props.getTimeoutSeconds()))
-    .cancelRunningFuture(true)
-    .build();
+                                            .timeoutDuration(Duration.ofSeconds(props.getTimeoutSeconds()))
+                                            .cancelRunningFuture(true)
+                                            .build();
 return tlRegistry.
 
 timeLimiter(LLM_TIMEOUT, config);
@@ -880,9 +917,10 @@ public class AsyncConfig implements AsyncConfigurer {
             log.error(
                 "event=async.uncaught component=AsyncConfig status=FAIL method={} errorCode=ASYNC_FAILURE traceId=NA spanId=NA jobId=NA durationMs=NA error={}",
                 method.getName(), ex.getMessage(), ex);
-        // NOTE: Sprint 2 replaces this with JobStateAsyncExceptionHandler that also marks the
-        // ExtractionJob as FAILED in Redis. The handler is injected as a Spring bean so it
-        // can access JobStatePort without static context. See Sprint 2 Epic 4 for full impl.
+        // NOTE: Sprint 2 replaces this with JobStateAsyncExceptionHandler that marks the
+        // AnalysisJobEntity as FAILED via AnalysisJobRepository (PostgreSQL). The handler is
+        // injected as a Spring bean so it can access the repository without static context.
+        // See Sprint 2 Epic 4 for full impl.
     }
 }
 ```
@@ -1150,10 +1188,10 @@ public <T> Optional<T> extractStructured(String systemPrompt,
 ```java
 private String callLlmRaw(String systemPrompt, String userContent) {
     return chatClient.prompt()
-        .system(systemPrompt)
-        .user(userContent)
-        .call()
-        .content();
+                     .system(systemPrompt)
+                     .user(userContent)
+                     .call()
+                     .content();
 }
 ```
 
@@ -1177,7 +1215,7 @@ private <T> Optional<T> parseResponse(String rawResponse, Class<T> responseType)
         cleaned = cleaned.substring(0, cleaned.length() - 3);
     }
     cleaned = cleaned.strip();
-    
+
     try {
         T result = objectMapper.readValue(cleaned, responseType);
         return Optional.of(result);
@@ -1829,15 +1867,16 @@ class HealthServiceTest {
 #### Story 6.1 — docker-compose.yml with Full Stack
 
 **Description:**
-Write `rfp-extractor/docker-compose.yml` defining all five services with health checks, environment variable injection
-from `.env`, and proper service dependencies.
+Write `rfp-extractor/docker-compose.yml` defining all four services (postgres, rfp-python-ocr, rfp-service,
+rfp-frontend) with health checks, environment variable injection from `.env`, and proper service dependencies.
+Redis is NOT in the stack — job state is in PostgreSQL.
 
 **Acceptance Criteria:**
 
 ```gherkin
 Given docker-compose.yml exists and .env is populated
 When `docker compose up --build` is run
-Then all five services start within 120s
+Then all four services start within 120s
 
 Given the postgres service
 When the health check runs
@@ -1845,7 +1884,8 @@ Then it uses pg_isready and reports healthy before rfp-service starts
 
 Given the rfp-service
 When it starts
-Then it depends_on: [postgres, redis, rfp-python-ocr] with condition: service_healthy
+Then it depends_on: [postgres, rfp-python-ocr] with condition: service_healthy
+And no Redis service is defined in docker-compose.yml
 ```
 
 **Interfaces/Contracts:**
@@ -1872,16 +1912,6 @@ services:
             timeout     : 5s
             retries     : 5
             start_period: 20s
-
-    redis         :
-        image      : redis:7-alpine
-        ports      :
-            - "6379:6379"
-        healthcheck:
-            test    : [ "CMD", "redis-cli", "ping" ]
-            interval: 10s
-            timeout : 3s
-            retries : 3
 
     rfp-python-ocr:
         build      :
@@ -1910,11 +1940,8 @@ services:
             POSTGRES_USER         : ${POSTGRES_USER:-rfpuser}
             POSTGRES_PASSWORD     : ${POSTGRES_PASSWORD:-rfppass}
             POSTGRES_DB           : ${POSTGRES_DB:-rfpdb}
-            REDIS_URL             : redis://redis:6379
         depends_on :
             postgres      :
-                condition: service_healthy
-            redis         :
                 condition: service_healthy
             rfp-python-ocr:
                 condition: service_healthy
@@ -2009,7 +2036,6 @@ OPENROUTER_API_KEY=sk-or-v1-your-key-here
 POSTGRES_DB=rfpdb
 POSTGRES_USER=rfpuser
 POSTGRES_PASSWORD=rfppass
-REDIS_URL=redis://redis:6379
 ```
 
 **Dependencies:** Stories 3.1, 4.1, 5.1.
@@ -2117,6 +2143,474 @@ All prompt files follow this convention:
 
 ---
 
+### Epic 8 — PostgreSQL DB Schema (Foundational, One-Time)
+
+All JPA entities, all enums, all repositories. Nothing deferred to later sprints. `UserEntity` is a plain domain entity
+here — Spring Security integration (password hashing, `UserDetailsService`, JWT) is added in Sprint 11.
+
+#### Story 8.1 — BaseEntity and JpaConfig
+
+**Description:**
+Create the `BaseEntity` `@MappedSuperclass` that all JPA entities extend, providing UUID PK, `createdAt`, and
+`updatedAt` audit fields. Add `JpaConfig` to enable JPA auditing.
+
+**Interfaces/Contracts:**
+
+File: `rfp-service/.../adapter/persistence/entity/BaseEntity.java`
+
+```java
+@MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
+@Data
+public abstract class BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private Instant updatedAt;
+}
+```
+
+File: `rfp-service/.../config/JpaConfig.java`
+
+```java
+@Configuration
+@EnableJpaAuditing
+public class JpaConfig {
+}
+```
+
+**Acceptance Criteria:**
+
+```gherkin
+Given any entity extends BaseEntity
+When the entity is persisted
+Then id is auto-generated as a UUID, createdAt and updatedAt are set to current time
+```
+
+**Estimation:** 1 SP
+
+---
+
+#### Story 8.2 — Domain Enums (rfp-core)
+
+**Description:**
+Add the 5 new enums to `rfp-core` domain layer (`rfp-core/.../domain/model/`). These must have zero framework
+dependencies.
+
+**Interfaces/Contracts:**
+
+```java
+// AnalysisStatus.java
+public enum AnalysisStatus {
+    QUEUED, RUNNING, COMPLETED, FAILED, PARTIAL
+}
+
+// ExecutionStatus.java
+public enum ExecutionStatus {
+    PENDING, RUNNING, COMPLETED, FAILED, CANCELLED
+}
+
+// TerminationReason.java
+public enum TerminationReason {
+    SUCCESS, ERROR, TIMEOUT, MAX_REPAIRS_EXCEEDED, USER_CANCELLED
+}
+
+// AgentStepType.java
+public enum AgentStepType {
+    VALIDATE, CLASSIFY_PAGES, EXTRACT_TEXT, SEGMENT_SECTIONS,
+    EXTRACT_TABLES, EXTRACT_ENTITIES, SCORE_CONFIDENCE,
+    REPAIR, RUN_RULES, FINALIZE
+}
+
+// StepOutcome.java
+public enum StepOutcome {
+    SUCCESS, SKIPPED, FAILED
+}
+```
+
+**Acceptance Criteria:**
+
+```gherkin
+Given rfp-core/pom.xml
+When inspecting enum class files
+Then there are zero Spring or JPA imports
+```
+
+**Estimation:** 1 SP
+
+---
+
+#### Story 8.3 — UserEntity (Plain JPA, No Spring Security)
+
+**Description:**
+Create `UserEntity` as a plain JPA entity. No `UserDetails`, no `BCryptPasswordEncoder`, no Spring Security imports.
+The password field is named `passwordHash` — it stores a bcrypt hash, but hashing logic is in Sprint 11.
+Sprint 11 adds `JpaUserDetailsService` on top of this existing entity with zero new columns.
+
+**Interfaces/Contracts:**
+
+File: `rfp-service/.../adapter/persistence/entity/UserEntity.java`
+
+```java
+@Entity
+@Table(name = "users")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserEntity extends BaseEntity {
+
+    @Column(unique = true, nullable = false)
+    private String username;
+
+    @Column(nullable = false)
+    private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role;           // UserRole enum from rfp-core (D-04, added Sprint 11)
+                                     // Sprint 1 placeholder: use String role or pre-add UserRole enum
+
+    @Column(nullable = false)
+    private boolean enabled;
+}
+```
+
+> **Note on `UserRole`:** Sprint 11 adds the `UserRole` enum (ANALYST/ADMIN/AUDITOR) to `rfp-core`. Sprint 1 must
+> either (a) pre-add `UserRole` now as a placeholder enum, or (b) use `String role` and migrate in Sprint 11.
+> **Decision: pre-add `UserRole` with values `ANALYST`, `ADMIN`, `AUDITOR` in Sprint 1** to avoid migration pain.
+> `UserRole.java` location: `rfp-core/.../domain/model/UserRole.java`.
+
+**Acceptance Criteria:**
+
+```gherkin
+Given the application starts
+When Hibernate DDL auto runs
+Then the "users" table is created with columns: id, username, password_hash, role, enabled, created_at, updated_at
+
+Given no Spring Security on classpath wiring
+When UserEntity.java is inspected
+Then there are zero imports from org.springframework.security
+```
+
+**Estimation:** 2 SP
+
+---
+
+#### Story 8.4 — DocumentEntity and AnalysisJobEntity
+
+**Description:**
+Create the two core pipeline entities. `DocumentEntity` stores uploaded file metadata with a SHA-256 dedup guard.
+`AnalysisJobEntity.id` is the system-wide `jobId` UUID used throughout the pipeline.
+
+**Interfaces/Contracts:**
+
+File: `rfp-service/.../adapter/persistence/entity/DocumentEntity.java`
+
+```java
+@Entity
+@Table(name = "documents")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class DocumentEntity extends BaseEntity {
+
+    @Column(nullable = false)
+    private String originalFilename;
+
+    @Column(nullable = false)
+    private String contentType;        // "application/pdf"
+
+    @Column(nullable = false)
+    private Long fileSizeBytes;
+
+    @Column(nullable = false)
+    private String storagePath;        // disk path under basePath
+
+    @Column(nullable = false, unique = true)
+    private String sha256Checksum;     // SHA-256 hex — dedup guard
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "uploaded_by_id")
+    private UserEntity uploadedBy;     // FK wired Sprint 1 — nullable (pre-auth uploads)
+}
+```
+
+File: `rfp-service/.../adapter/persistence/entity/AnalysisJobEntity.java`
+
+```java
+@Entity
+@Table(name = "analysis_jobs")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AnalysisJobEntity extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "document_id", nullable = false)
+    private DocumentEntity document;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "submitted_by_id")
+    private UserEntity submittedBy;    // FK wired Sprint 1 — nullable (pre-auth submissions)
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AnalysisStatus status;
+
+    private Instant startedAt;
+    private Instant completedAt;
+
+    @Column(columnDefinition = "TEXT")
+    private String errorMessage;
+
+    private int progressPercent;       // 0–100, updated by each graph node
+}
+```
+
+**Acceptance Criteria:**
+
+```gherkin
+Given a DocumentEntity is saved
+When the same SHA-256 is submitted again
+Then a DataIntegrityViolationException is thrown (unique constraint on sha256_checksum)
+
+Given an AnalysisJobEntity is saved with status=QUEUED
+When queried by id
+Then the document FK is resolved and status is QUEUED
+```
+
+**Estimation:** 3 SP
+
+---
+
+#### Story 8.5 — AnalysisResultEntity, AgentExecutionEntity, AgentStepEntity, UserAuditEntity
+
+**Description:**
+Create the remaining four entities: structured extraction output, agent run tracking, per-node step tracking, and
+user audit events.
+
+**Interfaces/Contracts:**
+
+File: `rfp-service/.../adapter/persistence/entity/AnalysisResultEntity.java`
+
+```java
+@Entity
+@Table(name = "analysis_results")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AnalysisResultEntity extends BaseEntity {
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "analysis_job_id", nullable = false)
+    private AnalysisJobEntity analysisJob;
+
+    @Column(columnDefinition = "JSONB", nullable = false)
+    private String resultJson;         // full RfpDocument serialised as JSON
+
+    private String modelId;            // e.g. "google/gemma-3-27b-it"
+    private String modelVersion;       // pinned model version logged at startup
+
+    private int totalTokensUsed;
+
+    @Column(precision = 5, scale = 4)
+    private double overallConfidence;  // 0.0–1.0
+}
+```
+
+File: `rfp-service/.../adapter/persistence/entity/AgentExecutionEntity.java`
+
+```java
+@Entity
+@Table(name = "agent_executions")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AgentExecutionEntity extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "analysis_job_id", nullable = false)
+    private AnalysisJobEntity analysisJob;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ExecutionStatus status;
+
+    @Enumerated(EnumType.STRING)
+    private TerminationReason terminationReason;
+
+    private Instant startedAt;
+    private Instant completedAt;
+    private int totalSteps;
+    private int completedSteps;
+    private int repairIterations;      // total REPAIR node invocations in this run
+}
+```
+
+File: `rfp-service/.../adapter/persistence/entity/AgentStepEntity.java`
+
+```java
+@Entity
+@Table(name = "agent_steps",
+       indexes = @Index(columnList = "execution_id, sequence"))
+@Data
+@EqualsAndHashCode(callSuper = true)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AgentStepEntity extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "execution_id", nullable = false)
+    private AgentExecutionEntity execution;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AgentStepType stepType;
+
+    @Column(nullable = false)
+    private int sequence;              // 0-based insertion order
+
+    private Instant startedAt;
+    private Instant completedAt;
+    private Long durationMs;
+
+    @Enumerated(EnumType.STRING)
+    private StepOutcome outcome;
+
+    @Column(columnDefinition = "TEXT")
+    private String errorMessage;
+}
+```
+
+File: `rfp-service/.../adapter/persistence/entity/UserAuditEntity.java`
+
+```java
+@Entity
+@Table(name = "user_audit_events")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserAuditEntity extends BaseEntity {
+
+    @Column(nullable = false)
+    private String userId;             // username string (not FK — survives user deletion)
+
+    @Column(nullable = false)
+    private String action;             // AuditAction enum value stored as string
+
+    private String documentId;         // nullable — UUID of related document
+
+    @Column(nullable = false)
+    private Instant timestamp;
+
+    private String ipAddress;
+
+    @Column(nullable = false)
+    private boolean success;
+}
+```
+
+**Acceptance Criteria:**
+
+```gherkin
+Given an AgentExecutionEntity with 10 AgentStepEntity children
+When agent_steps is queried ordered by sequence
+Then all 10 steps are returned in correct insertion order
+
+Given an AnalysisResultEntity is saved
+When the analysis_results table is inspected
+Then resultJson column is of type jsonb (not text)
+```
+
+**Estimation:** 3 SP
+
+---
+
+#### Story 8.6 — Spring Data JPA Repositories
+
+**Description:**
+Create the 6 Spring Data JPA repository interfaces with the key query methods required by the pipeline.
+
+**Interfaces/Contracts:**
+
+```java
+// DocumentRepository.java
+public interface DocumentRepository extends JpaRepository<DocumentEntity, UUID> {
+    Optional<DocumentEntity> findBySha256Checksum(String sha256Checksum);
+    List<DocumentEntity> findByUploadedBy(UserEntity uploadedBy);
+}
+
+// AnalysisJobRepository.java
+public interface AnalysisJobRepository extends JpaRepository<AnalysisJobEntity, UUID> {
+    List<AnalysisJobEntity> findByDocumentId(UUID documentId);
+    List<AnalysisJobEntity> findBySubmittedByAndStatus(UserEntity submittedBy, AnalysisStatus status);
+    List<AnalysisJobEntity> findAllByStatus(AnalysisStatus status);
+}
+
+// AnalysisResultRepository.java
+public interface AnalysisResultRepository extends JpaRepository<AnalysisResultEntity, UUID> {
+    Optional<AnalysisResultEntity> findByAnalysisJobId(UUID analysisJobId);
+}
+
+// AgentExecutionRepository.java
+public interface AgentExecutionRepository extends JpaRepository<AgentExecutionEntity, UUID> {
+    List<AgentExecutionEntity> findByAnalysisJobId(UUID analysisJobId);
+}
+
+// AgentStepRepository.java
+public interface AgentStepRepository extends JpaRepository<AgentStepEntity, UUID> {
+    List<AgentStepEntity> findByExecutionIdOrderBySequence(UUID executionId);
+}
+
+// UserAuditRepository.java
+public interface UserAuditRepository extends JpaRepository<UserAuditEntity, UUID> {
+    List<UserAuditEntity> findByUserIdOrderByCreatedAtDesc(String userId);
+    List<UserAuditEntity> findAllByOrderByCreatedAtDesc();
+}
+```
+
+**Acceptance Criteria:**
+
+```gherkin
+Given a DocumentEntity saved with sha256Checksum "abc123"
+When DocumentRepository.findBySha256Checksum("abc123") is called
+Then the entity is returned
+
+Given 10 AgentStepEntity rows with sequence 0–9 for the same execution
+When AgentStepRepository.findByExecutionIdOrderBySequence(executionId) is called
+Then 10 steps are returned in sequence order (0 first, 9 last)
+```
+
+**Test Plan:**
+
+Use `@DataJpaTest` with an embedded database (H2 in PostgreSQL compatibility mode, or Testcontainers) for each
+repository. Minimum 2 tests per repository covering the custom query methods.
+
+**Estimation:** 3 SP
+
+---
+
 ## 4) PR Plan
 
 ### PR 1: `feat/sprint1-infra` — Maven Multi-Module Build + Docker Compose
@@ -2141,7 +2635,7 @@ All prompt files follow this convention:
 - [ ] `rfp-core/pom.xml` has zero Spring/LangChain4J/LangGraph4J dependencies.
 - [ ] `mvn clean compile` passes on all modules.
 - [ ] `LlmProviderProperties` uses `@ConfigurationProperties` (not `@Value` field injection).
-- [ ] Docker Compose health checks defined for all five services.
+- [ ] Docker Compose health checks defined for all four services (no Redis service present).
 - [ ] `.env.example` committed; `.env` in `.gitignore`.
 - [ ] `rfp-frontend/` has TypeScript strict mode enabled in `tsconfig.json`.
 - [ ] `rfp-python-ocr/requirements.txt` has easyocr commented out.
@@ -2176,6 +2670,35 @@ All prompt files follow this convention:
 - [ ] No Spring context loaded in any unit test (`@ExtendWith(MockitoExtension.class)` only).
 - [ ] Health endpoint returns `ocrSidecar: "unreachable"` (not 5xx) when sidecar is down.
 - [ ] Classes are under 250 lines. Methods under 20 lines.
+
+---
+
+### PR 3: `feat/sprint1-db-schema` — PostgreSQL DB Schema (all entities, enums, repositories)
+
+**Contains:**
+
+- Enums in `rfp-core`: `AnalysisStatus`, `ExecutionStatus`, `TerminationReason`, `AgentStepType`, `StepOutcome`.
+- `BaseEntity.java` (MappedSuperclass).
+- `UserEntity.java` (plain JPA entity — no Spring Security wiring).
+- `DocumentEntity.java`, `AnalysisJobEntity.java`, `AnalysisResultEntity.java`,
+  `AgentExecutionEntity.java`, `AgentStepEntity.java`, `UserAuditEntity.java`.
+- `DocumentRepository`, `AnalysisJobRepository`, `AnalysisResultRepository`,
+  `AgentExecutionRepository`, `AgentStepRepository`, `UserAuditRepository`.
+- `JpaConfig.java` (enables `@EnableJpaAuditing`).
+- Unit tests for each repository using `@DataJpaTest` with embedded H2 or Testcontainers PostgreSQL.
+
+**Review Checklist:**
+
+- [ ] All entities extend `BaseEntity`. No entity has its own `@Id` field.
+- [ ] All `@Enumerated` fields use `EnumType.STRING` (never `ORDINAL`).
+- [ ] `AnalysisJobEntity.id` == `ExtractionJob.jobId` (same UUID used system-wide).
+- [ ] `DocumentEntity.sha256Checksum` is `unique = true`.
+- [ ] `AgentStepEntity` has `@Index(columnList = "execution_id, sequence")`.
+- [ ] `AnalysisResultEntity.resultJson` is `columnDefinition = "JSONB"`.
+- [ ] No Spring Security imports in any entity class — `UserEntity` is plain JPA only.
+- [ ] `@EnableJpaAuditing` is present (in `JpaConfig` or equivalent).
+- [ ] `mvn clean verify` — Hibernate DDL auto-creates all 6 tables on startup.
+- [ ] `grep -r "RedisTemplate\|RedisConnectionFactory\|spring-boot-starter-data-redis" rfp-service/` returns nothing.
 
 ---
 
@@ -2294,6 +2817,49 @@ Expected log line:
 INFO  LLM_CALL op=health-ping model=google/gemini-2.0-flash-001 provider=openrouter latencyMs=1234 status=SUCCESS
 ```
 
+### Step 10: Verify DB Schema (PostgreSQL tables auto-created)
+
+```bash
+# Connect to PostgreSQL and verify all 6 tables exist
+docker compose exec postgres psql -U rfpuser -d rfpdb -c "\dt"
+```
+
+Expected output includes all tables:
+
+```
+ Schema |       Name        | Type  |  Owner
+--------+-------------------+-------+---------
+ public | agent_executions  | table | rfpuser
+ public | agent_steps       | table | rfpuser
+ public | analysis_jobs     | table | rfpuser
+ public | analysis_results  | table | rfpuser
+ public | documents         | table | rfpuser
+ public | user_audit_events | table | rfpuser
+ public | users             | table | rfpuser
+```
+
+```bash
+# Verify no Redis connection beans in Spring context
+docker compose logs rfp-service | grep -i redis
+# Expected: no output (zero Redis references in logs)
+```
+
+```bash
+# Verify analysis_jobs table structure
+docker compose exec postgres psql -U rfpuser -d rfpdb \
+  -c "\d analysis_jobs"
+# Expected: columns id (uuid), document_id (uuid FK), submitted_by_id (uuid FK),
+#           status (varchar), started_at, completed_at, error_message, progress_percent,
+#           created_at, updated_at
+```
+
+```bash
+# Verify agent_steps index
+docker compose exec postgres psql -U rfpuser -d rfpdb \
+  -c "SELECT indexname FROM pg_indexes WHERE tablename = 'agent_steps';"
+# Expected: agent_steps_execution_id_sequence_idx (composite index)
+```
+
 ### Performance Checks:
 
 - Spring Boot startup time < 15s.
@@ -2310,7 +2876,7 @@ INFO  LLM_CALL op=health-ping model=google/gemini-2.0-flash-001 provider=openrou
 - [ ] `GET /api/v1/health` returns HTTP 200 with `status`, `provider`, `model`, and `ocrSidecar` fields — verified by
   `curl` in demo script.
 - [ ] `GET /health` on port 8000 returns `{"status":"ok","version":"1.0.0"}` — verified by `curl`.
-- [ ] `docker compose up --build` brings all five services to healthy state within 120s.
+- [ ] `docker compose up --build` brings all **four** services to healthy state within 120s. No Redis service defined.
 - [ ] `LlmAdapter.extractStructured()` returns `Optional.empty()` (not null, not exception) when LLM returns malformed
   JSON — verified by unit test `shouldReturnEmptyWhenLlmReturnsInvalidJson`.
 - [ ] Resilience4j retry is configured with exactly 3 max attempts — verified by
@@ -2324,6 +2890,18 @@ INFO  LLM_CALL op=health-ping model=google/gemini-2.0-flash-001 provider=openrou
 - [ ] `.env` is in `.gitignore` — verified by `git check-ignore .env`.
 - [ ] Frontend builds with zero TypeScript errors: `cd rfp-frontend && npm run build` exits 0.
 - [ ] Each Java class is under 250 lines. Each method is under 20 lines. Verified during code review.
+
+**DB Schema Exit Criteria (NON-NEGOTIABLE):**
+
+- [ ] Hibernate DDL auto-creates all 7 tables on startup: `documents`, `analysis_jobs`, `analysis_results`,
+  `agent_executions`, `agent_steps`, `user_audit_events`, `users`. Verified by `\dt` in psql.
+- [ ] No `RedisConnectionFactory`, `RedisTemplate`, or `spring-boot-starter-data-redis` in Spring context or POM.
+  Verified by `grep -r "RedisTemplate\|spring-boot-starter-data-redis" rfp-service/`.
+- [ ] `DocumentEntity.sha256Checksum` has UNIQUE constraint — verified by `\d documents` in psql.
+- [ ] `AgentStepEntity` table has composite index on `(execution_id, sequence)` — verified by `pg_indexes` query.
+- [ ] `AnalysisResultEntity.resultJson` column is of type `jsonb` — verified by `\d analysis_results` in psql.
+- [ ] All enum columns use `VARCHAR` storage (not integer) — verified by `\d analysis_jobs` showing `character varying`.
+- [ ] `UserEntity` has no Spring Security imports — verified by code review of `UserEntity.java`.
 
 ---
 
@@ -2357,3 +2935,19 @@ Confirm with team before Sprint 2.
 
 **Assumption:** Java virtual threads (`Executors.newVirtualThreadPerTaskExecutor()`) are used in `LlmAdapter` for the
 CompletableFuture supplier. Java 21 supports virtual threads natively. No additional configuration needed beyond JDK 21.
+
+**Architecture Decision — Redis removed from stack:** Redis is removed from the system entirely. Job state, analysis
+results, and agent execution traces are stored permanently in PostgreSQL via JPA. All planned Redis deliverables
+(`RedisJobStateRepository`, `RedisUserAuditRepository`, `RedisConfig`) are replaced by JPA equivalents.
+`JobStatePort` gets a JPA implementation backed by `AnalysisJobRepository`; `UserAuditPort` gets a JPA
+implementation backed by `UserAuditRepository`. The 24-hour TTL limitation is eliminated — all rows are permanent.
+
+**Architecture Decision — UserEntity FK wiring in Sprint 1:** `DocumentEntity.uploadedBy` and
+`AnalysisJobEntity.submittedBy` FKs to `UserEntity` are created in Sprint 1 but are nullable. Before Sprint 11
+adds authentication, the FKs are simply null. Sprint 11 populates them from the JWT principal — zero schema changes
+needed in Sprint 11.
+
+**Architecture Decision — UserRole enum pre-added in Sprint 1:** `UserRole` (ANALYST/ADMIN/AUDITOR) is added to
+`rfp-core` in Sprint 1, even though it is only used by Sprint 11 Spring Security. This avoids a schema migration
+in Sprint 11. `UserEntity.role` column is populated at signup in Sprint 11; pre-Sprint-11 entities have role=null
+(the column is nullable in Sprint 1).

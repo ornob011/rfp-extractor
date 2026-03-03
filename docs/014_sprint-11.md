@@ -19,6 +19,9 @@
   a future admin endpoint — not in scope this sprint.
 - Multi-factor authentication.
 - Full Bangla Unicode processing (Sprint 13).
+- **New JPA entities or new columns** — `UserEntity`, `UserAuditEntity`, and all FK columns (`uploaded_by_id`,
+  `submitted_by_id`) already exist from Sprint 1. Sprint 11 adds zero schema changes.
+- **Redis** — removed from the stack entirely in Sprint 1. No Redis deliverables exist in Sprint 11.
 
 ---
 
@@ -26,47 +29,52 @@
 
 - Sprint 10 is merged and green on CI (`mvn clean verify` passes).
 - All 5 artifact generators operational and writing to `LocalArtifactStorageAdapter`.
-- `ExtractionJob.createdByUserId` field exists (String, set at submission time from Sprint 2).
+- `AnalysisJobEntity.submittedBy` FK to `UserEntity` exists (set at submission time from Sprint 2+).
 - `DocumentStoragePort` and `ArtifactPort` implemented by plain (non-encrypted) adapters.
 - `LlmAdapter` is the single gateway for all LLM calls.
 - `spring-boot-starter-security` and `spring-boot-starter-oauth2-resource-server` on classpath (Sprint 1 POM).
 - `nimbus-jose-jwt` available (transitive dependency of oauth2-resource-server).
 - Spring Security BCrypt password encoder available via `spring-security-crypto`.
 - JUnit 5 + Mockito + AssertJ on classpath.
+- **`UserEntity` already exists** (plain JPA entity, created Sprint 1). Columns: `id`, `username`, `password_hash`,
+  `role` (nullable until signup wires it), `enabled`, `created_at`, `updated_at`. No schema migration needed.
+- **`UserAuditEntity` already exists** (created Sprint 1) with `UserAuditRepository`. Sprint 11 wires the JPA
+  implementation to `UserAuditPort`.
+- **No Redis** in the stack — `spring-boot-starter-data-redis` is NOT on the classpath.
 
 ---
 
 ## 2) Deliverables
 
-| #     | Deliverable                           | Type                    | Location                                                      |
-|-------|---------------------------------------|-------------------------|---------------------------------------------------------------|
-| D-01  | `SecurityConfig`                      | Spring `@Configuration` | `config/SecurityConfig.java`                                  |
-| D-02  | `JwtTokenService`                     | Spring component        | `adapter/security/JwtTokenService.java`                       |
-| D-03  | `RfpUserDetails`                      | UserDetails impl        | `adapter/security/RfpUserDetails.java`                        |
-| D-04  | `UserRole`                            | Java enum               | `rfp-core/.../domain/model/UserRole.java`                     |
-| D-04a | `UserEntity`                          | JPA `@Entity`           | `rfp-service/.../adapter/persistence/entity/UserEntity.java`  |
-| D-04b | `UserRepository`                      | Spring Data JPA iface   | `rfp-service/.../adapter/persistence/UserRepository.java`     |
-| D-04c | `JpaUserDetailsService`               | `UserDetailsService`    | `rfp-service/.../adapter/security/JpaUserDetailsService.java` |
-| D-04d | `admin_seed.sql`                      | SQL DML seed file       | `rfp-service/src/main/resources/db/seed/admin_seed.sql`       |
-| D-05  | `AuthController`                      | REST controller         | `adapter/api/AuthController.java`                             |
-| D-06  | `LoginRequest` / `LoginResponse` DTOs | Java records            | `adapter/api/dto/LoginRequest.java`, `LoginResponse.java`     |
-| D-07  | `UserAuditEvent` domain model         | Java class              | `rfp-core/.../domain/model/UserAuditEvent.java`               |
-| D-08  | `AuditAction` enum                    | Java enum               | `rfp-core/.../domain/model/AuditAction.java`                  |
-| D-09  | `UserAuditPort` port interface        | Java interface          | `rfp-core/.../domain/port/UserAuditPort.java`                 |
-| D-10  | `RedisUserAuditRepository`            | Spring component        | `adapter/persistence/RedisUserAuditRepository.java`           |
-| D-11  | `UserAuditService`                    | Application service     | `application/service/UserAuditService.java`                   |
-| D-12  | `@Auditable` annotation               | Custom annotation       | `adapter/security/Auditable.java`                             |
-| D-13  | `AuditingAspect`                      | Spring AOP aspect       | `adapter/security/AuditingAspect.java`                        |
-| D-14  | `FileEncryptionService`               | Spring component        | `adapter/security/FileEncryptionService.java`                 |
-| D-15  | `EncryptedDocumentStorageAdapter`     | Spring component        | `adapter/persistence/EncryptedDocumentStorageAdapter.java`    |
-| D-16  | `EncryptedArtifactStorageAdapter`     | Spring component        | `adapter/persistence/EncryptedArtifactStorageAdapter.java`    |
-| D-17  | `PromptInjectionFilter`               | Spring component        | `adapter/security/PromptInjectionFilter.java`                 |
-| D-18  | `BanglaEncodingDetector`              | Spring component        | `adapter/extraction/BanglaEncodingDetector.java`              |
-| D-19  | `DataRetentionScheduler`              | Spring component        | `adapter/persistence/DataRetentionScheduler.java`             |
-| D-20  | `GlobalExceptionHandler` (extended)   | REST advice (extended)  | `adapter/api/GlobalExceptionHandler.java`                     |
-| D-24  | `SignupRequest`                       | Java record (DTO)       | `rfp-service/.../adapter/api/dto/SignupRequest.java`          |
-| D-25  | `SignupResponse`                      | Java record (DTO)       | `rfp-service/.../adapter/api/dto/SignupResponse.java`         |
-| D-26  | `SignupPage.tsx`                      | React page              | `rfp-frontend/src/pages/SignupPage.tsx`                       |
+| #     | Deliverable                           | Type                              | Location                                                      |
+|-------|---------------------------------------|-----------------------------------|---------------------------------------------------------------|
+| D-01  | `SecurityConfig`                      | Spring `@Configuration`           | `config/SecurityConfig.java`                                  |
+| D-02  | `JwtTokenService`                     | Spring component                  | `adapter/security/JwtTokenService.java`                       |
+| D-03  | `RfpUserDetails`                      | UserDetails impl                  | `adapter/security/RfpUserDetails.java`                        |
+| D-04  | `UserRole`                            | Java enum *(exists Sprint 1)*     | `rfp-core/.../domain/model/UserRole.java`                     |
+| D-04a | `UserEntity`                          | JPA `@Entity` *(exists Sprint 1)* | `rfp-service/.../adapter/persistence/entity/UserEntity.java`  |
+| D-04b | `UserRepository`                      | Spring Data JPA iface             | `rfp-service/.../adapter/persistence/UserRepository.java`     |
+| D-04c | `JpaUserDetailsService`               | `UserDetailsService`              | `rfp-service/.../adapter/security/JpaUserDetailsService.java` |
+| D-04d | `admin_seed.sql`                      | SQL DML seed file                 | `rfp-service/src/main/resources/db/seed/admin_seed.sql`       |
+| D-05  | `AuthController`                      | REST controller                   | `adapter/api/AuthController.java`                             |
+| D-06  | `LoginRequest` / `LoginResponse` DTOs | Java records                      | `adapter/api/dto/LoginRequest.java`, `LoginResponse.java`     |
+| D-07  | `UserAuditEvent` domain model         | Java class                        | `rfp-core/.../domain/model/UserAuditEvent.java`               |
+| D-08  | `AuditAction` enum                    | Java enum                         | `rfp-core/.../domain/model/AuditAction.java`                  |
+| D-09  | `UserAuditPort` port interface        | Java interface                    | `rfp-core/.../domain/port/UserAuditPort.java`                 |
+| D-10  | `JpaUserAuditRepository`              | Spring component                  | `adapter/persistence/JpaUserAuditRepository.java`             |
+| D-11  | `UserAuditService`                    | Application service               | `application/service/UserAuditService.java`                   |
+| D-12  | `@Auditable` annotation               | Custom annotation                 | `adapter/security/Auditable.java`                             |
+| D-13  | `AuditingAspect`                      | Spring AOP aspect                 | `adapter/security/AuditingAspect.java`                        |
+| D-14  | `FileEncryptionService`               | Spring component                  | `adapter/security/FileEncryptionService.java`                 |
+| D-15  | `EncryptedDocumentStorageAdapter`     | Spring component                  | `adapter/persistence/EncryptedDocumentStorageAdapter.java`    |
+| D-16  | `EncryptedArtifactStorageAdapter`     | Spring component                  | `adapter/persistence/EncryptedArtifactStorageAdapter.java`    |
+| D-17  | `PromptInjectionFilter`               | Spring component                  | `adapter/security/PromptInjectionFilter.java`                 |
+| D-18  | `BanglaEncodingDetector`              | Spring component                  | `adapter/extraction/BanglaEncodingDetector.java`              |
+| D-19  | `DataRetentionScheduler`              | Spring component                  | `adapter/persistence/DataRetentionScheduler.java`             |
+| D-20  | `GlobalExceptionHandler` (extended)   | REST advice (extended)            | `adapter/api/GlobalExceptionHandler.java`                     |
+| D-24  | `SignupRequest`                       | Java record (DTO)                 | `rfp-service/.../adapter/api/dto/SignupRequest.java`          |
+| D-25  | `SignupResponse`                      | Java record (DTO)                 | `rfp-service/.../adapter/api/dto/SignupResponse.java`         |
+| D-26  | `SignupPage.tsx`                      | React page                        | `rfp-frontend/src/pages/SignupPage.tsx`                       |
 
 <!-- NOTE: GlobalExceptionHandler was introduced in Sprint 2 per the exception policy.
      Sprint 11 extends it with security-specific handlers:
@@ -84,7 +92,10 @@
 
 ## 2b) Interfaces / Contracts for New Deliverables (D-04 through D-26)
 
-### `UserRole` enum (`rfp-core`)
+### `UserRole` enum (`rfp-core`) — **already exists from Sprint 1**
+
+`UserRole` was pre-added to `rfp-core` in Sprint 1 to wire the `UserEntity.role` column.
+Sprint 11 does NOT create or modify this enum.
 
 ```java
 public enum UserRole {
@@ -94,38 +105,25 @@ public enum UserRole {
 }
 ```
 
-### `BaseEntity` (shared JPA base in `rfp-service`)
+### `BaseEntity` (shared JPA base in `rfp-service`) — **already exists from Sprint 1**
 
-All JPA entities extend this. Add `@EnableJpaAuditing` to `SecurityConfig` or a separate `JpaConfig`.
+`BaseEntity`, `@EnableJpaAuditing`, and `JpaConfig` were created in Sprint 1 (Story 8.1).
+Sprint 11 does NOT create or modify `BaseEntity`.
 
-Location: `rfp-service/.../adapter/persistence/entity/BaseEntity.java`
+### `UserEntity` (JPA entity in `rfp-service` adapter) — **already exists from Sprint 1**
 
-```java
-
-@MappedSuperclass
-@EntityListeners(AuditingEntityListener.class)
-@Data
-public abstract class BaseEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
-
-    @LastModifiedDate
-    @Column(nullable = false)
-    private Instant updatedAt;
-}
-```
-
-### `UserEntity` (JPA entity in `rfp-service` adapter)
-
+`UserEntity` was created in Sprint 1 (Story 8.3) as a plain JPA entity with no Spring Security imports.
 `@Table(name = "users")` — avoids collision with PostgreSQL reserved word `user`.
 `id`, `createdAt`, `updatedAt` inherited from `BaseEntity`.
-Hibernate DDL auto creates the `users` table on startup.
+The `users` table was created by Hibernate DDL auto in Sprint 1.
+
+**Sprint 11 adds zero new columns to `UserEntity`.** It only:
+
+1. Implements `JpaUserDetailsService` that wraps the existing `UserEntity` with `RfpUserDetails`.
+2. Wires `BCryptPasswordEncoder` to hash passwords on signup (the `passwordHash` column already exists).
+3. Uses `UserRepository.findByUsername()` in the security layer.
+
+For reference (do NOT re-implement — this class already exists):
 
 ```java
 
@@ -145,7 +143,7 @@ public class UserEntity extends BaseEntity {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column          // nullable — Sprint 1 pre-auth rows have role=null
     private UserRole role;
 
     @Column(nullable = false)
@@ -465,12 +463,12 @@ Then HTTP 200 is returned regardless of who submitted it
 **Implementation Plan:**
 
 1. `RfpJobService.getJob(UUID jobId, String userId, Set<String> roles)`:
-    - Load job from `JobStatePort`.
+    - Load job from `AnalysisJobRepository.findById(jobId)` (PostgreSQL — no Redis).
     - Ownership check — use this logic (**not** `roles.contains("ANALYST")`, which fails for multi-role tokens):
       ```java
       // Correct: skip ownership check only if user holds ADMIN or AUDITOR
       boolean skipOwnershipCheck = roles.contains("ADMIN") || roles.contains("AUDITOR");
-      if (!skipOwnershipCheck && !job.getCreatedByUserId().equals(userId)) {
+      if (!skipOwnershipCheck && !job.getSubmittedBy().getUsername().equals(userId)) {
           throw new AccessDeniedException("Access denied to job " + jobId);
       }
       ```
@@ -478,9 +476,9 @@ Then HTTP 200 is returned regardless of who submitted it
       the ownership check and deny the admin access. Always check for elevated roles, not the restricted role.
     - `ADMIN` and `AUDITOR`: return job without ownership check.
 2. `RfpJobService.listJobs(String userId, Set<String> roles)`:
-    - If `roles.contains("ADMIN") || roles.contains("AUDITOR")`: `JobStatePort.listAllJobs()`.
-    - Otherwise (ANALYST or unknown): `JobStatePort.listJobsForUser(userId)`.
-    - (Add `listAllJobs()` method to port and Redis implementation.)
+    - If `roles.contains("ADMIN") || roles.contains("AUDITOR")`: `AnalysisJobRepository.findAll()`.
+    - Otherwise (ANALYST or unknown): `AnalysisJobRepository.findBySubmittedBy(userEntity)`.
+    - No Redis — all queries go to PostgreSQL via `AnalysisJobRepository`.
 3. Update `RfpController` to extract `userId` and `roles` from `SecurityContextHolder.getContext().getAuthentication()`.
 4. `GlobalExceptionHandler` maps `AccessDeniedException` → 403.
 
@@ -533,33 +531,62 @@ public interface UserAuditPort {
 
 ---
 
-#### Story 11.3.2 — Redis Audit Repository
+#### Story 11.3.2 — JPA Audit Repository (`JpaUserAuditRepository`)
+
+`UserAuditEntity` and `UserAuditRepository` already exist from Sprint 1 (D-37 / D-43). Sprint 11 wires them
+to `UserAuditPort` by creating `JpaUserAuditRepository` — the implementation of the port interface.
 
 **Acceptance Criteria (Gherkin):**
 
 ```gherkin
 Given a UserAuditEvent for user alice
-When RedisUserAuditRepository.record(event) is called
-Then the event is stored in Redis sorted set rfp:audit:{userId} with timestamp score
+When JpaUserAuditRepository.record(event) is called
+Then a UserAuditEntity row is persisted in user_audit_events with userId=alice
 
 When findByUser("alice", 10) is called
-Then the 10 most recent events for alice are returned in reverse chronological order
+Then the 10 most recent rows for alice are returned in reverse chronological order
+And the data persists indefinitely (no TTL — PostgreSQL, not Redis)
+```
+
+**Interfaces / Contracts:**
+
+```java
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class JpaUserAuditRepository implements UserAuditPort {
+
+    private final UserAuditRepository userAuditRepository;   // exists from Sprint 1
+    private final ObjectMapper objectMapper;
+
+    @Override
+    public void record(UserAuditEvent event);    // maps domain event to UserAuditEntity, saves
+
+    @Override
+    public List<UserAuditEvent> findByUser(String userId, int limit);  // delegates to findByUserIdOrderByCreatedAtDesc
+
+    @Override
+    public List<UserAuditEvent> findAll(int limit);  // delegates to findAllByOrderByCreatedAtDesc
+}
 ```
 
 **Implementation Plan:**
 
-1. Use `ZSetOperations<String, String>` (Jackson JSON values).
-2. `record()`: key = `rfp:audit:{userId}`, score = `event.getTimestamp().toEpochMilli()`, value = JSON serialised event.
-   Also write to `rfp:audit:all` sorted set.
-3. Set TTL of 90 days: use `RedisTemplate.expire()` after each write.
-4. `findByUser()`: use `zSetOps.reverseRange("rfp:audit:{userId}", 0, limit-1)`, deserialise each.
+1. `record()`: map `UserAuditEvent` → `UserAuditEntity` (userId, action as string, documentId, timestamp, ipAddress,
+   success). Call `userAuditRepository.save(entity)`.
+2. `findByUser()`: call `userAuditRepository.findByUserIdOrderByCreatedAtDesc(userId)`, take first `limit` rows,
+   map `UserAuditEntity` → `UserAuditEvent`.
+3. `findAll()`: call `userAuditRepository.findAllByOrderByCreatedAtDesc()`, take first `limit` rows, map entities.
+4. No TTL — audit events are permanent in PostgreSQL.
 
 **Test Plan:**
 
-- `shouldStoreEventAndRetrieveByUser()` — use embedded Redis or mock `RedisTemplate`.
-- `shouldReturnEventsInReverseChronologicalOrder()`.
+- `shouldPersistAuditEventWhenRecordCalled()` — mock `UserAuditRepository`, verify `save()` called.
+- `shouldReturnEventsInReverseChronologicalOrder()` — mock repository returning ordered list.
+- `shouldLimitResultsToRequestedCount()` — assert only first `limit` elements returned.
 
-**Story Points:** 3
+**Story Points:** 2
 
 ---
 
@@ -861,13 +888,14 @@ public class BanglaEncodingDetector {
 **Acceptance Criteria (Gherkin):**
 
 ```gherkin
-Given a job created 91 days ago with status COMPLETED
+Given an AnalysisJobEntity with status COMPLETED and completedAt 91 days ago
 When DataRetentionScheduler runs
-Then the job status is set to EXPIRED in Redis
+Then the job status is set to EXPIRED in the analysis_jobs table (PostgreSQL)
 
-Given an EXPIRED job older than 97 days
+Given an EXPIRED AnalysisJobEntity with completedAt 97 days ago
 When DataRetentionScheduler runs
-Then the job's files are deleted from disk and the Redis key is removed
+Then the job's files are deleted from disk via DocumentStoragePort
+And the job row status is updated to EXPIRED (row is retained — no hard delete of the row)
 ```
 
 **Interfaces / Contracts:**
@@ -882,20 +910,23 @@ public class DataRetentionScheduler {
     @Scheduled(cron = "${app.retention.cron:0 0 2 * * *}")   // 2am daily
     public void runRetention();
 
-    private void softDeleteExpiredJobs(List<ExtractionJob> jobs);
+    private void softDeleteExpiredJobs(List<AnalysisJobEntity> jobs);
 
-    private void hardDeleteExpiredJobs(List<ExtractionJob> jobs);
+    private void hardDeleteExpiredJobs(List<AnalysisJobEntity> jobs);
 }
 ```
 
 **Implementation Plan:**
 
-1. `runRetention()`: fetch all jobs from `JobStatePort.listAllJobs()`.
+1. `runRetention()`: fetch all jobs via `AnalysisJobRepository.findAll()` (no Redis — direct JPA query).
 2. `softDeleteExpiredJobs()`: filter jobs where `job.getCompletedAt()` is older than `app.retention.days` (default 90)
-   days and `status != EXPIRED`. Set `status = EXPIRED`, save. Record audit event.
+   days and `status != EXPIRED`. Set `status = EXPIRED`, save via `AnalysisJobRepository.save()`. Record audit event.
 3. `hardDeleteExpiredJobs()`: filter EXPIRED jobs where `completedAt` is older than `app.retention.days + 7` days.
-   Delete files via `DocumentStoragePort`. Delete artifacts via `ArtifactPort`. Remove Redis job key.
+   Delete files via `DocumentStoragePort`. Delete artifacts via `ArtifactPort`. Update `status = EXPIRED` (row kept
+   for audit history — no row deletion).
 4. Log: `"Data retention run: soft-deleted {} jobs, hard-deleted {} jobs"`.
+
+> **Note:** `EXPIRED` must be added to `AnalysisStatus` enum (in `rfp-core`). This is a backward-compatible addition.
 
 **Test Plan:**
 
@@ -970,16 +1001,24 @@ Then client-side validation shows "Password must be at least 8 characters"
 
 ## 4) PR Plan
 
-| PR#      | Title                                               | Files Changed                                                                                                                                                                                           | Merge Order | Dependencies |
-|----------|-----------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|--------------|
-| PR-11-01 | feat: JWT token service, security config & UserRole | `SecurityConfig.java`, `JwtTokenService.java`, `RfpUserDetails.java`, `UserRole.java`, `BaseEntity.java`                                                                                                | 1st         | None         |
-| PR-11-02 | feat: user entity, repository & auth controller     | `UserEntity.java`, `UserRepository.java`, `JpaUserDetailsService.java`, `admin_seed.sql`, `AuthController.java`, `SignupRequest.java`, `SignupResponse.java`, `LoginRequest.java`, `LoginResponse.java` | 2nd         | PR-11-01     |
-| PR-11-03 | feat: RBAC document ownership enforcement           | `RfpJobService.java` (updated), `RfpController.java` (updated), `GlobalExceptionHandler.java`                                                                                                           | 3rd         | PR-11-01     |
-| PR-11-04 | feat: user audit trail (domain + Redis + AOP)       | `UserAuditEvent.java`, `AuditAction.java`, `UserAuditPort.java`, `RedisUserAuditRepository.java`, `UserAuditService.java`, `Auditable.java`, `AuditingAspect.java`                                      | 4th         | PR-11-02     |
-| PR-11-05 | feat: AES-256-GCM encryption at rest                | `FileEncryptionService.java`, `EncryptedDocumentStorageAdapter.java`, `EncryptedArtifactStorageAdapter.java`                                                                                            | 5th         | None         |
-| PR-11-06 | feat: prompt injection filter                       | `PromptInjectionFilter.java`, `LlmAdapter.java` (updated to call filter)                                                                                                                                | 6th         | None         |
-| PR-11-07 | feat: Bangla encoding detector + data retention     | `BanglaEncodingDetector.java`, `DataRetentionScheduler.java`, `DocumentValidationService.java` (updated)                                                                                                | 6th         | None         |
-| PR-11-08 | feat: frontend auth (login + signup + route guards) | `LoginPage.tsx`, `SignupPage.tsx`, `authClient.ts`, `ProtectedRoute.tsx`, `rfpClient.ts`, `App.tsx`                                                                                                     | 7th         | PR-11-02     |
+| PR#      | Title                                               | Files Changed                                                                                                                                                                        | Merge Order | Dependencies |
+|----------|-----------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|--------------|
+| PR-11-01 | feat: JWT token service, security config            | `SecurityConfig.java`, `JwtTokenService.java`, `RfpUserDetails.java`                                                                                                                 | 1st         | None         |
+| PR-11-02 | feat: user details service & auth controller        | `UserRepository.java`, `JpaUserDetailsService.java`, `admin_seed.sql`, `AuthController.java`, `SignupRequest.java`, `SignupResponse.java`, `LoginRequest.java`, `LoginResponse.java` | 2nd         | PR-11-01     |
+| PR-11-03 | feat: RBAC document ownership enforcement           | `RfpJobService.java` (updated), `RfpController.java` (updated), `GlobalExceptionHandler.java`                                                                                        | 3rd         | PR-11-01     |
+| PR-11-04 | feat: user audit trail (domain + JPA + AOP)         | `UserAuditEvent.java`, `AuditAction.java`, `UserAuditPort.java`, `JpaUserAuditRepository.java`, `UserAuditService.java`, `Auditable.java`, `AuditingAspect.java`                     | 4th         | PR-11-02     |
+| PR-11-05 | feat: AES-256-GCM encryption at rest                | `FileEncryptionService.java`, `EncryptedDocumentStorageAdapter.java`, `EncryptedArtifactStorageAdapter.java`                                                                         | 5th         | None         |
+| PR-11-06 | feat: prompt injection filter                       | `PromptInjectionFilter.java`, `LlmAdapter.java` (updated to call filter)                                                                                                             | 6th         | None         |
+| PR-11-07 | feat: Bangla encoding detector + data retention     | `BanglaEncodingDetector.java`, `DataRetentionScheduler.java`, `DocumentValidationService.java` (updated)                                                                             | 6th         | None         |
+| PR-11-08 | feat: frontend auth (login + signup + route guards) | `LoginPage.tsx`, `SignupPage.tsx`, `authClient.ts`, `ProtectedRoute.tsx`, `rfpClient.ts`, `App.tsx`                                                                                  | 7th         | PR-11-02     |
+
+> **Note on PR-11-01:** `UserRole` and `UserEntity` and `BaseEntity` already exist from Sprint 1. PR-11-01 does NOT
+> create them. PR-11-02 does NOT recreate `UserEntity` — it only adds `UserRepository` (the JPA interface) and
+> `JpaUserDetailsService` (the Spring Security integration layer).
+
+> **Note on PR-11-04:** `UserAuditEntity` and `UserAuditRepository` already exist from Sprint 1.
+`JpaUserAuditRepository`
+> is the new class that implements `UserAuditPort` using those existing Sprint 1 classes.
 
 ---
 
@@ -1069,12 +1108,16 @@ echo "Navigate directly to /admin — verify 'Access Denied' message."
 - [ ] `FileEncryptionService` throws `IllegalStateException` at startup if `STORAGE_ENCRYPTION_KEY` is missing.
 - [ ] `PromptInjectionFilter` strips injection phrases and logs WARNING.
 - [ ] `DocumentValidationService` rejects legacy Bangla encoding with errorCode `ENCODING_UNSUPPORTED`.
-- [ ] `DataRetentionScheduler` compiles and `@Scheduled` annotation is present.
-- [ ] `AuditingAspect` records events for `submitDocument` and `getResult` calls.
+- [ ] `DataRetentionScheduler` compiles and `@Scheduled` annotation is present. Uses `AnalysisJobRepository` (JPA),
+  not Redis.
+- [ ] `AuditingAspect` records events for `submitDocument` and `getResult` calls. Events written to PostgreSQL via
+  `JpaUserAuditRepository` (not Redis).
 - [ ] React `LoginPage` redirects to upload page on successful login.
 - [ ] React routes are guarded — unauthenticated access redirects to `/login`.
 - [ ] No class exceeds 250 lines. No method exceeds 20 lines. Constructor injection throughout.
 - [ ] All new config keys documented in `docs/configuration.md`.
+- [ ] `grep -r "RedisTemplate\|RedisConnectionFactory\|spring-boot-starter-data-redis" rfp-service/` returns nothing.
+- [ ] `UserEntity` requires no new columns in Sprint 11 — verified by `\d users` showing identical schema to Sprint 1.
 
 ---
 
@@ -1083,11 +1126,15 @@ echo "Navigate directly to /admin — verify 'Access Denied' message."
 - **RSA key generation**: Keys are generated offline and stored as PEM files. `app.security.jwt.private-key-path` and
   `app.security.jwt.public-key-path` point to files on the Docker volume. Key generation command:
   `openssl genrsa -out jwt-private.pem 2048 && openssl rsa -in jwt-private.pem -pubout -out jwt-public.pem`.
-- **Database user store**: Users are persisted in PostgreSQL via `UserEntity` (JPA). Hibernate DDL auto creates the
-  `users` table on first startup. Signup always creates ANALYST role. An initial admin user is seeded by running
-  `db/seed/admin_seed.sql` once after first deployment (default password documented in `docs/configuration.md`;
-  must be changed before production use). Role elevation (to ADMIN or AUDITOR) requires a direct DB UPDATE — a
-  future admin endpoint is out of scope for Sprint 11.
+- **Database user store**: `UserEntity` was created in Sprint 1. The `users` table already exists in PostgreSQL.
+  Sprint 11 ONLY adds `JpaUserDetailsService` (Spring Security integration) and `UserRepository` on top of
+  `UserEntity` — zero schema changes. Signup wires `BCryptPasswordEncoder.encode()` to populate `passwordHash`.
+  An initial admin user is seeded by running `db/seed/admin_seed.sql` once after first deployment (default password
+  documented in `docs/configuration.md`; must be changed before production use). Role elevation requires a direct
+  DB UPDATE — a future admin endpoint is out of scope for Sprint 11.
+- **No Redis**: The stack has no Redis service. `UserAuditPort` is implemented by `JpaUserAuditRepository`
+  (PostgreSQL, permanent — no TTL). `AnalysisJobRepository` replaces any planned Redis job state store.
+  `DataRetentionScheduler` reads from and writes to PostgreSQL only.
 - **Encryption format**: The `.enc` file format is `[12 bytes IV][remaining: ciphertext+16-byte GCM tag]`. No separate
   tag field on disk — Java GCM appends the tag to ciphertext automatically in `doFinal()`.
 - **`@Primary` adapter selection**: `EncryptedDocumentStorageAdapter` is `@Primary` over `LocalDocumentStorageAdapter`.
@@ -1096,5 +1143,6 @@ echo "Navigate directly to /admin — verify 'Access Denied' message."
 - **Legacy Bangla detection limitations**: The heuristic (ASCII ratio in Bangla pages) is imperfect. It may
   false-positive on documents with many English acronyms on Bangla pages. Confidence threshold 0.8 is deliberately high
   to avoid false positives. Full fix in Sprint 13.
-- **Data retention EXPIRED status**: A new `EXPIRED` value needs to be added to `JobStatus` enum. This is a
-  backward-compatible addition — existing enum values still work.
+- **Data retention EXPIRED status**: A new `EXPIRED` value needs to be added to `AnalysisStatus` enum (in
+  `rfp-core`). This is a backward-compatible addition — existing enum values still work. The `analysis_jobs` table
+  stores the status as VARCHAR (per Sprint 1 design), so no schema migration is needed — only the enum class update.
