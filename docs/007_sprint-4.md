@@ -47,44 +47,47 @@
 
 ## 2) Deliverables
 
-| #    | Deliverable                           | Type                    | Location                                                                                        |
-|------|---------------------------------------|-------------------------|-------------------------------------------------------------------------------------------------|
-| D-01 | `ExtractionState.java`                | LangGraph4J state class | `rfp-service/src/main/java/com/dsi/rfp/agent/ExtractionState.java`                              |
-| D-02 | `ExtractionGraph.java`                | LangGraph4J graph def   | `rfp-service/src/main/java/com/dsi/rfp/agent/ExtractionGraph.java`                              |
-| D-03 | `ExtractionOrchestrationService.java` | Application service     | `rfp-service/src/main/java/com/dsi/rfp/application/service/ExtractionOrchestrationService.java` |
-| D-04 | `ValidateNode.java`                   | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/ValidateNode.java`                            |
-| D-05 | `ClassifyPagesNode.java`              | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/ClassifyPagesNode.java`                       |
-| D-06 | `ExtractTextNode.java`                | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/ExtractTextNode.java`                         |
-| D-07 | `SegmentSectionsNode.java`            | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/SegmentSectionsNode.java`                     |
-| D-08 | `ExtractTablesNode.java` (stub)       | Graph node stub         | `rfp-service/src/main/java/com/dsi/rfp/agent/node/ExtractTablesNode.java`                       |
-| D-09 | `ExtractEntitiesNode.java`            | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/ExtractEntitiesNode.java`                     |
-| D-10 | `ScoreConfidenceNode.java`            | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/ScoreConfidenceNode.java`                     |
-| D-11 | `RepairLoopNode.java` (stub)          | Graph node stub         | `rfp-service/src/main/java/com/dsi/rfp/agent/node/RepairLoopNode.java`                          |
-| D-12 | `RunRulePackNode.java` (stub)         | Graph node stub         | `rfp-service/src/main/java/com/dsi/rfp/agent/node/RunRulePackNode.java`                         |
-| D-13 | `FinalizeNode.java`                   | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/FinalizeNode.java`                            |
-| D-14 | `DocumentChunk.java`                  | Domain value object     | `rfp-core/src/main/java/com/dsi/rfp/domain/model/DocumentChunk.java`                            |
-| D-15 | `DocumentChunkingService.java`        | Adapter service         | `rfp-service/src/main/java/com/dsi/rfp/adapter/extraction/DocumentChunkingService.java`         |
-| D-16 | `BaseEntityExtractor.java`            | Abstract adapter class  | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/BaseEntityExtractor.java`                 |
-| D-17 | `GeneralEntityExtractor.java`         | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/GeneralEntityExtractor.java`              |
-| D-18 | `SubmissionEntityExtractor.java`      | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/SubmissionEntityExtractor.java`           |
-| D-19 | `FinancialEntityExtractor.java`       | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/FinancialEntityExtractor.java`            |
-| D-20 | `IctEntityExtractor.java`             | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/IctEntityExtractor.java`                  |
-| D-21 | `StaffingEntityExtractor.java`        | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/StaffingEntityExtractor.java`             |
-| D-22 | `SupportEntityExtractor.java`         | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/SupportEntityExtractor.java`              |
-| D-23 | `EvaluationEntityExtractor.java`      | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/EvaluationEntityExtractor.java`           |
-| D-24 | `EntityExtractor.java`                | Adapter orchestrator    | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/EntityExtractor.java`                     |
-| D-25 | `entity-general-v1.md`                | Prompt file             | `rfp-service/src/main/resources/prompts/entity-general-v1.md`                                   |
-| D-26 | `entity-submission-v1.md`             | Prompt file             | `rfp-service/src/main/resources/prompts/entity-submission-v1.md`                                |
-| D-27 | `entity-financial-v1.md`              | Prompt file             | `rfp-service/src/main/resources/prompts/entity-financial-v1.md`                                 |
-| D-28 | `entity-ict-v1.md`                    | Prompt file             | `rfp-service/src/main/resources/prompts/entity-ict-v1.md`                                       |
-| D-29 | `entity-staffing-v1.md`               | Prompt file             | `rfp-service/src/main/resources/prompts/entity-staffing-v1.md`                                  |
-| D-30 | `entity-support-v1.md`                | Prompt file             | `rfp-service/src/main/resources/prompts/entity-support-v1.md`                                   |
-| D-31 | `entity-evaluation-v1.md`             | Prompt file             | `rfp-service/src/main/resources/prompts/entity-evaluation-v1.md`                                |
-| D-32 | `RepairLogEntry.java`                 | Domain value object     | `rfp-core/src/main/java/com/dsi/rfp/domain/model/RepairLogEntry.java`                           |
-| D-33 | `RulePackResults.java`                | Domain value object     | `rfp-core/src/main/java/com/dsi/rfp/domain/model/RulePackResults.java`                          |
-| D-34 | `EntityTable.tsx`                     | React component         | `rfp-frontend/src/components/EntityTable.tsx`                                                   |
-| D-35 | `ResultPage.tsx` (updated)            | React page              | `rfp-frontend/src/pages/ResultPage.tsx`                                                         |
-| D-36 | Unit tests (agent + extractors)       | JUnit 5 tests           | `rfp-service/src/test/java/com/dsi/rfp/agent/` and `.../adapter/entity/`                        |
+| #    | Deliverable                                          | Type                    | Location                                                                                        |
+|------|------------------------------------------------------|-------------------------|-------------------------------------------------------------------------------------------------|
+| D-01 | `ExtractionState.java`                               | LangGraph4J state class | `rfp-service/src/main/java/com/dsi/rfp/agent/ExtractionState.java`                              |
+| D-02 | `ExtractionGraph.java`                               | LangGraph4J graph def   | `rfp-service/src/main/java/com/dsi/rfp/agent/ExtractionGraph.java`                              |
+| D-03 | `ExtractionOrchestrationService.java`                | Application service     | `rfp-service/src/main/java/com/dsi/rfp/application/service/ExtractionOrchestrationService.java` |
+| D-04 | `ValidateNode.java`                                  | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/ValidateNode.java`                            |
+| D-05 | `ClassifyPagesNode.java`                             | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/ClassifyPagesNode.java`                       |
+| D-06 | `ExtractTextNode.java`                               | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/ExtractTextNode.java`                         |
+| D-07 | `SegmentSectionsNode.java`                           | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/SegmentSectionsNode.java`                     |
+| D-08 | `ExtractTablesNode.java` (stub)                      | Graph node stub         | `rfp-service/src/main/java/com/dsi/rfp/agent/node/ExtractTablesNode.java`                       |
+| D-09 | `ExtractEntitiesNode.java`                           | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/ExtractEntitiesNode.java`                     |
+| D-10 | `ScoreConfidenceNode.java`                           | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/ScoreConfidenceNode.java`                     |
+| D-11 | `RepairLoopNode.java` (stub)                         | Graph node stub         | `rfp-service/src/main/java/com/dsi/rfp/agent/node/RepairLoopNode.java`                          |
+| D-12 | `RunRulePackNode.java` (stub)                        | Graph node stub         | `rfp-service/src/main/java/com/dsi/rfp/agent/node/RunRulePackNode.java`                         |
+| D-13 | `FinalizeNode.java`                                  | Graph node              | `rfp-service/src/main/java/com/dsi/rfp/agent/node/FinalizeNode.java`                            |
+| D-14 | `DocumentChunk.java`                                 | Domain value object     | `rfp-core/src/main/java/com/dsi/rfp/domain/model/DocumentChunk.java`                            |
+| D-15 | `DocumentChunkingService.java`                       | Adapter service         | `rfp-service/src/main/java/com/dsi/rfp/adapter/extraction/DocumentChunkingService.java`         |
+| D-16 | `BaseEntityExtractor.java`                           | Abstract adapter class  | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/BaseEntityExtractor.java`                 |
+| D-17 | `GeneralEntityExtractor.java`                        | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/GeneralEntityExtractor.java`              |
+| D-18 | `SubmissionEntityExtractor.java`                     | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/SubmissionEntityExtractor.java`           |
+| D-19 | `FinancialEntityExtractor.java`                      | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/FinancialEntityExtractor.java`            |
+| D-20 | `IctEntityExtractor.java`                            | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/IctEntityExtractor.java`                  |
+| D-21 | `StaffingEntityExtractor.java`                       | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/StaffingEntityExtractor.java`             |
+| D-22 | `SupportEntityExtractor.java`                        | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/SupportEntityExtractor.java`              |
+| D-23 | `EvaluationEntityExtractor.java`                     | Concrete extractor      | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/EvaluationEntityExtractor.java`           |
+| D-24 | `EntityExtractor.java`                               | Adapter orchestrator    | `rfp-service/src/main/java/com/dsi/rfp/adapter/entity/EntityExtractor.java`                     |
+| D-25 | `entity-general-v1.md`                               | Prompt file             | `rfp-service/src/main/resources/prompts/entity-general-v1.md`                                   |
+| D-26 | `entity-submission-v1.md`                            | Prompt file             | `rfp-service/src/main/resources/prompts/entity-submission-v1.md`                                |
+| D-27 | `entity-financial-v1.md`                             | Prompt file             | `rfp-service/src/main/resources/prompts/entity-financial-v1.md`                                 |
+| D-28 | `entity-ict-v1.md`                                   | Prompt file             | `rfp-service/src/main/resources/prompts/entity-ict-v1.md`                                       |
+| D-29 | `entity-staffing-v1.md`                              | Prompt file             | `rfp-service/src/main/resources/prompts/entity-staffing-v1.md`                                  |
+| D-30 | `entity-support-v1.md`                               | Prompt file             | `rfp-service/src/main/resources/prompts/entity-support-v1.md`                                   |
+| D-31 | `entity-evaluation-v1.md`                            | Prompt file             | `rfp-service/src/main/resources/prompts/entity-evaluation-v1.md`                                |
+| D-32 | `RepairLogEntry.java`                                | Domain value object     | `rfp-core/src/main/java/com/dsi/rfp/domain/model/RepairLogEntry.java`                           |
+| D-33 | `RulePackResults.java`                               | Domain value object     | `rfp-core/src/main/java/com/dsi/rfp/domain/model/RulePackResults.java`                          |
+| D-34 | `EntityTable.tsx`                                    | React component         | `rfp-frontend/src/components/EntityTable.tsx`                                                   |
+| D-35 | `ResultPage.tsx` (updated)                           | React page              | `rfp-frontend/src/pages/ResultPage.tsx`                                                         |
+| D-36 | Unit tests (agent + extractors)                      | JUnit 5 tests           | `rfp-service/src/test/java/com/dsi/rfp/agent/` and `.../adapter/entity/`                        |
+| D-37 | Delete `ExtractionPipelineService`                   | Refactor (deletion)     | `rfp-service/src/main/java/com/dsi/rfp/application/service/ExtractionPipelineService.java`      |
+| D-38 | `MimeTypePort` interface                             | Domain port             | `rfp-core/src/main/java/com/dsi/rfp/domain/port/MimeTypePort.java`                              |
+| D-39 | `PageSummary` rename from `PageClassificationResult` | Refactor                | `rfp-core/src/main/java/com/dsi/rfp/domain/model/PageSummary.java`                              |
 
 ---
 
@@ -136,9 +139,13 @@ public class ExtractionState {
     @JsonProperty("documentPath")
     String documentPath;
 
+    // NOTE: Sprint 2 defines PageClassificationResult (not PageSummary). Either rename
+    // PageClassificationResult to PageSummary at Sprint 4 (document as a refactoring task),
+    // OR use PageClassificationResult here consistently. Do not introduce a second type
+    // for the same concept. The chosen name must be used uniformly across all sprints.
     @JsonProperty("pageClassifications")
     @Builder.Default
-    List<PageSummary> pageClassifications = List.of();
+    List<PageSummary> pageClassifications = List.of();  // PageSummary = PageClassificationResult renamed
 
     @JsonProperty("sections")
     @Builder.Default
@@ -184,9 +191,9 @@ public class ExtractionState {
 
     public static ExtractionState initial(String jobId, String documentPath) {
         return ExtractionState.builder()
-                              .jobId(jobId)
-                              .documentPath(documentPath)
-                              .build();
+            .jobId(jobId)
+            .documentPath(documentPath)
+            .build();
     }
 }
 ```
@@ -277,6 +284,22 @@ public class ExtractionGraph {
     private final RunRulePackNode runRulePackNode;
     private final FinalizeNode finalizeNode;
 
+    // CRITICAL: LangGraph4J requires the state class to implement AgentState (or provide a
+    // StateFactory). ExtractionState uses Lombok @Value (immutable, final fields).
+    // LangGraph4J nodes return Map<String,Object> updates; the framework merges these into
+    // the state via reflection or AgentState.update(). With @Value + final fields, reflection
+    // cannot set the fields — this will fail at runtime with IllegalAccessException.
+    //
+    // CORRECT DESIGN: ExtractionState must implement AgentState. The AgentState interface
+    // in LangGraph4J exposes an update(Map<String,Object>) method (or equivalent) for merging
+    // node outputs into state. Alternatively, use the LangGraph4J state builder / factory pattern.
+    // Verify the exact API against the chosen LangGraph4J version before implementing.
+    // The @Value + @Builder(toBuilder=true) pattern alone is NOT sufficient.
+    //
+    // Also: ExtractionState is currently defined in rfp-service/agent/ but it is a domain
+    // concept. It should be in rfp-core/domain/model/ so that both rfp-core and rfp-service
+    // components can reference it without creating upward dependency cycles. Sprint 7 entry
+    // criteria also assumes it is in rfp-core.
     public StateGraph<ExtractionState> build() throws Exception {
         var graph = new StateGraph<>(ExtractionState.class);
         // register nodes ...
@@ -301,7 +324,7 @@ public final class ConfidenceRouter {
 
     public static boolean anyFieldBelowThreshold(ExtractionState state) {
         return state.getConfidenceMap().values().stream()
-                    .anyMatch(score -> score < LOW_CONFIDENCE_THRESHOLD);
+            .anyMatch(score -> score < LOW_CONFIDENCE_THRESHOLD);
     }
 }
 ```
@@ -329,7 +352,9 @@ public final class ConfidenceRouter {
   map with entry `< 0.6`
 - `shouldRouteToRulePackWhenAllFieldsAboveThreshold()` — all entries `>= 0.6` → returns false
 
-**Observability:** `log.info("graph=ExtractionGraph compiled nodes={}", nodeCount)` at startup.
+**Observability:**
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO graph=ExtractionGraph compiled nodes={}", nodeCount)`
+at startup.
 
 **Story Points:** 5
 
@@ -344,10 +369,10 @@ Given a valid jobId and documentPath stored in Redis
 When ExtractionOrchestrationService.runExtraction(jobId, documentPath) is called
 Then an ExtractionState.initial() is built and passed to the compiled graph
 And graph.invoke(initialState) is called exactly once
-And the job status in Redis is updated to IN_PROGRESS before invocation
+And the job status in Redis is updated to RUNNING before invocation (JobStatus.RUNNING — not IN_PROGRESS)
 And the job status is updated to COMPLETED after successful invocation
-And if graph.invoke() throws an exception the job status is updated to FAILED
-And the exception message is stored in the job's errorMessage field
+And if graph.invoke() throws an exception, AsyncUncaughtExceptionHandler sets the job status to FAILED
+And the exception message is stored in the job's errorMessage field by JobStateAsyncExceptionHandler
 ```
 
 **Interfaces / Contracts:**
@@ -399,12 +424,20 @@ public class ExtractionOrchestrationService {
    queue-capacity=20, thread-name-prefix `extraction-`, `RejectedExecutionHandler = AbortPolicy` (default — lets
    `JobQueueGuard` in Sprint 12 handle overflow via HTTP 503; never use `CallerRunsPolicy` which would block a REST
    thread for the full extraction duration).
-4. In `runExtraction()`: wrap in try-catch. On entry call `jobStatePort.updateStatus(jobId, JobStatus.IN_PROGRESS)`.
+4. In `runExtraction()`: do NOT wrap in try-catch — per the exception policy, @Async void methods
+   must NOT use catch (Exception e). Instead, `AsyncUncaughtExceptionHandler` (Sprint 2) handles
+   unhandled exceptions and marks the job FAILED. On entry call
+   `jobStatePort.updateStatus(jobId, JobStatus.RUNNING)` — NOTE: the correct enum value is RUNNING
+   (NOT IN_PROGRESS; the JobStatus enum defined in Sprint 2 has QUEUED, RUNNING, COMPLETED, FAILED, PARTIAL).
    Build `ExtractionState.initial(jobId, documentPath)`. Call `extractionGraph.build().invoke(initialState)`. On success
-   call `jobStatePort.updateStatus(jobId, JobStatus.COMPLETED)`. On exception call
-   `jobStatePort.updateStatusFailed(jobId, e.getMessage())` and log at ERROR.
+   call `jobStatePort.updateStatus(jobId, JobStatus.COMPLETED)`. Any exception propagates to the
+   `JobStateAsyncExceptionHandler` which stores the error message and sets FAILED.
 5. Update `RfpSubmissionService.submit()` to call `extractionOrchestrationService.runExtraction(jobId, path)` instead of
    any prior ad-hoc chain.
+   **IMPORTANT — remove `ExtractionPipelineService` from Sprint 2**: Once `ExtractionOrchestrationService` is wired,
+   `ExtractionPipelineService` must be deleted (or marked `@Deprecated` as a first step). Leaving both active creates
+   a zombie service — both would run on submit, doubling async jobs. Sprint 4 deliverables must include:
+   "Delete `ExtractionPipelineService` and all references to it."
 6. Wire `@EnableAsync` on `AsyncConfig.java`, not on the main application class.
 
 **Test Plan:**
@@ -418,9 +451,21 @@ public class ExtractionOrchestrationService {
 
 **Observability:**
 
-- `log.info("extraction.start jobId={} documentPath={}", jobId, documentPath)` before graph invocation
-- `log.info("extraction.complete jobId={} durationMs={}", jobId, elapsed)` on success
-- `log.error("extraction.failed jobId={} error={}", jobId, e.getMessage())` on failure
+-
+
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO extraction.start jobId={} documentPath={}", jobId, documentPath)`
+before graph invocation
+
+-
+
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO extraction.complete jobId={} durationMs={}", jobId, elapsed)`
+on success
+
+-
+
+`log.error("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=ERROR extraction.failed jobId={} error={}", jobId, e.getMessage())`
+on failure
+
 - Micrometer counter: `rfp.extraction.started`, `rfp.extraction.completed`, `rfp.extraction.failed`
 
 **Story Points:** 5
@@ -489,7 +534,7 @@ public class ValidateNode implements NodeAction<ExtractionState> {
         if (!Files.exists(doc)) {
             throw new IllegalStateException("Document not found: " + state.getDocumentPath());
         }
-        log.info("validate.ok jobId={} path={}", state.getJobId(), state.getDocumentPath());
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO validate.ok jobId={} path={}", state.getJobId(), state.getDocumentPath());
         return Map.of(); // no state mutation needed
     }
 }
@@ -540,8 +585,16 @@ public class RfpDocumentAssembler {
 
 **Observability:**
 
-- `log.info("node.start node={} jobId={}", nodeName, jobId)` at entry of each non-trivial node
-- `log.info("node.complete node={} jobId={} items={}", nodeName, jobId, resultCount)` at exit
+-
+
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO node.start node={} jobId={}", nodeName, jobId)`
+at entry of each non-trivial node
+
+-
+
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO node.complete node={} jobId={} items={}", nodeName, jobId, resultCount)`
+at exit
+
 - Redis key pattern: `job:{jobId}:currentNode` updated at each node entry for progress tracking
 
 **Story Points:** 8
@@ -621,8 +674,9 @@ public class DocumentChunkingService {
 1. Create `DocumentChunk.java` in `rfp-core/domain/model/` as `@Value @Builder`. List field `sections` needs
    `@Builder.Default List.of()`.
 2. Do NOT add an explicit LangChain4J version to `rfp-service/pom.xml`. Use `dev.langchain4j:langchain4j` with version
-   managed by the root POM property `${langchain4j.version}` (set to `1.11.0` in Sprint 1). Adding an explicit version
-   here would create a classpath conflict with the root POM-managed version.
+   managed by the root POM property `${langchain4j.version}` (pinned in Sprint 1 parent POM — verify the exact version
+   in `rfp-extractor/pom.xml` before coding; the root POM is the single source of truth for dependency versions).
+   Adding an explicit version here would create a classpath conflict with the root POM-managed version.
 3. In `DocumentChunkingService.chunkDocument()`: extract full text from all sections' clauses (concatenate clause
    bodies). Instantiate
    `RecursiveCharacterTextSplitter.builder().maxSegmentSizeInChars(14000).maxOverlapSizeInChars(800).build()` (4 chars
@@ -643,8 +697,11 @@ public class DocumentChunkingService {
 
 **Observability:**
 
-- `log.info("chunking.complete jobId={} chunkCount={} totalTokens={}", jobId, chunks.size(), totalTokens)` — note: jobId
-  passed as optional context param
+-
+
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO chunking.complete jobId={} chunkCount={} totalTokens={}", jobId, chunks.size(), totalTokens)` —
+note: jobId
+passed as optional context param
 
 **Story Points:** 3
 
@@ -771,9 +828,13 @@ public abstract class BaseEntityExtractor {
 
 **Observability:**
 
-- `log.debug("entity.extract.start extractor={} jobId={} chunkCount={}", className, jobId, chunks.size())`
-- `log.warn("entity.parse.failed extractor={} jobId={} chunk={}", className, jobId, chunkIndex)`
-- `log.info("entity.extract.done extractor={} jobId={} fields={}", className, jobId, resultSize)`
+-
+
+`log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG entity.extract.start extractor={} jobId={} chunkCount={}", className, jobId, chunks.size())`
+-
+`log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN entity.parse.failed extractor={} jobId={} chunk={}", className, jobId, chunkIndex)`
+-
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO entity.extract.done extractor={} jobId={} fields={}", className, jobId, resultSize)`
 
 **Story Points:** 5
 
@@ -835,8 +896,8 @@ public class GeneralEntityExtractor extends BaseEntityExtractor {
     @Override
     protected void validateFields(Map<String, Object> parsed) {
         REQUIRED_FIELDS.stream()
-                       .filter(f -> !parsed.containsKey(f))
-                       .forEach(f -> log.warn("entity.field.missing extractor=General field={}", f));
+            .filter(f -> !parsed.containsKey(f))
+            .forEach(f -> log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN entity.field.missing extractor=General field={}", f));
     }
 
     @Override
@@ -1081,25 +1142,20 @@ public class EntityExtractor {
 
     public RfpEntities extractAll(List<Section> sections, List<Clause> clauses, ExtractionState state) {
         Map<String, Object> merged = new HashMap<>();
-        runSafe(generalExtractor, sections, clauses, state, merged, "general");
-        runSafe(submissionExtractor, sections, clauses, state, merged, "submission");
-        runSafe(financialExtractor, sections, clauses, state, merged, "financial");
-        runSafe(ictExtractor, sections, clauses, state, merged, "ict");
-        runSafe(staffingExtractor, sections, clauses, state, merged, "staffing");
-        runSafe(supportExtractor, sections, clauses, state, merged, "support");
-        runSafe(evaluationExtractor, sections, clauses, state, merged, "evaluation");
+        runExtractor(generalExtractor, sections, clauses, state, merged, "general");
+        runExtractor(submissionExtractor, sections, clauses, state, merged, "submission");
+        runExtractor(financialExtractor, sections, clauses, state, merged, "financial");
+        runExtractor(ictExtractor, sections, clauses, state, merged, "ict");
+        runExtractor(staffingExtractor, sections, clauses, state, merged, "staffing");
+        runExtractor(supportExtractor, sections, clauses, state, merged, "support");
+        runExtractor(evaluationExtractor, sections, clauses, state, merged, "evaluation");
         return entitiesMapper.fromMap(merged);
     }
 
-    private void runSafe(BaseEntityExtractor extractor, List<Section> sections,
-                         List<Clause> clauses, ExtractionState state,
-                         Map<String, Object> target, String name) {
-        try {
-            target.putAll(extractor.extract(sections, clauses, state));
-        } catch (Exception e) {
-            log.error("entity.extractor.failed extractor={} jobId={} error={}",
-                name, state.getJobId(), e.getMessage(), e);
-        }
+    private void runExtractor(BaseEntityExtractor extractor, List<Section> sections,
+                              List<Clause> clauses, ExtractionState state,
+                              Map<String, Object> target, String name) {
+        target.putAll(extractor.extract(sections, clauses, state));
     }
 }
 ```
@@ -1109,8 +1165,8 @@ public class EntityExtractor {
 1. Create `EntityExtractor` with 7 sub-extractor injections + `RfpEntitiesMapper`. Keep to under 250 lines.
 2. Create `RfpEntitiesMapper.java` in `adapter/entity/` — a `@Component` that maps a raw `Map<String,Object>` to
    `RfpEntities` domain object using safe casts and null defaults.
-3. `runSafe()` isolates each extractor failure: catches `Exception`, logs at ERROR, and continues. The merged map has
-   whatever partial results succeeded.
+3. `runExtractor()` does not catch generic exceptions. Failures propagate and are mapped by the global exception
+   handler.
 4. `extractAll()` method is under 20 lines — loop over a `List<Pair<BaseEntityExtractor, String>>` if needed to keep it
    clean. If inline calls keep the method under 20 lines, use inline form shown above.
 5. Create `ExtractEntitiesNode` in `agent/node/`: inject `EntityExtractor`, call
@@ -1124,8 +1180,12 @@ public class EntityExtractor {
 
 **Observability:**
 
-- `log.info("entity.extractAll.start jobId={}", state.getJobId())`
-- `log.info("entity.extractAll.done jobId={} fields={}", state.getJobId(), merged.size())`
+-
+
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO entity.extractAll.start jobId={}", state.getJobId())`
+-
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO entity.extractAll.done jobId={} fields={}", state.getJobId(), merged.size())`
+
 - Micrometer timer: `rfp.entity.extraction.duration` tagged `extractor=general|submission|...`
 
 **Story Points:** 5
@@ -1200,7 +1260,7 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
         double completeness = computeCompleteness(scores);
         scores.put("doc_completeness_score", completeness);
 
-        log.info("confidence.score jobId={} completeness={} lowConfFields={}",
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO confidence.score jobId={} completeness={} lowConfFields={}",
             state.getJobId(), completeness, lowConfQueue);
         return Map.of("confidenceMap", scores, "lowConfidenceQueue", lowConfQueue);
     }
@@ -1212,7 +1272,7 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
     }
 
     private double scoreValue(Object value) {
-        if (value == null) return 0.0;
+        if (Objects.isNull(value)) return 0.0;
         String str = value.toString().strip();
         if (str.isEmpty()) return 0.0;
         if (str.length() < 5) return 0.5;  // present but low-quality (very short)
@@ -1221,8 +1281,8 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
 
     private double computeCompleteness(Map<String, Double> scores) {
         long nonNull = CRITICAL_FIELDS.stream()
-                                      .filter(f -> scores.getOrDefault(f, 0.0) > 0.0)
-                                      .count();
+            .filter(f -> scores.getOrDefault(f, 0.0) > 0.0)
+            .count();
         return (double) nonNull / CRITICAL_FIELDS.size();
     }
 }
@@ -1250,7 +1310,11 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
 
 **Observability:**
 
-- `log.info("confidence.score jobId={} completeness={:.2f} lowConfFields={}",...)` on every invocation
+-
+
+`log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO confidence.score jobId={} completeness={:.2f} lowConfFields={}",...)`
+on every invocation
+
 - Redis key `job:{jobId}:confidence` storing completeness score as `HSET` field
 
 **Story Points:** 5

@@ -191,10 +191,10 @@ public class BookmarkHeadingStrategy implements HeadingStrategy {
         List<HeadingCandidate> results = new ArrayList<>();
         try (PDDocument doc = Loader.loadPDF(pdfPath.toFile())) {
             PDDocumentOutline outline = doc.getDocumentCatalog().getDocumentOutline();
-            if (outline == null) return results;
+            if (Objects.isNull(outline)) return results;
             traverseOutline(outline.getFirstChild(), 1, results);
         }
-        log.debug("BookmarkHeadingStrategy: found {} headings in {}",
+        log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG BookmarkHeadingStrategy: found {} headings in {}",
             results.size(), pdfPath.getFileName());
         return results;
     }
@@ -206,16 +206,16 @@ public class BookmarkHeadingStrategy implements HeadingStrategy {
 
     private void traverseOutline(PDOutlineItem item, int level,
                                  List<HeadingCandidate> results) {
-        while (item != null) {
+        while (Objects.nonNull(item)) {
             String title = item.getTitle();
-            if (title != null && !title.isBlank()) {
+            if (Objects.nonNull(title) && StringUtils.hasText(title)) {
                 results.add(HeadingCandidate.builder()
-                                            .text(title.strip())
-                                            .level(Math.min(level, 6))
-                                            .pageNumber(resolvePageNumber(item))
-                                            .startY(0.0f)
-                                            .detectedBy(strategyName())
-                                            .build());
+                    .text(title.strip())
+                    .level(Math.min(level, 6))
+                    .pageNumber(resolvePageNumber(item))
+                    .startY(0.0f)
+                    .detectedBy(strategyName())
+                    .build());
             }
             if (item.hasChildren()) {
                 traverseOutline(item.getFirstChild(), level + 1, results);
@@ -225,14 +225,9 @@ public class BookmarkHeadingStrategy implements HeadingStrategy {
     }
 
     private int resolvePageNumber(PDOutlineItem item) {
-        try {
-            var dest = item.getDestination();
-            // Simplified: return 0 if we cannot resolve. Sprint 3 does not need exact page
-            // numbers from bookmarks since page ranges are computed from section order.
-            return 0;
-        } catch (Exception e) {
-            return 0;
-        }
+        var dest = item.getDestination();
+        // Simplified: return 0 for Sprint 3. Exact bookmark destination mapping is deferred.
+        return 0;
     }
 }
 ```
@@ -352,14 +347,14 @@ public class HeadingStyleStrategy implements HeadingStrategy {
     private HeadingCandidate buildCandidate(String text, int level, int page,
                                             float y, String font, float fontSize) {
         return HeadingCandidate.builder()
-                               .text(text.strip())
-                               .level(level)
-                               .pageNumber(page)
-                               .startY(y)
-                               .fontName(font)
-                               .fontSize(fontSize)
-                               .detectedBy(strategyName())
-                               .build();
+            .text(text.strip())
+            .level(level)
+            .pageNumber(page)
+            .startY(y)
+            .fontName(font)
+            .fontSize(fontSize)
+            .detectedBy(strategyName())
+            .build();
     }
 }
 ```
@@ -441,7 +436,7 @@ public class NumberedHeadingStrategy implements HeadingStrategy {
     }
 
     private void detectInLine(String line, int pageIdx, List<HeadingCandidate> results) {
-        if (line.isBlank()) return;
+        if (!StringUtils.hasText(line)) return;
 
         Matcher numbered = NUMBERED_PATTERN.matcher(line);
         if (numbered.matches()) {
@@ -471,12 +466,12 @@ public class NumberedHeadingStrategy implements HeadingStrategy {
 
     private HeadingCandidate buildCandidate(String text, int level, int pageIdx) {
         return HeadingCandidate.builder()
-                               .text(text)
-                               .level(level)
-                               .pageNumber(pageIdx)
-                               .startY(0.0f)
-                               .detectedBy(strategyName())
-                               .build();
+            .text(text)
+            .level(level)
+            .pageNumber(pageIdx)
+            .startY(0.0f)
+            .detectedBy(strategyName())
+            .build();
     }
 }
 ```
@@ -583,7 +578,7 @@ public class BanglaHeadingStrategy implements HeadingStrategy {
                 detectInLine(line.strip(), pageIdx, results);
             }
         }
-        log.debug("BanglaHeadingStrategy: found {} Bangla headings in {}",
+        log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG BanglaHeadingStrategy: found {} Bangla headings in {}",
             results.size(), pdfPath.getFileName());
         return results;
     }
@@ -594,7 +589,7 @@ public class BanglaHeadingStrategy implements HeadingStrategy {
     }
 
     private void detectInLine(String line, int pageIdx, List<HeadingCandidate> results) {
-        if (line.isBlank()) return;
+        if (!StringUtils.hasText(line)) return;
         if (CHAPTER_PATTERN.matcher(line).matches()) {
             results.add(buildCandidate(line, 1, pageIdx));
         } else if (DHARA_PATTERN.matcher(line).matches()) {
@@ -606,8 +601,8 @@ public class BanglaHeadingStrategy implements HeadingStrategy {
 
     private HeadingCandidate buildCandidate(String text, int level, int pageIdx) {
         return HeadingCandidate.builder()
-                               .text(text).level(level).pageNumber(pageIdx)
-                               .startY(0.0f).detectedBy(strategyName()).build();
+            .text(text).level(level).pageNumber(pageIdx)
+            .startY(0.0f).detectedBy(strategyName()).build();
     }
 }
 ```
@@ -685,13 +680,13 @@ public class FontSizeHeadingStrategy implements HeadingStrategy {
         if (allBlocks.isEmpty()) return List.of();
 
         float medianFontSize = computeMedianFontSize(allBlocks);
-        log.debug("FontSizeHeadingStrategy: medianFontSize={}", medianFontSize);
+        log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG FontSizeHeadingStrategy: medianFontSize={}", medianFontSize);
 
         return allBlocks.stream()
-                        .filter(block -> isHeadingCandidate(block, medianFontSize))
-                        .map(block -> buildCandidate(block, medianFontSize))
-                        .filter(c -> !c.getText().isBlank())
-                        .collect(java.util.stream.Collectors.toList());
+            .filter(block -> isHeadingCandidate(block, medianFontSize))
+            .map(block -> buildCandidate(block, medianFontSize))
+            .filter(c -> StringUtils.hasText(c.getText()))
+            .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
@@ -710,33 +705,33 @@ public class FontSizeHeadingStrategy implements HeadingStrategy {
 
     private float computeMedianFontSize(List<TextBlock> blocks) {
         List<Float> sizes = blocks.stream()
-                                  .map(TextBlock::getFontSize)
-                                  .filter(s -> s > 0)
-                                  .sorted()
-                                  .collect(java.util.stream.Collectors.toList());
+            .map(TextBlock::getFontSize)
+            .filter(s -> s > 0)
+            .sorted()
+            .collect(java.util.stream.Collectors.toList());
         if (sizes.isEmpty()) return 10.0f;
         return sizes.get(sizes.size() / 2);
     }
 
     private boolean isHeadingCandidate(TextBlock block, float medianSize) {
         return block.getFontSize() > (medianSize + HEADING_FONT_SIZE_DELTA)
-            && block.getText() != null
+            && Objects.nonNull(block.getText())
             && block.getText().length() <= MAX_HEADING_LENGTH
-            && !block.getText().isBlank();
+            && StringUtils.hasText(block.getText());
     }
 
     private HeadingCandidate buildCandidate(TextBlock block, float medianSize) {
         float delta = block.getFontSize() - medianSize;
         int level = fontDeltaToLevel(delta);
         return HeadingCandidate.builder()
-                               .text(block.getText().strip())
-                               .level(level)
-                               .pageNumber((int) block.getY())  // approximation: y used as page proxy
-                               .startY(block.getY())
-                               .fontName(block.getFontName())
-                               .fontSize(block.getFontSize())
-                               .detectedBy(strategyName())
-                               .build();
+            .text(block.getText().strip())
+            .level(level)
+            .pageNumber((int) block.getY())  // approximation: y used as page proxy
+            .startY(block.getY())
+            .fontName(block.getFontName())
+            .fontSize(block.getFontSize())
+            .detectedBy(strategyName())
+            .build();
     }
 
     private int fontDeltaToLevel(float delta) {
@@ -823,18 +818,18 @@ public class AllCapsHeadingStrategy implements HeadingStrategy {
             String line = lines[i].strip();
             if (isAllCapsHeading(line, lines, i)) {
                 results.add(HeadingCandidate.builder()
-                                            .text(line)
-                                            .level(1)
-                                            .pageNumber(pageIdx)
-                                            .startY(0.0f)
-                                            .detectedBy(strategyName())
-                                            .build());
+                    .text(line)
+                    .level(1)
+                    .pageNumber(pageIdx)
+                    .startY(0.0f)
+                    .detectedBy(strategyName())
+                    .build());
             }
         }
     }
 
     private boolean isAllCapsHeading(String line, String[] lines, int index) {
-        if (line.isBlank()) return false;
+        if (!StringUtils.hasText(line)) return false;
         if (line.length() < MIN_LENGTH || line.length() > MAX_LENGTH) return false;
         if (!isAllUppercase(line)) return false;
         return isSurroundedByBlanks(lines, index);
@@ -842,13 +837,13 @@ public class AllCapsHeadingStrategy implements HeadingStrategy {
 
     private boolean isAllUppercase(String line) {
         return line.chars()
-                   .filter(Character::isLetter)
-                   .allMatch(Character::isUpperCase);
+            .filter(Character::isLetter)
+            .allMatch(Character::isUpperCase);
     }
 
     private boolean isSurroundedByBlanks(String[] lines, int index) {
-        boolean prevBlank = index == 0 || lines[index - 1].isBlank();
-        boolean nextBlank = index == lines.length - 1 || lines[index + 1].isBlank();
+        boolean prevBlank = index == 0 || !StringUtils.hasText(lines[index - 1]);
+        boolean nextBlank = index == lines.length - 1 || !StringUtils.hasText(lines[index + 1]);
         return prevBlank && nextBlank;
     }
 }
@@ -916,7 +911,7 @@ public class TocDetector {
             String[] lines = pageText.split("\\r?\\n");
             List<HeadingCandidate> candidates = extractTocEntries(lines, i);
             if (candidates.size() >= TOC_LINE_THRESHOLD) {
-                log.info("TOC detected on page {} with {} entries", i + 1, candidates.size());
+                log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO TOC detected on page {} with {} entries", i + 1, candidates.size());
                 return Optional.of(candidates);
             }
         }
@@ -928,17 +923,17 @@ public class TocDetector {
         for (String line : lines) {
             Matcher m = TOC_LINE_PATTERN.matcher(line);
             if (m.matches()) {
-                String indent = m.group(1) != null ? m.group(1) : m.group(4);
-                String text = m.group(2) != null ? m.group(2) : m.group(5);
-                if (text != null && !text.isBlank()) {
+                String indent = Objects.nonNull(m.group(1)) ? m.group(1) : m.group(4);
+                String text = Objects.nonNull(m.group(2)) ? m.group(2) : m.group(5);
+                if (Objects.nonNull(text) && StringUtils.hasText(text)) {
                     int level = computeLevelFromIndent(indent);
                     entries.add(HeadingCandidate.builder()
-                                                .text(text.strip())
-                                                .level(level)
-                                                .pageNumber(pageIdx)
-                                                .startY(0.0f)
-                                                .detectedBy("TocDetector")
-                                                .build());
+                        .text(text.strip())
+                        .level(level)
+                        .pageNumber(pageIdx)
+                        .startY(0.0f)
+                        .detectedBy("TocDetector")
+                        .build());
                 }
             }
         }
@@ -946,7 +941,7 @@ public class TocDetector {
     }
 
     private int computeLevelFromIndent(String indent) {
-        if (indent == null) return 1;
+        if (Objects.isNull(indent)) return 1;
         int spaces = indent.length();
         if (spaces == 0) return 1;
         if (spaces <= 2) return 2;
@@ -1113,14 +1108,14 @@ public class SectionSegmenter {
         for (HeadingStrategy strategy : strategies) {
             List<HeadingCandidate> candidates = strategy.detectHeadings(pdfPath, loader);
             if (candidates.size() >= MIN_HEADINGS_TO_USE_STRATEGY) {
-                log.info("SectionSegmenter using strategy={} with {} candidates",
+                log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO SectionSegmenter using strategy={} with {} candidates",
                     strategy.strategyName(), candidates.size());
                 double confidence = computeConfidence(strategy, candidates.size());
                 return buildSectionTree(candidates, totalPages, strategy.strategyName(), confidence);
             }
         }
 
-        log.warn("SectionSegmenter: no strategy produced {} headings — returning empty",
+        log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN SectionSegmenter: no strategy produced {} headings — returning empty",
             MIN_HEADINGS_TO_USE_STRATEGY);
         return List.of();
     }
@@ -1131,9 +1126,9 @@ public class SectionSegmenter {
                                            double confidence) {
         // Sort candidates by pageNumber then startY
         List<HeadingCandidate> sorted = candidates.stream()
-                                                  .sorted(Comparator.comparingInt(HeadingCandidate::getPageNumber)
-                                                                    .thenComparingDouble(HeadingCandidate::getStartY))
-                                                  .toList();
+            .sorted(Comparator.comparingInt(HeadingCandidate::getPageNumber)
+                .thenComparingDouble(HeadingCandidate::getStartY))
+            .toList();
 
         List<Section> roots = new ArrayList<>();
         Deque<Section> stack = new ArrayDeque<>();
@@ -1142,16 +1137,16 @@ public class SectionSegmenter {
             HeadingCandidate c = sorted.get(i);
             int pageEnd = computePageEnd(sorted, i, totalPages);
             Section section = Section.builder()
-                                     .id(UUID.randomUUID())
-                                     .title(c.getText())
-                                     .level(c.getLevel())
-                                     .pageStart(c.getPageNumber())
-                                     .pageEnd(pageEnd)
-                                     .confidence(SectionConfidence.builder()
-                                                                  .score(confidence)
-                                                                  .method(method)
-                                                                  .build())
-                                     .build();
+                .id(UUID.randomUUID())
+                .title(c.getText())
+                .level(c.getLevel())
+                .pageStart(c.getPageNumber())
+                .pageEnd(pageEnd)
+                .confidence(SectionConfidence.builder()
+                    .score(confidence)
+                    .method(method)
+                    .build())
+                .build();
 
             placeInHierarchy(section, stack, roots);
         }
@@ -1317,7 +1312,7 @@ public class ClauseIdAssigner {
         if (sectionNumber.isPresent()) {
             return normalizedRef + ":" + sectionNumber.get() + ":P" + paragraphIndex;
         } else {
-            log.warn("ClauseIdAssigner: using fallback ID for section without numeric prefix: " +
+            log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN ClauseIdAssigner: using fallback ID for section without numeric prefix: " +
                 "procRef={} sectionTitle={}", procurementRef, sectionTitle);
             return normalizedRef + ":S" + (sectionIndex + 1) + ":P" + paragraphIndex;
         }
@@ -1335,17 +1330,17 @@ public class ClauseIdAssigner {
     }
 
     private String normalizeRef(String ref) {
-        if (ref == null || ref.isBlank()) return "unknown";
+        if (Objects.isNull(ref) || !StringUtils.hasText(ref)) return "unknown";
         String normalized = ref.toLowerCase()
-                               .replaceAll("\\s+", "-")
-                               .replaceAll("[^a-z0-9\\-]", "");
+            .replaceAll("\\s+", "-")
+            .replaceAll("[^a-z0-9\\-]", "");
         return normalized.length() > MAX_REF_LENGTH
             ? normalized.substring(0, MAX_REF_LENGTH)
             : normalized;
     }
 
     private Optional<String> extractSectionNumber(String sectionTitle) {
-        if (sectionTitle == null) return Optional.empty();
+        if (Objects.isNull(sectionTitle)) return Optional.empty();
         Matcher m = SECTION_NUMBER_PATTERN.matcher(sectionTitle.strip());
         if (m.matches()) return Optional.of(m.group(1));
         return Optional.empty();
@@ -1472,7 +1467,6 @@ File: `rfp-service/src/main/java/com/dsi/rfp/adapter/RfpSchemaValidator.java`:
 ```java
 package com.dsi.rfp.adapter;
 
-import com.dsi.rfp.domain.exception.RfpSchemaLoadException;
 import com.dsi.rfp.domain.model.SchemaValidationResult;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
@@ -1486,6 +1480,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1506,17 +1501,12 @@ public class RfpSchemaValidator {
     private JsonSchema jsonSchema;
 
     @PostConstruct
-    void loadSchema() {
-        try {
-            Path path = Path.of(schemaPath);
-            InputStream schemaStream = Files.newInputStream(path);
-            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
-            jsonSchema = factory.getSchema(schemaStream);
-            log.info("RFP JSON Schema loaded successfully from {}", schemaPath);
-        } catch (Exception e) {
-            throw new RfpSchemaLoadException(
-                "Failed to load RFP JSON Schema from " + schemaPath, e);
-        }
+    void loadSchema() throws IOException {
+        Path path = Path.of(schemaPath);
+        InputStream schemaStream = Files.newInputStream(path);
+        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
+        jsonSchema = factory.getSchema(schemaStream);
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO RFP JSON Schema loaded successfully from {}", schemaPath);
     }
 
     /**
@@ -1525,18 +1515,14 @@ public class RfpSchemaValidator {
      * @param rfpJson the JSON string to validate
      * @return SchemaValidationResult with valid flag and list of error messages
      */
-    public SchemaValidationResult validate(String rfpJson) {
-        try {
-            JsonNode node = objectMapper.readTree(rfpJson);
-            Set<ValidationMessage> messages = jsonSchema.validate(node);
-            if (messages.isEmpty()) return SchemaValidationResult.ok();
-            List<String> errors = messages.stream()
-                                          .map(ValidationMessage::getMessage)
-                                          .collect(Collectors.toList());
-            return SchemaValidationResult.fail(errors);
-        } catch (Exception e) {
-            return SchemaValidationResult.fail(List.of("Invalid JSON: " + e.getMessage()));
-        }
+    public SchemaValidationResult validate(String rfpJson) throws IOException {
+        JsonNode node = objectMapper.readTree(rfpJson);
+        Set<ValidationMessage> messages = jsonSchema.validate(node);
+        if (messages.isEmpty()) return SchemaValidationResult.ok();
+        List<String> errors = messages.stream()
+            .map(ValidationMessage::getMessage)
+            .collect(Collectors.toList());
+        return SchemaValidationResult.fail(errors);
     }
 }
 ```
@@ -2535,9 +2521,9 @@ class RfpSchemaValidatorTest {
 **Description:**
 Collect, annotate, and validate a real-document benchmark dataset for future reporting. This is **not** a Sprint 3
 prerequisite. Sprint 3 acceptance uses deterministic fixtures and schema checks; real-document benchmarking is deferred
-to `docs/wishlist/001_wishlist.md`.
+to `wishlist/001_wishlist.md`.
 
-**Assignment:** Backlog item tracked in `docs/wishlist/001_wishlist.md`; no Sprint 3 staffing dependency.
+**Assignment:** Backlog item tracked in `wishlist/001_wishlist.md`; no Sprint 3 staffing dependency.
 
 **Annotation format** — each file at `testdata/ground-truth/{doc-id}.json` must include:
 
@@ -2571,14 +2557,11 @@ ground-truth compatibility remains supported but is not part of Sprint 3 exit cr
 # Ground Truth Dataset
 
 ## Directory Structure
-
-- testdata/pdfs/ — raw PDF files (gitignored)
+- testdata/pdfs/         — raw PDF files (gitignored)
 - testdata/ground-truth/ — JSON annotations (committed)
 
 ## Sourcing PDFs
-
 PDFs must be obtained from:
-
 1. CPTU (Central Procurement Technical Unit) Bangladesh: https://cptu.gov.bd/
 2. Client-provided RFP archives.
 3. IMED (Implementation Monitoring and Evaluation Division): https://imed.gov.bd/
@@ -2587,11 +2570,9 @@ Store PDFs as testdata/pdfs/{doc-id}.pdf (e.g., cptu-2024-ict-001.pdf).
 PDFs are gitignored — annotators must share via Google Drive or S3.
 
 ## Annotation Format
-
 See sample-annotation-template.json for the schema.
 
 ## Target
-
 - 15 PDF documents total
 - 5 fully annotated (sections + entities)
 - 10 partially annotated (sections only)
@@ -2601,66 +2582,51 @@ See sample-annotation-template.json for the schema.
 
 ```json
 {
-    "doc_id": "cptu-2024-ict-001",
-    "pdf_filename": "cptu-2024-ict-001.pdf",
-    "annotator": "name@example.com",
-    "annotation_date": "2025-06-01",
-    "sections": [
-        {
-            "title": "1. Background",
-            "level": 1,
-            "page_start": 1,
-            "page_end": 3,
-            "children": []
-        },
-        {
-            "title": "2. Scope of Work",
-            "level": 1,
-            "page_start": 4,
-            "page_end": 12,
-            "children": [
-                {
-                    "title": "2.1 Technical Requirements",
-                    "level": 2,
-                    "page_start": 4,
-                    "page_end": 8,
-                    "children": []
-                }
-            ]
-        }
-    ],
-    "entities": {
-        "submission_deadline": "2025-08-15T17:00:00+06:00",
-        "client_name": "Ministry of ICT, Bangladesh",
-        "procurement_ref": "CPTU-2024-ICT-001"
+  "doc_id": "cptu-2024-ict-001",
+  "pdf_filename": "cptu-2024-ict-001.pdf",
+  "annotator": "name@example.com",
+  "annotation_date": "2025-06-01",
+  "sections": [
+    {
+      "title": "1. Background",
+      "level": 1,
+      "page_start": 1,
+      "page_end": 3,
+      "children": []
     },
-    "tables": [
+    {
+      "title": "2. Scope of Work",
+      "level": 1,
+      "page_start": 4,
+      "page_end": 12,
+      "children": [
         {
-            "page": 7,
-            "headers": [
-                "Item",
-                "Quantity",
-                "Unit Price (BDT)"
-            ],
-            "rows": [
-                [
-                    "Laptop",
-                    "10",
-                    "85000"
-                ],
-                [
-                    "Server",
-                    "2",
-                    "450000"
-                ]
-            ]
+          "title": "2.1 Technical Requirements",
+          "level": 2,
+          "page_start": 4,
+          "page_end": 8,
+          "children": []
         }
-    ],
-    "expected_rule_failures": [
-        "BD-ICT-001",
-        "BD-ICT-014"
-    ],
-    "notes": "Add any annotator notes here. Use null (not omit) for entity fields absent from this document."
+      ]
+    }
+  ],
+  "entities": {
+    "submission_deadline": "2025-08-15T17:00:00+06:00",
+    "client_name": "Ministry of ICT, Bangladesh",
+    "procurement_ref": "CPTU-2024-ICT-001"
+  },
+  "tables": [
+    {
+      "page": 7,
+      "headers": ["Item", "Quantity", "Unit Price (BDT)"],
+      "rows": [
+        ["Laptop", "10", "85000"],
+        ["Server", "2", "450000"]
+      ]
+    }
+  ],
+  "expected_rule_failures": ["BD-ICT-001", "BD-ICT-014"],
+  "notes": "Add any annotator notes here. Use null (not omit) for entity fields absent from this document."
 }
 ```
 
@@ -2678,7 +2644,6 @@ package com.dsi.rfp.adapter.extraction.evaluation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -2701,18 +2666,18 @@ public class GroundTruthLoader {
     public List<GroundTruthAnnotation> loadAll(Path groundTruthDir) throws IOException {
         List<GroundTruthAnnotation> annotations = new ArrayList<>();
         try (var stream = Files.list(groundTruthDir)) {
-            stream
+            for (Path path : stream
                 .filter(p -> p.toString().endsWith(".json"))
                 .filter(p -> !p.getFileName().toString().startsWith("sample-"))
-                .forEach(p -> {
-                    try {
-                        annotations.add(objectMapper.readValue(p.toFile(), GroundTruthAnnotation.class));
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to load annotation: " + p, e);
-                    }
-                });
+                .toList()) {
+                annotations.add(readAnnotation(path));
+            }
         }
         return annotations;
+    }
+
+    private GroundTruthAnnotation readAnnotation(Path path) throws IOException {
+        return objectMapper.readValue(path.toFile(), GroundTruthAnnotation.class);
     }
 }
 ```
@@ -2720,7 +2685,6 @@ public class GroundTruthLoader {
 **File: `rfp-core/src/main/java/com/dsi/rfp/domain/model/GroundTruthAnnotation.java`** (or in evaluation package):
 
 ```java
-
 @Data
 public class GroundTruthAnnotation {
     @JsonProperty("doc_id")
@@ -2735,10 +2699,8 @@ public class GroundTruthAnnotation {
 class AnnotatedSection {
     private String title;
     private int level;
-    @JsonProperty("page_start")
-    private int pageStart;
-    @JsonProperty("page_end")
-    private int pageEnd;
+    @JsonProperty("page_start") private int pageStart;
+    @JsonProperty("page_end") private int pageEnd;
     private final List<AnnotatedSection> children = new ArrayList<>();
 }
 ```
@@ -2753,7 +2715,6 @@ import com.dsi.rfp.domain.model.GroundTruthAnnotation;
 import com.dsi.rfp.domain.model.Section;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 
 @Slf4j
@@ -2784,7 +2745,7 @@ public class SectionExtractionEvaluator {
 
         if (precision + recall == 0) return 0.0;
         double f1 = 2 * precision * recall / (precision + recall);
-        log.info("F1 evaluation: docId={} precision={:.3f} recall={:.3f} f1={:.3f}",
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO F1 evaluation: docId={} precision={:.3f} recall={:.3f} f1={:.3f}",
             truth.getDocId(), precision, recall, f1);
         return f1;
     }
@@ -2807,7 +2768,7 @@ public class SectionExtractionEvaluator {
 
     private boolean isMatch(Section extracted, AnnotatedSection truth) {
         boolean titleMatch = extracted.getTitle().strip()
-                                      .equalsIgnoreCase(truth.getTitle().strip());
+            .equalsIgnoreCase(truth.getTitle().strip());
         boolean pageMatch = Math.abs(extracted.getPageStart() - truth.getPageStart())
             <= PAGE_PROXIMITY_TOLERANCE;
         return titleMatch && pageMatch;
@@ -2929,41 +2890,40 @@ Then children are shown/hidden
 Update `GET /api/v1/rfp/result/{jobId}` in `RfpController`:
 
 ```java
-
 @GetMapping("/result/{jobId}")
 public ResponseEntity<Map<String, Object>> getResult(@PathVariable UUID jobId) {
     // Sprint 3: return sections from job state
     return jobService.findById(jobId)
-                     .map(job -> {
-                         // Parse sectionsJson from job, return basic result
+        .map(job -> {
+            // Parse sectionsJson from job, return basic result
             ...
-                     })
-                     .orElse(ResponseEntity.notFound().build());
+        })
+        .orElse(ResponseEntity.notFound().build());
 }
 ```
 
 File: `rfp-frontend/src/components/SectionTree.tsx`:
 
 ```tsx
-import {useState} from 'react';
-import {Section} from '../types/rfp';
+import { useState } from 'react';
+import { Section } from '../types/rfp';
 
 interface SectionTreeProps {
     sections: Section[];
     depth?: number;
 }
 
-export function SectionTree({sections, depth = 0}: SectionTreeProps) {
+export function SectionTree({ sections, depth = 0 }: SectionTreeProps) {
     return (
         <ul className={`space-y-1 ${depth > 0 ? 'ml-4 mt-1' : ''}`}>
             {sections.map((section) => (
-                <SectionNode key={section.id} section={section} depth={depth}/>
+                <SectionNode key={section.id} section={section} depth={depth} />
             ))}
         </ul>
     );
 }
 
-function SectionNode({section, depth}: { section: Section; depth: number }) {
+function SectionNode({ section, depth }: { section: Section; depth: number }) {
     const [expanded, setExpanded] = useState(depth === 0);
     const hasChildren = section.children && section.children.length > 0;
     const confidence = section.confidence?.score ?? 0;
@@ -2991,7 +2951,7 @@ function SectionNode({section, depth}: { section: Section; depth: number }) {
                 </span>
             </div>
             {expanded && hasChildren && (
-                <SectionTree sections={section.children} depth={depth + 1}/>
+                <SectionTree sections={section.children} depth={depth + 1} />
             )}
         </li>
     );
@@ -3001,25 +2961,25 @@ function SectionNode({section, depth}: { section: Section; depth: number }) {
 File: `rfp-frontend/src/pages/ResultPage.tsx` (updated):
 
 ```tsx
-import {useParams} from 'react-router-dom';
-import {useQuery} from '@tanstack/react-query';
-import {useState} from 'react';
-import {SectionTree} from '../components/SectionTree';
-import {getRfpResult} from '../api/rfpClient';
+import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { SectionTree } from '../components/SectionTree';
+import { getRfpResult } from '../api/rfpClient';
 
 export function ResultPage() {
-    const {jobId} = useParams<{ jobId: string }>();
+    const { jobId } = useParams<{ jobId: string }>();
     const [activeTab, setActiveTab] = useState<'sections' | 'entities' | 'tables'>('sections');
-    const {data} = useQuery({
+    const { data } = useQuery({
         queryKey: ['rfpResult', jobId],
         queryFn: () => getRfpResult(jobId!),
         enabled: !!jobId,
     });
 
     const tabs = [
-        {key: 'sections', label: 'Sections'},
-        {key: 'entities', label: 'Entities'},
-        {key: 'tables', label: 'Tables'},
+        { key: 'sections', label: 'Sections' },
+        { key: 'entities', label: 'Entities' },
+        { key: 'tables', label: 'Tables' },
     ] as const;
 
     return (
@@ -3046,7 +3006,7 @@ export function ResultPage() {
             </div>
 
             {activeTab === 'sections' && data?.sections && (
-                <SectionTree sections={data.sections}/>
+                <SectionTree sections={data.sections} />
             )}
             {activeTab === 'entities' && (
                 <p className="text-gray-500">Entity extraction — implemented in Sprint 4.</p>
@@ -3196,16 +3156,16 @@ Expected output:
 
 ```json
 {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "title": "1. Background",
-    "level": 1,
-    "pageStart": 1,
-    "pageEnd": 4,
-    "children": [],
-    "confidence": {
-        "score": 0.95,
-        "method": "BookmarkHeadingStrategy"
-    }
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "title": "1. Background",
+  "level": 1,
+  "pageStart": 1,
+  "pageEnd": 4,
+  "children": [],
+  "confidence": {
+    "score": 0.95,
+    "method": "BookmarkHeadingStrategy"
+  }
 }
 ```
 
@@ -3295,7 +3255,7 @@ scanning, not from bookmark resolution. Precise bookmark page number resolution 
 or `PDPageDestination` — implement in Sprint 5 if needed.
 
 **Assumption:** Real-document benchmark annotations are not available during Sprint 3 and are intentionally deferred to
-`docs/wishlist/001_wishlist.md`. This does not block Sprint 3-12 delivery because fixture-based gates are the
+`wishlist/001_wishlist.md`. This does not block Sprint 3-12 delivery because fixture-based gates are the
 acceptance baseline.
 
 **Open Question:** Should `SectionSegmenter` merge adjacent identical-level sections that span fewer than 2 lines? E.g.,

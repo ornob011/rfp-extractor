@@ -14,8 +14,11 @@ expose repair events in real time, and the React frontend displays them in a col
 ## 1) Entry Criteria
 
 - Sprint 6 is merged and green on CI.
-- `ExtractionState` exists in `rfp-core` with fields `sections`, `tables`, `entities`, `pageClassifications`,
-  `pageTexts`, `pageConfidences`.
+- `ExtractionState` exists in `rfp-service/agent/` (Sprint 4 placed it there; it will move to `rfp-core` once
+  LangGraph4J compatibility is confirmed). Minimum required fields already present from Sprint 4:
+  `sections`, `tables`, `entities`, `pageClassifications`, `confidenceMap`, `repairLog`, `lowConfidenceQueue`.
+  This sprint adds: `pageTexts` (Map<Integer,String> of page-index → extracted text) and
+  `pageConfidences` (Map<Integer,Double> of page-index → OCR confidence score).
 - `ScoreConfidenceNode` has a basic stub (Sprint 4); full implementation is this sprint.
 - `RepairLoopNode` has a basic stub (Sprint 4); full implementation is this sprint.
 - `LangGraph4J` conditional edge exists:
@@ -129,10 +132,10 @@ public class RepairableComponent {
 private List<String> lowConfidenceQueue = new ArrayList<>();
 
 @Builder.Default
-private int totalRepairIterations = 0;
+private final int totalRepairIterations = 0;
 
 @Builder.Default
-private List<RepairLogEntry> repairLog = new ArrayList<>();
+private final List<RepairLogEntry> repairLog = new ArrayList<>();
 
 @Builder.Default
 private final List<String> manualReviewRequired = new ArrayList<>();
@@ -444,7 +447,7 @@ public class LlmSectionSegmentFallback {
     - Parse `parseLlmResponse(llmJson)` → `List<Section> llmSections`.
     - For each `llmSection`: if `!isDuplicate(llmSection, state.sections)` → add to `state.sections`.
     - Log merged count.
-    - Wrap everything in `try/catch(Exception e)` → log error, return without modifying state.
+    - Do not use `try/catch(Exception e)` here. Let failures propagate and map them in the global exception handler.
 
 4. `parseLlmResponse(llmJson)`:
     - `JsonNode root = objectMapper.readTree(llmJson)`.
@@ -478,13 +481,13 @@ Mock `LlmAdapter`. Build `ExtractionState` with specific `sections`, `pageTexts`
 **Observability:**
 
 ```java
-log.info("[LlmSectionSegmentFallback] Fired: existingSections={} llmSuggestedNew={} totalAfterMerge={}",
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [LlmSectionSegmentFallback] Fired: existingSections={} llmSuggestedNew={} totalAfterMerge={}",
          existingCount, newCount, state.getSections().
 
 size());
     log.
 
-error("[LlmSectionSegmentFallback] LLM call failed; sections unchanged: {}",e.getMessage());
+error("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=ERROR [LlmSectionSegmentFallback] LLM call failed; sections unchanged: {}",e.getMessage());
 ```
 
 **Story Points:** 8
@@ -611,8 +614,8 @@ private final double docCompletenessScore = 0.0;
         - Call `enqueue(path, "entity", "llm", score, state)`.
 
 2. `entityScore(entityValue, llmConfidence)`:
-    - If `entityValue == null` → `0.0`.
-    - If `llmConfidence != null && llmConfidence < 0.7` → `0.5`.
+    - If `Objects.isNull(entityValue)` → `0.0`.
+    - If `Objects.nonNull(llmConfidence) && llmConfidence < 0.7` → `0.5`.
     - Else → `1.0`.
 
 3. `scoreSections(state)`:
@@ -664,7 +667,7 @@ No mocking needed — pure computation on hand-built `ExtractionState`.
 **Observability:**
 
 ```java
-log.info("[ScoreConfidenceNode] JobId={} entitiesScored={} sectionsScored={} tablesScored={} "+
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [ScoreConfidenceNode] JobId={} entitiesScored={} sectionsScored={} tablesScored={} "+
              "lowConfidenceQueue={} manualReview={} docCompleteness={}",
          state.jobId, entityCount, sectionCount, tableCount,
          state.lowConfidenceQueue.size(),state.manualReviewRequired.
@@ -789,14 +792,14 @@ public class RepairLoopNode implements NodeAction<ExtractionState> {
 public ExtractionState execute(ExtractionState state) {
     if (state.getLowConfidenceQueue().isEmpty()) return state;
     if (state.getTotalRepairIterations() >= MAX_TOTAL_ITERATIONS) {
-        log.warn("[RepairLoopNode] Repair hard stop reached: totalIterations={}", MAX_TOTAL_ITERATIONS);
+        log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN [RepairLoopNode] Repair hard stop reached: totalIterations={}", MAX_TOTAL_ITERATIONS);
         return state;
     }
     String componentId = state.getLowConfidenceQueue().remove(0);
     int attemptNumber = countPreviousAttempts(state.getRepairLog(), componentId) + 1;
     double before = state.getConfidenceMap().getOrDefault(componentId, 0.0);
     RepairableComponent comp = state.getRepairableComponents().get(componentId);
-    if (comp == null) {
+    if (Objects.isNull(comp)) {
         state.getManualReviewRequired().add(componentId);
         return state;
     }
@@ -894,7 +897,7 @@ Mock all collaborators. Build `ExtractionState` for each test case.
 **Observability:**
 
 ```java
-log.info("[RepairLoopNode] JobId={} componentId={} type={} strategy={} attempt={} before={} after={} queueRemaining={}",
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [RepairLoopNode] JobId={} componentId={} type={} strategy={} attempt={} before={} after={} queueRemaining={}",
          state.jobId, componentId, comp.componentType, strategy, attemptNumber,
          String.format("%.3f", before),String.
 
@@ -1003,7 +1006,7 @@ Use `EmbeddedRedis` (testcontainers or embedded-redis) or mock `StringRedisTempl
 **Observability:**
 
 ```java
-log.debug("[ExtractionStateRedisSerializer] Saved state for jobId={} size={}bytes ttl=2h",jobId, json.length());
+log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG [ExtractionStateRedisSerializer] Saved state for jobId={} size={}bytes ttl=2h",jobId, json.length());
 ```
 
 **Story Points:** 5

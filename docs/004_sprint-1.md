@@ -109,7 +109,7 @@ File: `rfp-extractor/pom.xml`
 <spring-boot.version>3.5.11</spring-boot.version>
 <spring-ai.version>1.0.0</spring-ai.version>
 <langchain4j.version>0.36.2</langchain4j.version>
-<langgraph4j.version>1.5.4</langgraph4j.version>
+<langgraph4j.version>1.8.4</langgraph4j.version>
 <resilience4j.version>2.2.0</resilience4j.version>
 <lombok.version>1.18.34</lombok.version>
 <pdfbox.version>3.0.3</pdfbox.version>
@@ -271,6 +271,7 @@ File: `rfp-extractor/rfp-service/pom.xml`
     - `spring-boot-starter-data-jpa`
     - `spring-boot-starter-actuator`
     - `spring-boot-starter-security`
+    - `spring-boot-starter-oauth2-resource-server`
     - `spring-ai-openai-spring-boot-starter`
     - `spring-ai-ollama-spring-boot-starter`
     - `langchain4j-spring-boot-starter`
@@ -398,13 +399,13 @@ public class LlmProviderProperties {
         private String baseUrl = "https://openrouter.ai/api/v1";
         private String apiKey;                        // required if provider=openrouter
         private String model = "google/gemini-2.0-flash-001";
-        private String modelJudge = "google/gemini-2.5-pro-preview-06-05";
+        private final String modelJudge = "google/gemini-2.5-pro-preview-06-05";
     }
 
     @Data
     public static class OllamaProps {
-        private final String baseUrl = "http://localhost:11434";
-        private final String model = "llama3.1:8b";
+        private String baseUrl = "http://localhost:11434";
+        private String model = "llama3.1:8b";
         private final String modelJudge = "llama3.1:70b";
     }
 }
@@ -557,9 +558,9 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.openai.OpenAiChatModel as SpringAiOpenAiChatModel;
+import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.api.OpenAiApi;
-import org.springframework.ai.ollama.OllamaChatModel as SpringAiOllamaChatModel;
+import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -640,7 +641,7 @@ public class LlmProviderConfig {
 
 @PostConstruct
 void validateConfiguration() {
-    log.info("LLM provider configured: provider={}, model={}",
+    log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO LLM provider configured: provider={}, model={}",
         props.getProvider(),
         "openrouter".equals(props.getProvider())
             ? props.getOpenrouter().getModel()
@@ -778,14 +779,14 @@ public class LlmResilienceConfig {
 
 ```java
 RetryConfig config = RetryConfig.custom()
-                                .maxAttempts(3)
-                                .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(
-                                    Duration.ofSeconds(1),   // initial interval
-                                    2.0,                     // multiplier
-                                    0.3                      // randomization factor (jitter)
-                                ))
-                                .retryOnException(e -> !(e instanceof LlmResponseParseException))
-                                .build();
+    .maxAttempts(3)
+    .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(
+        Duration.ofSeconds(1),   // initial interval
+        2.0,                     // multiplier
+        0.3                      // randomization factor (jitter)
+    ))
+    .retryOnException(e -> !(e instanceof LlmResponseParseException))
+    .build();
 return retryRegistry.
 
 retry(LLM_RETRY, config);
@@ -798,14 +799,14 @@ unparseable. Only `LlmUnavailableException` and transient IO errors should retry
 
 ```java
 CircuitBreakerConfig config = CircuitBreakerConfig.custom()
-                                                  .failureRateThreshold(50.0f)
-                                                  .slidingWindowType(SlidingWindowType.COUNT_BASED)
-                                                  .slidingWindowSize(10)
-                                                  .waitDurationInOpenState(Duration.ofSeconds(30))
-                                                  .permittedNumberOfCallsInHalfOpenState(3)
-                                                  .recordExceptions(LlmUnavailableException.class, java.io.IOException.class,
-                                                      java.util.concurrent.TimeoutException.class)
-                                                  .build();
+    .failureRateThreshold(50.0f)
+    .slidingWindowType(SlidingWindowType.COUNT_BASED)
+    .slidingWindowSize(10)
+    .waitDurationInOpenState(Duration.ofSeconds(30))
+    .permittedNumberOfCallsInHalfOpenState(3)
+    .recordExceptions(LlmUnavailableException.class, java.io.IOException.class,
+        java.util.concurrent.TimeoutException.class)
+    .build();
 return cbRegistry.
 
 circuitBreaker(LLM_CB, config);
@@ -815,10 +816,10 @@ circuitBreaker(LLM_CB, config);
 
 ```java
 RateLimiterConfig config = RateLimiterConfig.custom()
-                                            .limitForPeriod(props.getRateLimitPerMinute())
-                                            .limitRefreshPeriod(Duration.ofMinutes(1))
-                                            .timeoutDuration(Duration.ofSeconds(10))
-                                            .build();
+    .limitForPeriod(props.getRateLimitPerMinute())
+    .limitRefreshPeriod(Duration.ofMinutes(1))
+    .timeoutDuration(Duration.ofSeconds(10))
+    .build();
 return rlRegistry.
 
 rateLimiter(LLM_RL, config);
@@ -828,9 +829,9 @@ rateLimiter(LLM_RL, config);
 
 ```java
 TimeLimiterConfig config = TimeLimiterConfig.custom()
-                                            .timeoutDuration(Duration.ofSeconds(props.getTimeoutSeconds()))
-                                            .cancelRunningFuture(true)
-                                            .build();
+    .timeoutDuration(Duration.ofSeconds(props.getTimeoutSeconds()))
+    .cancelRunningFuture(true)
+    .build();
 return tlRegistry.
 
 timeLimiter(LLM_TIMEOUT, config);
@@ -842,8 +843,10 @@ File: `AsyncConfig.java`:
 
 ```java
 
+@Slf4j
 @Configuration
 @EnableAsync
+@RequiredArgsConstructor
 public class AsyncConfig implements AsyncConfigurer {
     @Value("${app.async.core-pool-size:2}")
     private int corePoolSize;
@@ -852,6 +855,7 @@ public class AsyncConfig implements AsyncConfigurer {
     @Value("${app.async.queue-capacity:20}")
     private int queueCapacity;
 
+    // Sprint 4 adds extractionExecutor (core=4, max=8, queue=20) for ExtractionOrchestrationService.
     @Bean(name = "rfpTaskExecutor")
     public Executor rfpTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -861,6 +865,24 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.setThreadNamePrefix("rfp-worker-");
         executor.initialize();
         return executor;
+    }
+
+    /**
+     * Global handler for unhandled exceptions thrown by @Async void methods.
+     * Per the exception policy, @Async void methods must NOT use catch (Exception e).
+     * Instead, any uncaught exception propagates here, where the job state is marked FAILED.
+     * The Spring container invokes this after the thread unwinds — the JobStatePort bean
+     * must be injected here, NOT obtained from static context.
+     */
+    @Override
+    public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
+        return (ex, method, params) ->
+            log.error(
+                "event=async.uncaught component=AsyncConfig status=FAIL method={} errorCode=ASYNC_FAILURE traceId=NA spanId=NA jobId=NA durationMs=NA error={}",
+                method.getName(), ex.getMessage(), ex);
+        // NOTE: Sprint 2 replaces this with JobStateAsyncExceptionHandler that also marks the
+        // ExtractionJob as FAILED in Redis. The handler is injected as a Spring bean so it
+        // can access JobStatePort without static context. See Sprint 2 Epic 4 for full impl.
     }
 }
 ```
@@ -1002,7 +1024,8 @@ Then the LLM response is parsed to MyDto and returned as Optional.of(myDto)
 
 Given the LLM returns malformed JSON
 When extractStructured() tries to parse the response
-Then Optional.empty() is returned and a WARN log includes the raw response (truncated to 200 chars)
+Then LlmResponseParseException is thrown with the raw response (truncated to 200 chars) in the WARN log
+And Resilience4j does NOT retry (retryOnException predicate excludes LlmResponseParseException)
 
 Given the LLM is unreachable (connection refused)
 When extractStructured() is called
@@ -1058,7 +1081,9 @@ public class LlmAdapter {
      * @param systemPrompt the system prompt (from prompt file)
      * @param userContent  the user content (section text / chunk)
      * @param responseType the target class for JSON deserialization
-     * @return Optional.of(parsed result) or Optional.empty() if parse fails
+     * @return Optional.of(parsed result) if LLM returns valid JSON
+     * @throws LlmResponseParseException if the LLM response cannot be parsed into responseType
+     *         (see parseResponse() — per exception policy, parse failures throw, not return empty)
      */
     public <T> Optional<T> extractStructured(
         String systemPrompt,
@@ -1071,6 +1096,11 @@ public class LlmAdapter {
      * @param prompt  the full judge prompt (system + injected snippet)
      * @param snippet the text being judged
      * @return Optional.of(judgment response) or Optional.empty() on failure
+     *
+     * NOTE [D]: Sprint 8 changes this signature to return {@code LlmJudgmentResult}
+     * (a structured object with {@code finding}, {@code confidence}, {@code evidence},
+     * and {@code status} fields) instead of {@code Optional<String>}.
+     * Sprint 8 must update this method and all callers as part of its deliverables.
      */
     public Optional<String> judgeSnippet(String prompt, String snippet) { ...}
 
@@ -1095,37 +1125,23 @@ public <T> Optional<T> extractStructured(String systemPrompt,
                                          Class<T> responseType) {
     long startMs = System.currentTimeMillis();
     String model = props.getOpenrouter().getModel(); // or ollama model
-    try {
-        // Apply resilience chain: Retry(CircuitBreaker(RateLimiter(TimeLimiter(call))))
-        Supplier<CompletableFuture<String>> futureSupplier =
-            () -> CompletableFuture.supplyAsync(
-                () -> callLlmRaw(systemPrompt, userContent),
-                Executors.newVirtualThreadPerTaskExecutor()
-            );
+    // Apply resilience chain: Retry(CircuitBreaker(RateLimiter(TimeLimiter(call))))
+    Supplier<CompletableFuture<String>> futureSupplier =
+        () -> CompletableFuture.supplyAsync(
+            () -> callLlmRaw(systemPrompt, userContent),
+            Executors.newVirtualThreadPerTaskExecutor()
+        );
 
-        Supplier<CompletableFuture<String>> rlDecorated =
-            RateLimiter.decorateSupplier(llmRateLimiter, futureSupplier);
-        Supplier<CompletableFuture<String>> cbDecorated =
-            CircuitBreaker.decorateSupplier(llmCircuitBreaker, rlDecorated);
-        Supplier<String> timedSupplier =
-            () -> {
-                try {
-                    return llmTimeLimiter.executeFutureSupplier(cbDecorated);
-                } catch (Exception e) {
-                    throw new LlmUnavailableException("LLM call timed out or failed", e);
-                }
-            };
-        String rawResponse = Retry.decorateSupplier(llmRetry, timedSupplier).get();
-        Optional<T> result = parseResponse(rawResponse, responseType);
-        logLlmCall("extract", model, startMs, true, null);
-        return result;
-    } catch (LlmUnavailableException e) {
-        logLlmCall("extract", model, startMs, false, e.getMessage());
-        throw e;
-    } catch (Exception e) {
-        logLlmCall("extract", model, startMs, false, e.getMessage());
-        throw new LlmUnavailableException("Unexpected LLM error", e);
-    }
+    Supplier<CompletableFuture<String>> rlDecorated =
+        RateLimiter.decorateSupplier(llmRateLimiter, futureSupplier);
+    Supplier<CompletableFuture<String>> cbDecorated =
+        CircuitBreaker.decorateSupplier(llmCircuitBreaker, rlDecorated);
+    Supplier<String> timedSupplier =
+        () -> llmTimeLimiter.executeFutureSupplier(cbDecorated);
+    String rawResponse = Retry.decorateSupplier(llmRetry, timedSupplier).get();
+    Optional<T> result = parseResponse(rawResponse, responseType);
+    logLlmCall("extract", model, startMs, true, null);
+    return result;
 }
 ```
 
@@ -1134,10 +1150,10 @@ public <T> Optional<T> extractStructured(String systemPrompt,
 ```java
 private String callLlmRaw(String systemPrompt, String userContent) {
     return chatClient.prompt()
-                     .system(systemPrompt)
-                     .user(userContent)
-                     .call()
-                     .content();
+        .system(systemPrompt)
+        .user(userContent)
+        .call()
+        .content();
 }
 ```
 
@@ -1145,8 +1161,8 @@ private String callLlmRaw(String systemPrompt, String userContent) {
 
 ```java
 private <T> Optional<T> parseResponse(String rawResponse, Class<T> responseType) {
-    if (rawResponse == null || rawResponse.isBlank()) {
-        log.warn("LLM returned empty response for type={}", responseType.getSimpleName());
+    if (Objects.isNull(rawResponse) || !StringUtils.hasText(rawResponse)) {
+        log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN LLM returned empty response for type={}", responseType.getSimpleName());
         return Optional.empty();
     }
     // Strip markdown code fences if present
@@ -1161,13 +1177,18 @@ private <T> Optional<T> parseResponse(String rawResponse, Class<T> responseType)
         cleaned = cleaned.substring(0, cleaned.length() - 3);
     }
     cleaned = cleaned.strip();
+    
     try {
         T result = objectMapper.readValue(cleaned, responseType);
         return Optional.of(result);
-    } catch (Exception e) {
-        String preview = cleaned.length() > 200 ? cleaned.substring(0, 200) + "..." : cleaned;
-        log.warn("Failed to parse LLM response as {}: preview={}", responseType.getSimpleName(), preview);
-        return Optional.empty();
+    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+        String preview = cleaned.substring(0, Math.min(200, cleaned.length()));
+        log.warn("event=llm.parse.fail component=LlmAdapter jobId=NA durationMs=NA errorCode=LLM_PARSE_FAIL traceId={} spanId={} status=WARN type={} preview={}",
+            MDC.get("traceId"), MDC.get("spanId"), responseType.getSimpleName(), preview);
+        throw new LlmResponseParseException(
+            "LLM response could not be parsed as " + responseType.getSimpleName(),
+            cleaned,
+            e);
     }
 }
 ```
@@ -1179,10 +1200,10 @@ private void logLlmCall(String operation, String model,
                         long startMs, boolean success, String failReason) {
     long latencyMs = System.currentTimeMillis() - startMs;
     if (success) {
-        log.info("LLM_CALL op={} model={} provider={} latencyMs={} status=SUCCESS",
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO LLM_CALL op={} model={} provider={} latencyMs={} status=SUCCESS",
             operation, model, props.getProvider(), latencyMs);
     } else {
-        log.warn("LLM_CALL op={} model={} provider={} latencyMs={} status=FAIL reason={}",
+        log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN LLM_CALL op={} model={} provider={} latencyMs={} status=FAIL reason={}",
             operation, model, props.getProvider(), latencyMs, failReason);
     }
     // Micrometer counter
@@ -1221,10 +1242,10 @@ class LlmAdapterTest {
     void shouldReturnParsedDtoWhenLlmReturnsValidJson() { ...}
 
     @Test
-    void shouldReturnEmptyWhenLlmReturnsInvalidJson() { ...}
+    void shouldThrowLlmResponseParseExceptionWhenLlmReturnsInvalidJson() { ...}
 
     @Test
-    void shouldReturnEmptyWhenLlmReturnsBlankResponse() { ...}
+    void shouldReturnEmptyWhenLlmReturnsBlankResponse() { ...}  // blank response → Optional.empty (no parse attempted)
 
     @Test
     void shouldStripMarkdownCodeFencesBeforeParsing() { ...}
@@ -1303,10 +1324,10 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("OCR sidecar starting up")
+    logger.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO OCR sidecar starting up")
     app.state.ocr_service = OcrService()
     yield
-    logger.info("OCR sidecar shutting down")
+    logger.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO OCR sidecar shutting down")
 
 app = FastAPI(title="RFP OCR Sidecar", version="1.0.0", lifespan=lifespan)
 
@@ -1497,14 +1518,9 @@ export function UploadPage() {
         if (!file) return;
         setUploading(true);
         setError(null);
-        try {
-            const {jobId} = await submitRfp(file);
-            navigate(`/job/${jobId}`);
-        } catch (err: unknown) {
-            setError('Upload failed. Please try again.');
-        } finally {
-            setUploading(false);
-        }
+        const {jobId} = await submitRfp(file);
+        navigate(`/job/${jobId}`);
+        setUploading(false);
     };
 
     return (
@@ -1746,16 +1762,11 @@ public class HealthService {
     }
 
     private String pingOcrSidecar() {
-        try {
-            restClient.get()
-                      .uri(ocrSidecarUrl + "/health")
-                      .retrieve()
-                      .body(String.class);
-            return "reachable";
-        } catch (Exception e) {
-            log.warn("OCR sidecar unreachable at {}: {}", ocrSidecarUrl, e.getMessage());
-            return "unreachable";
-        }
+        restClient.get()
+                  .uri(ocrSidecarUrl + "/health")
+                  .retrieve()
+                  .body(String.class);
+        return "reachable";
     }
 }
 ```
@@ -1773,7 +1784,8 @@ public RestClient restClient() {
 ```
 
 **Dependencies:** Stories 2.1, 2.4 (LlmAdapter exists).
-**Risks:** RestClient timeout — wrap the OCR ping in a try/catch with a fixed 2s connect timeout. Spring 6 `RestClient`
+**Risks:** RestClient timeout — keep a fixed 2s connect timeout and let failures propagate to `GlobalExceptionHandler`.
+Spring 6 `RestClient`
 supports `.httpClientOptions()` for timeout.
 
 **Test Plan:**

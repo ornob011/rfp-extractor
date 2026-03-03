@@ -26,7 +26,10 @@
 ## 1) Entry Criteria
 
 - Sprint 11 is merged and green on CI (`mvn clean verify` passes).
-- All 9 LangGraph4J nodes operational end-to-end.
+- All 10 LangGraph4J nodes operational end-to-end.
+  <!-- FIX [I]: Sprint 4 defines 10 nodes: ValidateNode, ClassifyPagesNode, ExtractTextNode,
+       SegmentSectionsNode, ExtractTablesNode, ExtractEntitiesNode, ScoreConfidenceNode,
+       RepairLoopNode, RunRulePackNode, FinalizeNode. The previous count of 9 was wrong. -->
 - `FinalizeNode` updates `ExtractionJob.status` to `COMPLETED` and calls `ArtifactApplicationService.generateAll()`.
 - `LlmAdapter` is the single gateway for all LLM calls with Resilience4j wrapping.
 - `OcrSidecarClient` calls the Python FastAPI sidecar.

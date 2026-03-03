@@ -41,6 +41,12 @@ is fully operational and the `ExtractionGraph` produces a populated `state.table
 | D-12 | `TableViewer.tsx`                    | React component   | `rfp-frontend/src/components/TableViewer.tsx`                  |
 | D-13 | `ResultPage.tsx` — Tables tab        | React update      | `rfp-frontend/src/pages/ResultPage.tsx`                        |
 | D-14 | Unit tests                           | Java test classes | `rfp-service/src/test/java/.../adapter/table/`                 |
+| D-15 | `ExtractionState.tables` type update | Refactor          | `rfp-service/.../agent/ExtractionState.java`                   |
+
+**Breaking Change Note:** `ExtractionState.tables` is typed `List<Table>` in Sprint 4 (placeholder).
+This sprint changes it to `List<TableExtractionResult>`. The placeholder `Table.java` domain model
+is replaced by `TableExtractionResult.java`. Update `ExtractionState`, `FinalizeNode`,
+`RfpDocumentAssembler`, and all tests that reference `state.getTables()`.
 
 ---
 
@@ -287,7 +293,7 @@ programmatically (PDFBox API) with known line coordinates drawn via `PDPageConte
 **Observability:**
 
 ```java
-log.debug("[LatticeTableExtractor] Page={} hLines={} vLines={} cells={}",
+log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG [LatticeTableExtractor] Page={} hLines={} vLines={} cells={}",
           pageNum, hLines.size(),vLines.
 
 size(),grid.
@@ -389,7 +395,7 @@ Mock `loader.loadPageBoundingBoxes` to return hand-crafted `TextBlock` lists wit
 **Observability:**
 
 ```java
-log.debug("[StreamTableExtractor] Page={} columnBoundaries={} rows={} cells={}",
+log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG [StreamTableExtractor] Page={} columnBoundaries={} rows={} cells={}",
           pageNum, boundaries.size(),rows.
 
 size(),grid.
@@ -562,7 +568,7 @@ Mock both sub-extractors. Verify interaction counts.
 **Observability:**
 
 ```java
-log.info("[TableExtractor] JobId={} totalPages={} digitalPages={} tablesFound={}",
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [TableExtractor] JobId={} totalPages={} digitalPages={} tablesFound={}",
          jobId, totalPages, digitalCount, tables.size());
 ```
 
@@ -675,7 +681,7 @@ Build `TableExtractionResult` objects with known grids. Do not mock Levenshtein 
 **Observability:**
 
 ```java
-log.info("[TableContinuationDetector] Merged tables: pageStart={} pageEnd={} signals=[adjacent={}, noFooter={}, sameHeaders={}]",
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [TableContinuationDetector] Merged tables: pageStart={} pageEnd={} signals=[adjacent={}, noFooter={}, sameHeaders={}]",
          prev.getPageStart(),next.
 
 getPageEnd(),signal1,signal2,signal3);
@@ -833,8 +839,8 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
     - Call `sectionLinker.link(mergedTables, state.sections, state.clauses)` → `linkedTables`.
     - Set `state.tables = linkedTables`.
     - Close `PDDocument` in `finally` block.
-2. Wrap entire body in `try/catch(Exception e)`. On exception:
-   `state.errors.add(new ExtractionError("table_extraction", e.getMessage()))`, `state.tables = List.of()`, log error.
+2. Do not wrap the body in `try/catch(Exception e)`. Let failures propagate and map them via the global exception
+   handler (`@RestControllerAdvice` + typed `@ExceptionHandler` methods).
 3. `state.pageClassifications` is a `Map<Integer, PageClass>` populated by `ClassifyPagesNode` in Sprint 2.
 
 **Dependencies:** `TableExtractor` (C-1), `TableContinuationDetector` (D-1), `TableSectionLinker` (E-1),
@@ -854,7 +860,7 @@ Mock all three collaborators. Assert `state.tables` and `state.errors` contents.
 **Observability:**
 
 ```java
-log.info("[ExtractTablesNode] JobId={} rawTables={} afterMerge={} withSectionLinks={}",
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [ExtractTablesNode] JobId={} rawTables={} afterMerge={} withSectionLinks={}",
          state.jobId, rawTables.size(),mergedTables.
 
 size(),linkedWithSections);
@@ -1016,7 +1022,7 @@ export function TableViewer({table}: TableViewerProps): JSX.Element { ...
 - [ ] `TableExtractor` never calls `StreamTableExtractor` when `LatticeTableExtractor` returns non-empty
 - [ ] `TableContinuationDetector` requires ≥ 2 of 3 signals — not just adjacency
 - [ ] Levenshtein distance threshold of 3 is used (not equals-zero)
-- [ ] `ExtractTablesNode` has try/catch; never rethrows; populates `state.errors`
+- [ ] `ExtractTablesNode` does not use `catch (Exception e)` and relies on the global exception handler contract
 - [ ] `PDDocument` closed in `finally` block
 
 ---

@@ -15,7 +15,7 @@
 **Non-goals:**
 
 - OAuth2 / OpenID Connect / social login (not required).
-- Full-featured admin user-management UI (basic auth pages only this sprint).
+- Full-featured user management UI (admin can manage users via properties file this sprint).
 - Multi-factor authentication.
 - Full Bangla Unicode processing (Sprint 13).
 
@@ -37,34 +37,40 @@
 
 ## 2) Deliverables
 
-| #    | Deliverable                       | Type                    | Location                                                                                                                                              |
-|------|-----------------------------------|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| D-01 | `SecurityConfig`                  | Spring `@Configuration` | `config/SecurityConfig.java`                                                                                                                          |
-| D-02 | `JwtTokenService`                 | Spring component        | `adapter/security/JwtTokenService.java`                                                                                                               |
-| D-03 | `RfpUserDetails`                  | UserDetails impl        | `adapter/security/RfpUserDetails.java`                                                                                                                |
-| D-04 | `UserRole` enum                   | Java enum               | `rfp-core/.../domain/model/UserRole.java`                                                                                                             |
-| D-05 | `AuthController`                  | REST controller         | `adapter/api/AuthController.java`                                                                                                                     |
-| D-06 | Auth DTOs                         | Java records            | `adapter/api/dto/LoginRequest.java`, `LoginResponse.java`, `SignupRequest.java`, `SignupResponse.java`, `RefreshRequest.java`, `RefreshResponse.java` |
-| D-07 | `UserAuditEvent` domain model     | Java class              | `rfp-core/.../domain/model/UserAuditEvent.java`                                                                                                       |
-| D-08 | `AuditAction` enum                | Java enum               | `rfp-core/.../domain/model/AuditAction.java`                                                                                                          |
-| D-09 | `UserAuditPort` port interface    | Java interface          | `rfp-core/.../domain/port/UserAuditPort.java`                                                                                                         |
-| D-10 | `RedisUserAuditRepository`        | Spring component        | `adapter/persistence/RedisUserAuditRepository.java`                                                                                                   |
-| D-11 | `UserAuditService`                | Application service     | `application/service/UserAuditService.java`                                                                                                           |
-| D-12 | `@Auditable` annotation           | Custom annotation       | `adapter/security/Auditable.java`                                                                                                                     |
-| D-13 | `AuditingAspect`                  | Spring AOP aspect       | `adapter/security/AuditingAspect.java`                                                                                                                |
-| D-14 | `FileEncryptionService`           | Spring component        | `adapter/security/FileEncryptionService.java`                                                                                                         |
-| D-15 | `EncryptedDocumentStorageAdapter` | Spring component        | `adapter/persistence/EncryptedDocumentStorageAdapter.java`                                                                                            |
-| D-16 | `EncryptedArtifactStorageAdapter` | Spring component        | `adapter/persistence/EncryptedArtifactStorageAdapter.java`                                                                                            |
-| D-17 | `PromptInjectionFilter`           | Spring component        | `adapter/security/PromptInjectionFilter.java`                                                                                                         |
-| D-18 | `BanglaEncodingDetector`          | Spring component        | `adapter/extraction/BanglaEncodingDetector.java`                                                                                                      |
-| D-19 | `DataRetentionScheduler`          | Spring component        | `adapter/persistence/DataRetentionScheduler.java`                                                                                                     |
-| D-20 | `GlobalExceptionHandler`          | REST advice             | `adapter/api/GlobalExceptionHandler.java`                                                                                                             |
-| D-21 | `LoginPage.tsx`                   | React page              | `rfp-frontend/src/pages/LoginPage.tsx`                                                                                                                |
-| D-22 | `authClient.ts`                   | API module              | `rfp-frontend/src/api/authClient.ts`                                                                                                                  |
-| D-23 | `ProtectedRoute.tsx`              | React component         | `rfp-frontend/src/components/ProtectedRoute.tsx`                                                                                                      |
-| D-24 | `SignupPage.tsx`                  | React page              | `rfp-frontend/src/pages/SignupPage.tsx`                                                                                                               |
-| D-25 | `RefreshTokenService`             | Application service     | `application/service/RefreshTokenService.java`                                                                                                        |
-| D-26 | `RefreshTokenPort` + persistence  | Port + adapter          | `rfp-core/.../domain/port/RefreshTokenPort.java`, `adapter/persistence/RedisRefreshTokenRepository.java`                                              |
+| #    | Deliverable                           | Type                    | Location                                                   |
+|------|---------------------------------------|-------------------------|------------------------------------------------------------|
+| D-01 | `SecurityConfig`                      | Spring `@Configuration` | `config/SecurityConfig.java`                               |
+| D-02 | `JwtTokenService`                     | Spring component        | `adapter/security/JwtTokenService.java`                    |
+| D-03 | `RfpUserDetails`                      | UserDetails impl        | `adapter/security/RfpUserDetails.java`                     |
+| D-04 | `InMemoryUserDetailsService`          | UserDetailsService impl | `adapter/security/InMemoryUserDetailsService.java`         |
+| D-05 | `AuthController`                      | REST controller         | `adapter/api/AuthController.java`                          |
+| D-06 | `LoginRequest` / `LoginResponse` DTOs | Java records            | `adapter/api/dto/LoginRequest.java`, `LoginResponse.java`  |
+| D-07 | `UserAuditEvent` domain model         | Java class              | `rfp-core/.../domain/model/UserAuditEvent.java`            |
+| D-08 | `AuditAction` enum                    | Java enum               | `rfp-core/.../domain/model/AuditAction.java`               |
+| D-09 | `UserAuditPort` port interface        | Java interface          | `rfp-core/.../domain/port/UserAuditPort.java`              |
+| D-10 | `RedisUserAuditRepository`            | Spring component        | `adapter/persistence/RedisUserAuditRepository.java`        |
+| D-11 | `UserAuditService`                    | Application service     | `application/service/UserAuditService.java`                |
+| D-12 | `@Auditable` annotation               | Custom annotation       | `adapter/security/Auditable.java`                          |
+| D-13 | `AuditingAspect`                      | Spring AOP aspect       | `adapter/security/AuditingAspect.java`                     |
+| D-14 | `FileEncryptionService`               | Spring component        | `adapter/security/FileEncryptionService.java`              |
+| D-15 | `EncryptedDocumentStorageAdapter`     | Spring component        | `adapter/persistence/EncryptedDocumentStorageAdapter.java` |
+| D-16 | `EncryptedArtifactStorageAdapter`     | Spring component        | `adapter/persistence/EncryptedArtifactStorageAdapter.java` |
+| D-17 | `PromptInjectionFilter`               | Spring component        | `adapter/security/PromptInjectionFilter.java`              |
+| D-18 | `BanglaEncodingDetector`              | Spring component        | `adapter/extraction/BanglaEncodingDetector.java`           |
+| D-19 | `DataRetentionScheduler`              | Spring component        | `adapter/persistence/DataRetentionScheduler.java`          |
+| D-20 | `GlobalExceptionHandler` (extended)   | REST advice (extended)  | `adapter/api/GlobalExceptionHandler.java`                  |
+
+<!-- NOTE: GlobalExceptionHandler was introduced in Sprint 2 per the exception policy.
+     Sprint 11 extends it with security-specific handlers:
+     @ExceptionHandler(AccessDeniedException.class) → 403,
+     @ExceptionHandler(AuthenticationException.class) → 401.
+     Do NOT create a new class here — extend the existing one. -->
+| D-21 | `LoginPage.tsx`                       | React page |
+`rfp-frontend/src/pages/LoginPage.tsx`                     |
+| D-22 | `authClient.ts`                       | API module |
+`rfp-frontend/src/api/authClient.ts`                       |
+| D-23 | `ProtectedRoute.tsx`                  | React component |
+`rfp-frontend/src/components/ProtectedRoute.tsx`           |
 
 ---
 
@@ -116,8 +122,7 @@ public class SecurityConfig {
 1. Disable CSRF (stateless JWT API).
 2. Set session creation policy to `STATELESS`.
 3. Configure endpoint rules:
-    - `permitAll()`: `POST /api/v1/auth/signup`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`,
-      `POST /api/v1/auth/logout`, `GET /api/v1/health`, `GET /actuator/health`, `GET /actuator/prometheus`
+    - `permitAll()`: `POST /api/v1/auth/login`, `GET /api/v1/health`, `GET /actuator/health`, `GET /actuator/prometheus`
     - `hasAnyRole("ANALYST","ADMIN")`: `POST /api/v1/rfp/submit`, `GET /api/v1/rfp/jobs`
     - `hasAnyRole("ANALYST","ADMIN","AUDITOR")`: `GET /api/v1/rfp/status/**`, `GET /api/v1/rfp/result/**`,
       `GET /api/v1/rfp/artifacts/**`
@@ -126,8 +131,7 @@ public class SecurityConfig {
 4. Configure `oauth2ResourceServer().jwt()` with `JwtDecoder` bean.
 5. `JwtDecoder` bean: `NimbusJwtDecoder.withPublicKey(rsaPublicKey)` loaded from `app.security.jwt.public-key-path`.
 6. `PasswordEncoder` bean: `new BCryptPasswordEncoder()`.
-7. Add `JwtAuthenticationConverter` to extract roles from JWT `roles` claim and map them through `UserRole` enum into
-   `ROLE_` prefixed `GrantedAuthority`.
+7. Add `JwtAuthenticationConverter` to extract roles from JWT `roles` claim as `ROLE_` prefixed `GrantedAuthority`.
 
 **Test Plan:**
 
@@ -152,7 +156,7 @@ Then a signed JWT string is returned
 
 Given the JWT is passed to validateToken()
 When the token is valid and not expired
-Then JwtClaims.subject = "alice" and roles contains `UserRole.ANALYST`
+Then JwtClaims.subject = "alice" and roles contains "ANALYST"
 
 Given an expired or tampered JWT
 When validateToken() is called
@@ -167,7 +171,7 @@ Then a JwtValidationException is thrown
 @Builder
 public class JwtClaims {
     private String subject;
-    private Set<UserRole> roles;
+    private Set<String> roles;
     private Instant issuedAt;
     private Instant expiresAt;
 }
@@ -177,9 +181,9 @@ public class JwtClaims {
 public class JwtTokenService {
     // private key path: app.security.jwt.private-key-path
     // public key path: app.security.jwt.public-key-path
-    // access token expiry: app.security.jwt.access-expiry-minutes (default 15)
+    // expiry: app.security.jwt.expiry-hours (default 8)
 
-    public String generateToken(String username, Set<UserRole> roles);
+    public String generateToken(String username, Set<String> roles);
 
     public JwtClaims validateToken(String token);
 }
@@ -189,11 +193,10 @@ public class JwtTokenService {
 
 1. Load RSA key pair at startup (`@PostConstruct`): read PEM from configured paths, convert to `RSAPrivateKey` /
    `RSAPublicKey` using `PKCS8EncodedKeySpec`.
-2. `generateToken()`: create `JWTClaimsSet` with `subject`, `issueTime`, `expirationTime`, `claim("roles", roles as
-   string array)`. Sign
+2. `generateToken()`: create `JWTClaimsSet` with `subject`, `issueTime`, `expirationTime`, `claim("roles", roles)`. Sign
    with `RSASSASigner(privateKey)`. Return `SignedJWT.serialize()`.
 3. `validateToken()`: parse `SignedJWT`, verify with `RSASSAVerifier(publicKey)`. Check `expirationTime` not past.
-   Parse `roles` claim strings into `UserRole`; reject unknown values with `JwtValidationException`.
+   Return `JwtClaims`.
 4. On any error: throw `JwtValidationException` (extends `RuntimeException`).
 5. `GlobalExceptionHandler` maps `JwtValidationException` → 401.
 
@@ -207,29 +210,17 @@ public class JwtTokenService {
 
 ---
 
-#### Story 11.1.3 — Signup, Login, Refresh, Logout (Public Auth Flow)
+#### Story 11.1.3 — Auth Controller & In-Memory User Store
 
 **Acceptance Criteria (Gherkin):**
 
 ```gherkin
-Given signup payload (username, password) for a new user
-When POST /api/v1/auth/signup is called
-Then HTTP 201 is returned with role ANALYST
-
 Given valid credentials (username=analyst1, password=correct)
 When POST /api/v1/auth/login is called
-Then HTTP 200 is returned with accessToken, refreshToken, and expiries
-
-Given a valid refresh token
-When POST /api/v1/auth/refresh is called
-Then a rotated refresh token and a new access token are returned
+Then HTTP 200 is returned with a JWT token and expiresAt
 
 Given invalid credentials
 When POST /api/v1/auth/login is called
-Then HTTP 401 is returned
-
-Given a revoked or expired refresh token
-When POST /api/v1/auth/refresh is called
 Then HTTP 401 is returned
 ```
 
@@ -239,22 +230,7 @@ Then HTTP 401 is returned
 public record LoginRequest(String username, String password) {
 }
 
-public record SignupRequest(String username, String password) {
-}
-
-public record SignupResponse(UUID userId, String username, Set<UserRole> roles, Instant createdAt) {
-}
-
-public record LoginResponse(String accessToken, String refreshToken, Instant accessExpiresAt, Instant refreshExpiresAt,
-                            Set<UserRole> roles) {
-}
-
-public record RefreshRequest(String refreshToken) {
-}
-
-public record RefreshResponse(String accessToken, String refreshToken, Instant accessExpiresAt,
-                              Instant refreshExpiresAt,
-                              Set<UserRole> roles) {
+public record LoginResponse(String token, Instant expiresAt, Set<String> roles) {
 }
 
 @RestController
@@ -262,38 +238,33 @@ public record RefreshResponse(String accessToken, String refreshToken, Instant a
 @RequiredArgsConstructor
 public class AuthController {
 
-    @PostMapping("/signup")
-    public ResponseEntity<SignupResponse> signup(@RequestBody @Valid SignupRequest request);
-
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request);
 
     @PostMapping("/refresh")
-    public ResponseEntity<RefreshResponse> refresh(@RequestBody @Valid RefreshRequest request);
-
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody @Valid RefreshRequest request);
+    public ResponseEntity<LoginResponse> refresh(@RequestBody String token);
 }
 ```
 
 **Implementation Plan:**
 
-1. Add `UserAccountService` + persistent user repository (JPA/Redis adapter), with unique username constraint.
-2. `signup()`: validate password policy, create user with default role `UserRole.ANALYST`, hash password with BCrypt.
-3. `login()`: verify credentials, issue short-lived access token + persisted refresh token via `RefreshTokenService`.
-4. `refresh()`: validate refresh token, rotate token (invalidate old, mint new), issue fresh access token.
-5. `logout()`: revoke refresh token (or token family) and return 204.
-6. On invalid credentials or invalid refresh token: throw security exceptions mapped to 401.
+1. `InMemoryUserDetailsService` reads user list from `app.security.users` property list (YAML format):
+   ```yaml
+   app.security.users:
+     - username: analyst1
+       password: $2a$10$... (bcrypt hash)
+       roles: ANALYST
+   ```
+2. `AuthController.login()`: load `UserDetails` by username, verify password with `PasswordEncoder.matches()`. If valid:
+   call `JwtTokenService.generateToken()`, return `LoginResponse`.
+3. On invalid credentials: throw `BadCredentialsException` → mapped to 401 by `GlobalExceptionHandler`.
+4. `refresh()`: validate existing token, if not expired by > 1h, issue new token.
 
 **Test Plan:**
 
-- `shouldReturn201OnValidSignupWithDefaultAnalystRole()`.
-- `shouldReturn409WhenSignupUsernameAlreadyExists()`.
-- `shouldReturn200WithTokenPairOnValidLogin()`.
+- `shouldReturn200WithTokenOnValidLogin()`.
 - `shouldReturn401OnInvalidPassword()`.
 - `shouldReturn401WhenUsernameNotFound()`.
-- `shouldRotateRefreshTokenOnRefresh()`.
-- `shouldRejectRefreshWhenTokenRevokedOrExpired()`.
 
 **Story Points:** 5
 
@@ -317,22 +288,21 @@ Then HTTP 200 is returned regardless of who submitted it
 
 **Implementation Plan:**
 
-1. `RfpJobService.getJob(UUID jobId, String userId, Set<UserRole> roles)`:
+1. `RfpJobService.getJob(UUID jobId, String userId, Set<String> roles)`:
     - Load job from `JobStatePort`.
-    - Ownership check — use this logic (**not** `roles.contains(UserRole.ANALYST)`, which fails for multi-role tokens):
+    - Ownership check — use this logic (**not** `roles.contains("ANALYST")`, which fails for multi-role tokens):
       ```java
       // Correct: skip ownership check only if user holds ADMIN or AUDITOR
-      boolean skipOwnershipCheck = roles.contains(UserRole.ADMIN) || roles.contains(UserRole.AUDITOR);
+      boolean skipOwnershipCheck = roles.contains("ADMIN") || roles.contains("AUDITOR");
       if (!skipOwnershipCheck && !job.getCreatedByUserId().equals(userId)) {
           throw new AccessDeniedException("Access denied to job " + jobId);
       }
       ```
-      Rationale: `roles.contains(UserRole.ANALYST)` is **wrong** — a token with `[ANALYST, ADMIN]` would incorrectly
-      trigger
+      Rationale: `roles.contains("ANALYST")` is **wrong** — a token with `[ANALYST, ADMIN]` would incorrectly trigger
       the ownership check and deny the admin access. Always check for elevated roles, not the restricted role.
     - `ADMIN` and `AUDITOR`: return job without ownership check.
-2. `RfpJobService.listJobs(String userId, Set<UserRole> roles)`:
-    - If `roles.contains(UserRole.ADMIN) || roles.contains(UserRole.AUDITOR)`: `JobStatePort.listAllJobs()`.
+2. `RfpJobService.listJobs(String userId, Set<String> roles)`:
+    - If `roles.contains("ADMIN") || roles.contains("AUDITOR")`: `JobStatePort.listAllJobs()`.
     - Otherwise (ANALYST or unknown): `JobStatePort.listJobsForUser(userId)`.
     - (Add `listAllJobs()` method to port and Redis implementation.)
 3. Update `RfpController` to extract `userId` and `roles` from `SecurityContextHolder.getContext().getAuthentication()`.
@@ -356,7 +326,7 @@ Then HTTP 200 is returned regardless of who submitted it
 
 ```java
 public enum AuditAction {
-    SIGNUP, LOGIN, LOGOUT, TOKEN_REFRESH, SUBMIT_DOCUMENT, VIEW_RESULT,
+    LOGIN, LOGOUT, SUBMIT_DOCUMENT, VIEW_RESULT,
     DOWNLOAD_ARTIFACT, RELOAD_RULE_PACK, VIEW_ADMIN, ACCESS_DENIED
 }
 
@@ -465,8 +435,7 @@ public class AuditingAspect {
    found: `"unknown"`.
 3. `extractDocumentId()`: check if any arg is UUID or String matching UUID pattern → use as `documentId`.
 4. Call `pjp.proceed()`. On success: record `success=true`. On exception: record `success=false`, rethrow.
-5. Apply `@Auditable` to: `AuthController.signup()`, `AuthController.login()`, `AuthController.refresh()`,
-   `AuthController.logout()`, `RfpController.submitDocument()`, `RfpController.getResult()`,
+5. Apply `@Auditable` to: `AuthController.login()`, `RfpController.submitDocument()`, `RfpController.getResult()`,
    `RfpController.downloadArtifact()`, `AdminController.reloadRulePacks()`.
 
 **Test Plan:**
@@ -763,41 +732,37 @@ public class DataRetentionScheduler {
 
 ### Epic 11.7 — Frontend Auth
 
-#### Story 11.7.1 — Signup/Login Pages and Token Lifecycle
+#### Story 11.7.1 — Login Page & Token Storage
 
 **Acceptance Criteria (Gherkin):**
 
 ```gherkin
-Given valid data entered in SignupPage
-When the signup button is clicked
-Then POST /api/v1/auth/signup is called
-And the user is redirected to /login
+Given valid credentials entered in LoginPage
+When the login button is clicked
+Then POST /api/v1/auth/login is called
+And the token is stored in localStorage
+And the user is redirected to the upload page
 
 Given an invalid password
-When signup or login is attempted
+When login is attempted
 Then an error message "Invalid username or password" is displayed
 ```
 
 **Implementation Plan:**
 
 1. `authClient.ts`:
-    - `type UserRole = 'ANALYST' | 'ADMIN' | 'AUDITOR'`.
-    - `signup(username, password)`: `POST /api/v1/auth/signup`.
-    - `login(username, password)`: `POST /api/v1/auth/login`; keep access token in memory, keep refresh token per
-      backend
-      transport contract.
-    - `refresh(refreshToken)`: `POST /api/v1/auth/refresh`; rotate token pair.
-    - `logout(refreshToken)`: `POST /api/v1/auth/logout`; clear local auth state.
-    - `getRoles()`: returns `UserRole[]` from decoded auth/session payload.
+    - `login(username, password)`: `POST /api/v1/auth/login` via axios, store `response.data.token` in
+      `localStorage.setItem("jwt", ...)`. Store `roles` in `localStorage.setItem("roles", ...)`.
+    - `getToken()`: `localStorage.getItem("jwt")`.
+    - `logout()`: `localStorage.removeItem("jwt")`, `localStorage.removeItem("roles")`.
+    - `getRoles()`: `JSON.parse(localStorage.getItem("roles") || "[]")`.
 2. Update `rfpClient.ts`: add Axios request interceptor that reads `authClient.getToken()` and sets
    `Authorization: Bearer {token}`.
-   Add response interceptor: on access-token expiry/401, call `authClient.refresh()` once and retry original request.
 3. `LoginPage.tsx`: username + password fields, login button. On success → `navigate("/")`. On 401 error → show inline
    error message. No placeholder empty space — clean form layout.
-4. `SignupPage.tsx`: username + password + confirm-password, submit to signup endpoint.
-5. `ProtectedRoute.tsx`: check `authClient.getToken()`. If null → `<Navigate to="/login" />`. Else → render
+4. `ProtectedRoute.tsx`: check `authClient.getToken()`. If null → `<Navigate to="/login" />`. Else → render
    `<Outlet />`.
-6. Update React Router in `App.tsx`: add `/signup`; wrap all non-auth routes with `<ProtectedRoute>`.
+5. Update React Router in `App.tsx`: wrap all non-login routes with `<ProtectedRoute>`.
 
 **Test Plan:** Manual browser testing.
 **Story Points:** 5
@@ -806,17 +771,16 @@ Then an error message "Invalid username or password" is displayed
 
 ## 4) PR Plan
 
-| PR#       | Title                                                  | Files Changed                                                                                                                                                      | Merge Order | Dependencies |
-|-----------|--------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|--------------|
-| PR-11-01  | feat: JWT token service & security config              | `SecurityConfig.java`, `JwtTokenService.java`, `RfpUserDetails.java`, `UserRole.java`                                                                              | 1st         | None         |
-| PR-11-02  | feat: auth controller with signup/login/refresh/logout | `AuthController.java`, `SignupRequest.java`, `SignupResponse.java`, `LoginRequest.java`, `LoginResponse.java`, `RefreshRequest.java`, `RefreshResponse.java`       | 2nd         | PR-11-01     |
-| PR-11-02b | feat: refresh token persistence & rotation             | `RefreshTokenService.java`, `RefreshTokenPort.java`, `RedisRefreshTokenRepository.java`                                                                            | 2nd         | PR-11-01     |
-| PR-11-03  | feat: RBAC document ownership enforcement              | `RfpJobService.java` (updated), `RfpController.java` (updated), `GlobalExceptionHandler.java`                                                                      | 3rd         | PR-11-01     |
-| PR-11-04  | feat: user audit trail (domain + Redis + AOP)          | `UserAuditEvent.java`, `AuditAction.java`, `UserAuditPort.java`, `RedisUserAuditRepository.java`, `UserAuditService.java`, `Auditable.java`, `AuditingAspect.java` | 4th         | PR-11-02     |
-| PR-11-05  | feat: AES-256-GCM encryption at rest                   | `FileEncryptionService.java`, `EncryptedDocumentStorageAdapter.java`, `EncryptedArtifactStorageAdapter.java`                                                       | 5th         | None         |
-| PR-11-06  | feat: prompt injection filter                          | `PromptInjectionFilter.java`, `LlmAdapter.java` (updated to call filter)                                                                                           | 6th         | None         |
-| PR-11-07  | feat: Bangla encoding detector + data retention        | `BanglaEncodingDetector.java`, `DataRetentionScheduler.java`, `DocumentValidationService.java` (updated)                                                           | 6th         | None         |
-| PR-11-08  | feat: frontend auth (signup/login + route guards)      | `SignupPage.tsx`, `LoginPage.tsx`, `authClient.ts`, `ProtectedRoute.tsx`, `rfpClient.ts`, `App.tsx`                                                                | 7th         | PR-11-02     |
+| PR#      | Title                                           | Files Changed                                                                                                                                                      | Merge Order | Dependencies |
+|----------|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|--------------|
+| PR-11-01 | feat: JWT token service & security config       | `SecurityConfig.java`, `JwtTokenService.java`, `RfpUserDetails.java`, `InMemoryUserDetailsService.java`                                                            | 1st         | None         |
+| PR-11-02 | feat: auth controller & login endpoint          | `AuthController.java`, `LoginRequest.java`, `LoginResponse.java`                                                                                                   | 2nd         | PR-11-01     |
+| PR-11-03 | feat: RBAC document ownership enforcement       | `RfpJobService.java` (updated), `RfpController.java` (updated), `GlobalExceptionHandler.java`                                                                      | 3rd         | PR-11-01     |
+| PR-11-04 | feat: user audit trail (domain + Redis + AOP)   | `UserAuditEvent.java`, `AuditAction.java`, `UserAuditPort.java`, `RedisUserAuditRepository.java`, `UserAuditService.java`, `Auditable.java`, `AuditingAspect.java` | 4th         | PR-11-02     |
+| PR-11-05 | feat: AES-256-GCM encryption at rest            | `FileEncryptionService.java`, `EncryptedDocumentStorageAdapter.java`, `EncryptedArtifactStorageAdapter.java`                                                       | 5th         | None         |
+| PR-11-06 | feat: prompt injection filter                   | `PromptInjectionFilter.java`, `LlmAdapter.java` (updated to call filter)                                                                                           | 6th         | None         |
+| PR-11-07 | feat: Bangla encoding detector + data retention | `BanglaEncodingDetector.java`, `DataRetentionScheduler.java`, `DocumentValidationService.java` (updated)                                                           | 6th         | None         |
+| PR-11-08 | feat: frontend auth (login page + route guards) | `LoginPage.tsx`, `authClient.ts`, `ProtectedRoute.tsx`, `rfpClient.ts`, `App.tsx`                                                                                  | 7th         | PR-11-02     |
 
 ---
 
@@ -835,22 +799,11 @@ echo "OPENROUTER_API_KEY=your-key" >> .env
 docker-compose up -d
 sleep 15
 
-# 4. Signup + login as analyst
-curl -s -X POST http://localhost:8080/api/v1/auth/signup \
+# 4. Login as analyst
+TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"analyst1","password":"Analyst@123"}' | jq .
-
-LOGIN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"analyst1","password":"Analyst@123"}')
-TOKEN=$(echo "$LOGIN" | jq -r .accessToken)
-REFRESH=$(echo "$LOGIN" | jq -r .refreshToken)
+  -d '{"username":"analyst1","password":"analyst123"}' | jq -r .token)
 echo "Token: ${TOKEN:0:30}..."
-
-# 4b. Refresh token rotation check
-curl -s -X POST http://localhost:8080/api/v1/auth/refresh \
-  -H "Content-Type: application/json" \
-  -d "{\"refreshToken\":\"$REFRESH\"}" | jq .
 
 # 5. Submit a document as analyst1
 JOB1=$(curl -s -F "file=@testdata/sample-ict-rfp.pdf" \
@@ -861,7 +814,7 @@ echo "Job created: $JOB1"
 # 6. Login as analyst2 and try to access analyst1's job
 TOKEN2=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"analyst2","password":"analyst456"}' | jq -r .accessToken)
+  -d '{"username":"analyst2","password":"analyst456"}' | jq -r .token)
 
 curl -s -H "Authorization: Bearer $TOKEN2" \
   http://localhost:8080/api/v1/rfp/status/$JOB1 | jq .
@@ -870,7 +823,7 @@ curl -s -H "Authorization: Bearer $TOKEN2" \
 # 7. Login as admin and access analyst1's job (should succeed)
 ADMIN_TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin789"}' | jq -r .accessToken)
+  -d '{"username":"admin","password":"admin789"}' | jq -r .token)
 
 curl -s -H "Authorization: Bearer $ADMIN_TOKEN" \
   http://localhost:8080/api/v1/rfp/status/$JOB1 | jq .status
@@ -907,11 +860,6 @@ echo "Navigate directly to /admin — verify 'Access Denied' message."
 - [ ] `DocumentValidationService` rejects legacy Bangla encoding with errorCode `ENCODING_UNSUPPORTED`.
 - [ ] `DataRetentionScheduler` compiles and `@Scheduled` annotation is present.
 - [ ] `AuditingAspect` records events for `submitDocument` and `getResult` calls.
-- [ ] `POST /api/v1/auth/signup` creates user with default `ANALYST` role.
-- [ ] `POST /api/v1/auth/login` returns access + refresh token pair.
-- [ ] `POST /api/v1/auth/refresh` rotates refresh token and issues new access token.
-- [ ] `POST /api/v1/auth/logout` revokes refresh token.
-- [ ] React `SignupPage` routes user to login on successful signup.
 - [ ] React `LoginPage` redirects to upload page on successful login.
 - [ ] React routes are guarded — unauthenticated access redirects to `/login`.
 - [ ] No class exceeds 250 lines. No method exceeds 20 lines. Constructor injection throughout.
@@ -924,9 +872,8 @@ echo "Navigate directly to /admin — verify 'Access Denied' message."
 - **RSA key generation**: Keys are generated offline and stored as PEM files. `app.security.jwt.private-key-path` and
   `app.security.jwt.public-key-path` point to files on the Docker volume. Key generation command:
   `openssl genrsa -out jwt-private.pem 2048 && openssl rsa -in jwt-private.pem -pubout -out jwt-public.pem`.
-- **User store**: Users are persisted through a repository adapter (JPA or Redis). Public signup creates ANALYST users
-  by
-  default; elevated roles are assigned only through controlled admin/bootstrap paths.
+- **In-memory user store**: User credentials are configured in `application.properties` (bcrypt hashed passwords). A
+  full database-backed user management system is out of scope — DSI has a small team and the app is internal-only.
 - **Encryption format**: The `.enc` file format is `[12 bytes IV][remaining: ciphertext+16-byte GCM tag]`. No separate
   tag field on disk — Java GCM appends the tag to ciphertext automatically in `doFinal()`.
 - **`@Primary` adapter selection**: `EncryptedDocumentStorageAdapter` is `@Primary` over `LocalDocumentStorageAdapter`.

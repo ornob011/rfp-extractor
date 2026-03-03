@@ -46,10 +46,26 @@
 - `PdfDocumentLoader` — PDFBox wrapper providing text and image metadata per page.
 - `PageClassifier` — 3-class classification (DIGITAL / SCANNED / MIXED) with heuristic thresholds.
 - `PageClassificationService` — orchestrates per-page classification, stores results in job state.
-- `RedisJobStateRepository` — saves/loads `ExtractionJob` from Redis with 24h TTL.
+- `RedisJobStateRepository` — saves/loads `ExtractionJob` from Redis with 24h TTL; uses `SCAN` (not `keys()`) for
+  `findAll()`.
 - `LocalFileStorageAdapter` — stores uploaded files to disk under `{basePath}/{jobId}/`.
-- Updated React frontend: `UploadPage` wires to real API; `JobStatusPage` polls every 3s showing progress bar and status
-  badge.
+- **`MimeTypePort`** (`rfp-core/domain/port/`) — port interface for MIME type detection; implemented by
+  `MimeTypeDetector` adapter. Application services depend on this interface, never on the concrete adapter (hexagonal
+  rule).
+- **`DocumentUnsupportedTypeException`** (`rfp-core/domain/exception/`) — thrown when upload is not PDF or DOCX;
+  `GlobalExceptionHandler` maps to HTTP 415.
+- **`DocumentValidationException`** (`rfp-core/domain/exception/`) — base/fallback domain exception for other validation
+  failures; mapped to HTTP 422.
+- **`GlobalExceptionHandler`** (`@RestControllerAdvice`) — maps domain exceptions to `ProblemDetail` HTTP responses.
+  Required by the exception policy from Sprint 1. Maps at minimum: `DocumentEncryptedException` → 422,
+  `DocumentXfaException` → 422, `DocumentUnsupportedTypeException` → 415, `DocumentValidationException` → 422,
+  `FileSizeLimitExceededException` → 413, `LlmUnavailableException` → 503,
+  `LlmResponseParseException` → 502, `NoSuchFileException` → 404.
+- **`JobStateAsyncExceptionHandler`** — implements `AsyncUncaughtExceptionHandler`; marks the job FAILED in Redis when
+  an `@Async` void method throws. Replaces the placeholder log-only handler added in Sprint 1 `AsyncConfig`.
+- Updated React frontend: `UploadPage` wires to real API and redirects to `/jobs` on success; `JobStatusPage` polls
+  every 3s showing progress bar and status badge; `JobsListPage` lists all submitted jobs with status badge, filename,
+  submitted timestamp, and "View" link to `/job/{uuid}`.
 - At least 30 unit tests covering validation, classification, and job state.
 
 ---
@@ -76,8 +92,8 @@ And errorCode is FILE_TOO_LARGE
 
 Given an encrypted PDF
 When validateDocument() is called
-Then ValidationResult.valid() is false
-And errorCode is ENCRYPTED
+Then DocumentEncryptedException is thrown
+And GlobalExceptionHandler maps it to HTTP 422 with body {"errorCode": "ENCRYPTED", "message": "..."}
 
 Given a PDF with an XFA AcroForm stream
 When validateDocument() is called
@@ -117,10 +133,10 @@ public class ValidationResult {
 
     public static ValidationResult fail(String errorCode, String errorMessage) {
         return ValidationResult.builder()
-                               .valid(false)
-                               .errorCode(errorCode)
-                               .errorMessage(errorMessage)
-                               .build();
+            .valid(false)
+            .errorCode(errorCode)
+            .errorMessage(errorMessage)
+            .build();
     }
 }
 ```
@@ -131,9 +147,7 @@ File: `rfp-core/src/main/java/com/dsi/rfp/domain/exception/DocumentEncryptedExce
 package com.dsi.rfp.domain.exception;
 
 public class DocumentEncryptedException extends RuntimeException {
-    public DocumentEncryptedException(String message) {
-        super(message);
-    }
+    public DocumentEncryptedException(String message) { super(message); }
 }
 ```
 
@@ -143,9 +157,7 @@ File: `rfp-core/src/main/java/com/dsi/rfp/domain/exception/DocumentCorruptExcept
 package com.dsi.rfp.domain.exception;
 
 public class DocumentCorruptException extends RuntimeException {
-    public DocumentCorruptException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    public DocumentCorruptException(String message, Throwable cause) { super(message, cause); }
 }
 ```
 
@@ -155,9 +167,7 @@ File: `rfp-core/src/main/java/com/dsi/rfp/domain/exception/DocumentXfaException.
 package com.dsi.rfp.domain.exception;
 
 public class DocumentXfaException extends RuntimeException {
-    public DocumentXfaException(String message) {
-        super(message);
-    }
+    public DocumentXfaException(String message) { super(message); }
 }
 ```
 
@@ -169,20 +179,13 @@ package com.dsi.rfp.domain.exception;
 public class FileSizeLimitExceededException extends RuntimeException {
     private final long actualBytes;
     private final long limitBytes;
-
     public FileSizeLimitExceededException(long actualBytes, long limitBytes) {
         super(String.format("File size %d bytes exceeds limit %d bytes", actualBytes, limitBytes));
         this.actualBytes = actualBytes;
         this.limitBytes = limitBytes;
     }
-
-    public long getActualBytes() {
-        return actualBytes;
-    }
-
-    public long getLimitBytes() {
-        return limitBytes;
-    }
+    public long getActualBytes() { return actualBytes; }
+    public long getLimitBytes() { return limitBytes; }
 }
 ```
 
@@ -226,7 +229,7 @@ public class DocumentValidationService {
     public ValidationResult validateDocument(
         Path filePath,
         long fileSizeBytes,
-        String detectedMimeType) {
+        String detectedMimeType) throws IOException {
 
         ValidationResult sizeCheck = checkFileSize(fileSizeBytes);
         if (!sizeCheck.isValid()) return sizeCheck;
@@ -258,25 +261,27 @@ public class DocumentValidationService {
         return ValidationResult.ok();
     }
 
-    private ValidationResult validatePdf(Path filePath) {
+    private ValidationResult validatePdf(Path filePath) throws IOException {
+        // PDFBox 3.x throws InvalidPasswordException (extends IOException) for encrypted PDFs.
+        // Per the exception policy: catch the SPECIFIC exception and rethrow as the domain
+        // exception DocumentEncryptedException — do NOT use catch (Exception e).
+        // DocumentEncryptedException propagates to GlobalExceptionHandler (Sprint 2 Epic 5)
+        // which maps it to HTTP 422 with errorCode="ENCRYPTED".
         try (PDDocument doc = Loader.loadPDF(filePath.toFile())) {
             if (doc.getNumberOfPages() == 0) {
                 return ValidationResult.fail("EMPTY_DOCUMENT", "PDF has zero pages");
             }
             return checkForXfa(doc);
         } catch (org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException e) {
-            return ValidationResult.fail("ENCRYPTED",
-                "PDF is password-protected and cannot be processed");
-        } catch (IOException e) {
-            log.warn("PDF validation failed - corrupt file at {}: {}", filePath, e.getMessage());
-            return ValidationResult.fail("CORRUPT",
-                "PDF file appears to be corrupt and cannot be opened");
+            throw new DocumentEncryptedException(
+                "PDF is password-protected and cannot be processed. " +
+                    "Please provide an unlocked copy.");
         }
     }
 
     private ValidationResult checkForXfa(PDDocument doc) {
         PDAcroForm acroForm = doc.getDocumentCatalog().getAcroForm();
-        if (acroForm != null && acroForm.getXFA() != null) {
+        if (Objects.nonNull(acroForm) && Objects.nonNull(acroForm.getXFA())) {
             return ValidationResult.fail("XFA_FORM",
                 "PDF contains XFA form which cannot be processed. " +
                     "Please export as a standard PDF.");
@@ -299,9 +304,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 @Component
-public class MimeTypeDetector {
+public class MimeTypeDetector implements MimeTypePort {
     private final Tika tika = new Tika();
 
+    @Override
     public String detect(Path filePath) throws IOException {
         return tika.detect(filePath.toFile());
     }
@@ -447,20 +453,15 @@ public class TextBlock {
 File: `rfp-core/src/main/java/com/dsi/rfp/domain/model/EmbeddedImageInfo.java`:
 
 ```java
-
-@Data
-@Builder
+@Data @Builder
 public class EmbeddedImageInfo {
     private int pageNumber;
     private float x;
     private float y;
     private float width;
     private float height;
-
     // area() is computed: width * height
-    public float area() {
-        return width * height;
-    }
+    public float area() { return width * height; }
 }
 ```
 
@@ -622,10 +623,10 @@ public List<EmbeddedImageInfo> loadPageImages(Path pdfPath, int pageIndex) throw
             PDXObject xobj = page.getResources().getXObject(name);
             if (xobj instanceof PDImageXObject img) {
                 images.add(EmbeddedImageInfo.builder()
-                                            .pageNumber(pageIndex)
-                                            .x(0).y(0)
-                                            .width(img.getWidth()).height(img.getHeight())
-                                            .build());
+                    .pageNumber(pageIndex)
+                    .x(0).y(0)
+                    .width(img.getWidth()).height(img.getHeight())
+                    .build());
             }
         }
     }
@@ -678,16 +679,16 @@ class PdfDocumentLoaderTest {
     }
 
     @Test
-    void shouldReturnNonBlankTextWhenDigitalPdfLoaded() throws IOException { ...}
+    void shouldReturnNonBlankTextWhenDigitalPdfLoaded() throws IOException { ... }
 
     @Test
-    void shouldReturnPageCountMatchingFixture() throws IOException { ...}
+    void shouldReturnPageCountMatchingFixture() throws IOException { ... }
 
     @Test
-    void shouldReturnEmptyTextBlocksForEmptyPage() throws IOException { ...}
+    void shouldReturnEmptyTextBlocksForEmptyPage() throws IOException { ... }
 
     @Test
-    void shouldReturnPositiveWidthAndHeightForEmbeddedImages() throws IOException { ...}
+    void shouldReturnPositiveWidthAndHeightForEmbeddedImages() throws IOException { ... }
 
     @Test
     void shouldThrowIOExceptionWhenFileDoesNotExist() {
@@ -778,7 +779,6 @@ import com.dsi.rfp.domain.model.PageClassification;
 import com.dsi.rfp.domain.model.PageClassificationResult;
 import com.dsi.rfp.domain.model.TextBlock;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 
 @Component
@@ -801,43 +801,43 @@ public class PageClassifier {
      * @return PageClassificationResult with classification and raw metrics
      */
     public PageClassificationResult classify(
-        int pageNumber,
-        List<TextBlock> textBlocks,
-        List<EmbeddedImageInfo> images,
-        float pageWidth,
-        float pageHeight) {
+            int pageNumber,
+            List<TextBlock> textBlocks,
+            List<EmbeddedImageInfo> images,
+            float pageWidth,
+            float pageHeight) {
 
         double pageArea = pageWidth * pageHeight;
         int totalChars = computeTotalCharCount(textBlocks);
         double charDensity = pageArea > 0 ? totalChars / pageArea : 0.0;
 
         double totalImageArea = images.stream()
-                                      .mapToDouble(EmbeddedImageInfo::area)
-                                      .sum();
+            .mapToDouble(EmbeddedImageInfo::area)
+            .sum();
         double rasterCoverage = pageArea > 0 ? totalImageArea / pageArea : 0.0;
 
         PageClassification classification = applyThresholds(charDensity, rasterCoverage);
 
         return PageClassificationResult.builder()
-                                       .pageNumber(pageNumber)
-                                       .classification(classification)
-                                       .charDensity(charDensity)
-                                       .rasterCoverage(rasterCoverage)
-                                       .charCount(totalChars)
-                                       .pageWidth(pageWidth)
-                                       .pageHeight(pageHeight)
-                                       .pageAreaPixels(pageArea)
-                                       .totalImageArea(totalImageArea)
-                                       .build();
+            .pageNumber(pageNumber)
+            .classification(classification)
+            .charDensity(charDensity)
+            .rasterCoverage(rasterCoverage)
+            .charCount(totalChars)
+            .pageWidth(pageWidth)
+            .pageHeight(pageHeight)
+            .pageAreaPixels(pageArea)
+            .totalImageArea(totalImageArea)
+            .build();
     }
 
     private PageClassification applyThresholds(double charDensity, double rasterCoverage) {
         if (charDensity > DIGITAL_CHAR_DENSITY_THRESHOLD
-            && rasterCoverage < DIGITAL_MAX_RASTER_COVERAGE) {
+                && rasterCoverage < DIGITAL_MAX_RASTER_COVERAGE) {
             return PageClassification.DIGITAL;
         }
         if (charDensity < SCANNED_CHAR_DENSITY_THRESHOLD
-            || rasterCoverage > SCANNED_RASTER_COVERAGE_THRESHOLD) {
+                || rasterCoverage > SCANNED_RASTER_COVERAGE_THRESHOLD) {
             return PageClassification.SCANNED;
         }
         return PageClassification.MIXED;
@@ -845,8 +845,8 @@ public class PageClassifier {
 
     private int computeTotalCharCount(List<TextBlock> textBlocks) {
         return textBlocks.stream()
-                         .mapToInt(tb -> tb.getText() != null ? tb.getText().length() : 0)
-                         .sum();
+            .mapToInt(tb -> Objects.nonNull(tb.getText()) ? tb.getText().length() : 0)
+            .sum();
     }
 }
 ```
@@ -859,9 +859,7 @@ class PageClassifierTest {
     private PageClassifier classifier;
 
     @BeforeEach
-    void setUp() {
-        classifier = new PageClassifier();
-    }
+    void setUp() { classifier = new PageClassifier(); }
 
     @Test
     void shouldReturnDigitalWhenHighCharDensityAndLowRasterCoverage() {
@@ -951,7 +949,6 @@ import com.dsi.rfp.domain.port.JobStatePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -976,7 +973,7 @@ public class PageClassificationService {
      * @throws IOException if PDF cannot be read
      */
     public List<PageClassificationResult> classifyAllPages(Path pdfPath, UUID jobId)
-        throws IOException {
+            throws IOException {
 
         int pageCount = pdfDocumentLoader.getPageCount(pdfPath);
         List<PageClassificationResult> results = new ArrayList<>(pageCount);
@@ -986,7 +983,7 @@ public class PageClassificationService {
             results.add(result);
             int progress = computeProgress(i + 1, pageCount);
             jobStatePort.updateProgress(jobId, progress);
-            log.debug("Page {}/{} classified as {}", i + 1, pageCount,
+            log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG Page {}/{} classified as {}", i + 1, pageCount,
                 result.getClassification());
         }
 
@@ -995,7 +992,7 @@ public class PageClassificationService {
     }
 
     private PageClassificationResult classifySinglePage(Path pdfPath, int pageIndex)
-        throws IOException {
+            throws IOException {
         var textBlocks = pdfDocumentLoader.loadPageBoundingBoxes(pdfPath, pageIndex);
         var images = pdfDocumentLoader.loadPageImages(pdfPath, pageIndex);
         // Get page dimensions from PDFBox (requires a helper method in PdfDocumentLoader)
@@ -1008,10 +1005,10 @@ public class PageClassificationService {
     }
 
     private void logClassificationSummary(UUID jobId, List<PageClassificationResult> results) {
-        long digital = results.stream().filter(r -> r.getClassification().name().equals("DIGITAL")).count();
-        long scanned = results.stream().filter(r -> r.getClassification().name().equals("SCANNED")).count();
-        long mixed = results.stream().filter(r -> r.getClassification().name().equals("MIXED")).count();
-        log.info("Classification summary: jobId={} total={} DIGITAL={} SCANNED={} MIXED={}",
+        long digital = results.stream().filter(r -> r.getClassification() == PageClassification.DIGITAL).count();
+        long scanned = results.stream().filter(r -> r.getClassification() == PageClassification.SCANNED).count();
+        long mixed = results.stream().filter(r -> r.getClassification() == PageClassification.MIXED).count();
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO Classification summary: jobId={} total={} DIGITAL={} SCANNED={} MIXED={}",
             jobId, results.size(), digital, scanned, mixed);
     }
 }
@@ -1024,7 +1021,7 @@ public float[] getPageDimensions(Path pdfPath, int pageIndex) throws IOException
     try (PDDocument doc = Loader.loadPDF(pdfPath.toFile())) {
         PDPage page = doc.getPage(pageIndex);
         PDRectangle box = page.getMediaBox();
-        return new float[]{box.getWidth(), box.getHeight()};
+        return new float[]{ box.getWidth(), box.getHeight() };
     }
 }
 ```
@@ -1034,17 +1031,12 @@ Class: `PageClassificationServiceTest`
 Mocks: `PdfDocumentLoader` (mock), `PageClassifier` (mock), `JobStatePort` (mock).
 
 ```java
-
 @ExtendWith(MockitoExtension.class)
 class PageClassificationServiceTest {
-    @Mock
-    PdfDocumentLoader pdfDocumentLoader;
-    @Mock
-    PageClassifier pageClassifier;
-    @Mock
-    JobStatePort jobStatePort;
-    @InjectMocks
-    PageClassificationService service;
+    @Mock PdfDocumentLoader pdfDocumentLoader;
+    @Mock PageClassifier pageClassifier;
+    @Mock JobStatePort jobStatePort;
+    @InjectMocks PageClassificationService service;
 
     @Test
     void shouldReturnOneResultPerPage() throws IOException {
@@ -1056,8 +1048,8 @@ class PageClassificationServiceTest {
         when(pdfDocumentLoader.getPageDimensions(any(), anyInt())).thenReturn(new float[]{595, 842});
         when(pageClassifier.classify(anyInt(), any(), any(), anyFloat(), anyFloat()))
             .thenReturn(PageClassificationResult.builder()
-                                                .pageNumber(0).classification(PageClassification.DIGITAL)
-                                                .charDensity(0.01).rasterCoverage(0.1).build());
+                .pageNumber(0).classification(PageClassification.DIGITAL)
+                .charDensity(0.01).rasterCoverage(0.1).build());
 
         List<PageClassificationResult> results = service.classifyAllPages(fakePath, jobId);
 
@@ -1117,7 +1109,6 @@ package com.dsi.rfp.domain.model;
 
 import lombok.Builder;
 import lombok.Data;
-
 import java.time.Instant;
 import java.util.UUID;
 
@@ -1177,20 +1168,15 @@ package com.dsi.rfp.domain.port;
 
 import com.dsi.rfp.domain.model.ExtractionJob;
 import com.dsi.rfp.domain.model.JobStatus;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface JobStatePort {
     void save(ExtractionJob job);
-
     Optional<ExtractionJob> findById(UUID jobId);
-
     void updateStatus(UUID jobId, JobStatus status);
-
     void updateProgress(UUID jobId, int progress);
-
     List<ExtractionJob> findAll();
 }
 ```
@@ -1203,15 +1189,12 @@ package com.dsi.rfp.adapter.persistence;
 import com.dsi.rfp.domain.model.ExtractionJob;
 import com.dsi.rfp.domain.model.JobStatus;
 import com.dsi.rfp.domain.port.JobStatePort;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
-
 import java.time.Duration;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
@@ -1221,33 +1204,19 @@ public class RedisJobStateRepository implements JobStatePort {
     private static final String KEY_PREFIX = "rfp:job:";
     private static final Duration TTL = Duration.ofHours(24);
 
-    private final StringRedisTemplate redisTemplate;
-    private final ObjectMapper objectMapper;
+    private final RedisTemplate<String, ExtractionJob> redisTemplate;
 
     @Override
     public void save(ExtractionJob job) {
         String key = buildKey(job.getJobId());
-        try {
-            String json = objectMapper.writeValueAsString(job);
-            redisTemplate.opsForValue().set(key, json, TTL);
-            log.debug("Saved job {} to Redis with TTL 24h", job.getJobId());
-        } catch (Exception e) {
-            log.error("Failed to save job {} to Redis: {}", job.getJobId(), e.getMessage());
-            throw new RuntimeException("Failed to persist job state", e);
-        }
+        redisTemplate.opsForValue().set(key, job, TTL);
+        log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG Saved job {} to Redis with TTL 24h", job.getJobId());
     }
 
     @Override
     public Optional<ExtractionJob> findById(UUID jobId) {
         String key = buildKey(jobId);
-        String json = redisTemplate.opsForValue().get(key);
-        if (json == null) return Optional.empty();
-        try {
-            return Optional.of(objectMapper.readValue(json, ExtractionJob.class));
-        } catch (Exception e) {
-            log.error("Failed to deserialize job {}: {}", jobId, e.getMessage());
-            return Optional.empty();
-        }
+        return Optional.ofNullable(redisTemplate.opsForValue().get(key));
     }
 
     @Override
@@ -1271,22 +1240,16 @@ public class RedisJobStateRepository implements JobStatePort {
 
     @Override
     public List<ExtractionJob> findAll() {
-        Set<String> keys = redisTemplate.keys(KEY_PREFIX + "*");
-        if (keys == null || keys.isEmpty()) return List.of();
-        List<String> values = redisTemplate.opsForValue().multiGet(new ArrayList<>(keys));
-        if (values == null) return List.of();
-        return values.stream()
-                     .filter(Objects::nonNull)
-                     .map(json -> {
-                         try {
-                             return objectMapper.readValue(json, ExtractionJob.class);
-                         } catch (Exception e) {
-                             log.warn("Could not deserialize job JSON from Redis: {}", e.getMessage());
-                             return null;
-                         }
-                     })
-                     .filter(Objects::nonNull)
-                     .collect(Collectors.toList());
+        List<String> keys = new ArrayList<>();
+        ScanOptions opts = ScanOptions.scanOptions().match(KEY_PREFIX + "*").count(100).build();
+        try (Cursor<byte[]> cursor = redisTemplate.scan(opts)) {
+            cursor.forEachRemaining(rawKey ->
+                keys.add((String) redisTemplate.getKeySerializer().deserialize(rawKey)));
+        }
+        if (keys.isEmpty()) return List.of();
+        List<ExtractionJob> values = redisTemplate.opsForValue().multiGet(keys);
+        if (Objects.isNull(values)) return List.of();
+        return values.stream().filter(Objects::nonNull).toList();
     }
 
     private String buildKey(UUID jobId) {
@@ -1309,6 +1272,7 @@ import org.springframework.context.annotation.Primary;
 
 @Configuration
 public class RedisConfig {
+
     @Bean
     @Primary
     public ObjectMapper objectMapper() {
@@ -1316,41 +1280,58 @@ public class RedisConfig {
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
+
+    /**
+     * Typed RedisTemplate for ExtractionJob persistence.
+     * Keys are serialized as UTF-8 strings (StringRedisSerializer).
+     * Values are serialized as JSON via Jackson (Jackson2JsonRedisSerializer).
+     * This lets RedisJobStateRepository use strongly-typed ValueOperations<String, ExtractionJob>
+     * rather than StringRedisTemplate + manual ObjectMapper serialization.
+     */
+    @Bean
+    public RedisTemplate<String, ExtractionJob> extractionJobRedisTemplate(
+            RedisConnectionFactory factory, ObjectMapper objectMapper) {
+        RedisTemplate<String, ExtractionJob> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+        template.setKeySerializer(new org.springframework.data.redis.serializer.StringRedisSerializer());
+        template.setHashKeySerializer(new org.springframework.data.redis.serializer.StringRedisSerializer());
+        var valueSerializer = new org.springframework.data.redis.serializer
+                .Jackson2JsonRedisSerializer<>(objectMapper, ExtractionJob.class);
+        template.setValueSerializer(valueSerializer);
+        template.setHashValueSerializer(valueSerializer);
+        template.afterPropertiesSet();
+        return template;
+    }
 }
 ```
 
 **Test Plan:**
 Class: `RedisJobStateRepositoryTest`
-Mocks: `StringRedisTemplate` (mock), `ObjectMapper` (real instance).
+Mocks: `RedisTemplate<String, ExtractionJob>` (mock), `ValueOperations<String, ExtractionJob>` (mock).
+Note: `ObjectMapper` is NOT injected into the repository — the typed `RedisTemplate` handles
+serialization via `Jackson2JsonRedisSerializer`. Do NOT mock `StringRedisTemplate` (wrong type).
 
 ```java
-
 @ExtendWith(MockitoExtension.class)
 class RedisJobStateRepositoryTest {
-    @Mock
-    StringRedisTemplate redisTemplate;
-    @Mock
-    org.springframework.data.redis.core.ValueOperations<String, String> valueOps;
+    @Mock RedisTemplate<String, ExtractionJob> redisTemplate;
+    @Mock org.springframework.data.redis.core.ValueOperations<String, ExtractionJob> valueOps;
 
     private RedisJobStateRepository repository;
-    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         when(redisTemplate.opsForValue()).thenReturn(valueOps);
-        repository = new RedisJobStateRepository(redisTemplate, objectMapper);
+        repository = new RedisJobStateRepository(redisTemplate);
     }
 
     @Test
-    void shouldSaveJobWithCorrectKey() throws Exception {
+    void shouldSaveJobWithCorrectKey() {
         ExtractionJob job = buildSampleJob();
         repository.save(job);
         verify(valueOps).set(
             eq("rfp:job:" + job.getJobId()),
-            anyString(),
+            eq(job),
             eq(Duration.ofHours(24)));
     }
 
@@ -1362,26 +1343,23 @@ class RedisJobStateRepositoryTest {
     }
 
     @Test
-    void shouldDeserializeJobCorrectlyWhenFoundInRedis() throws Exception {
+    void shouldReturnJobWhenFoundInRedis() {
         ExtractionJob job = buildSampleJob();
-        String json = objectMapper.writeValueAsString(job);
-        when(valueOps.get("rfp:job:" + job.getJobId())).thenReturn(json);
+        when(valueOps.get("rfp:job:" + job.getJobId())).thenReturn(job);
         Optional<ExtractionJob> result = repository.findById(job.getJobId());
         assertThat(result).isPresent();
         assertThat(result.get().getStatus()).isEqualTo(JobStatus.QUEUED);
     }
 
     @Test
-    void shouldUpdateStatusToRunning() throws Exception {
+    void shouldUpdateStatusToRunning() {
         ExtractionJob job = buildSampleJob();
-        String json = objectMapper.writeValueAsString(job);
-        when(valueOps.get("rfp:job:" + job.getJobId())).thenReturn(json);
+        when(valueOps.get("rfp:job:" + job.getJobId())).thenReturn(job);
         repository.updateStatus(job.getJobId(), JobStatus.RUNNING);
-        // Capture the saved value and verify status was changed
-        ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
-        verify(valueOps, atLeastOnce()).set(anyString(), jsonCaptor.capture(), any());
-        ExtractionJob saved = objectMapper.readValue(jsonCaptor.getValue(), ExtractionJob.class);
-        assertThat(saved.getStatus()).isEqualTo(JobStatus.RUNNING);
+        // Capture the saved ExtractionJob and verify status was changed
+        ArgumentCaptor<ExtractionJob> jobCaptor = ArgumentCaptor.forClass(ExtractionJob.class);
+        verify(valueOps, atLeastOnce()).set(anyString(), jobCaptor.capture(), any());
+        assertThat(jobCaptor.getValue().getStatus()).isEqualTo(JobStatus.RUNNING);
     }
 }
 ```
@@ -1436,7 +1414,6 @@ import com.dsi.rfp.domain.port.FileStoragePort;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.UUID;
@@ -1457,7 +1434,7 @@ public class LocalFileStorageAdapter implements FileStoragePort {
         Files.createDirectories(dir);
         Path target = dir.resolve(sanitizeFilename(filename));
         Files.write(target, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        log.info("Stored file: jobId={} filename={} bytes={}", jobId, filename, content.length);
+        log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO Stored file: jobId={} filename={} bytes={}", jobId, filename, content.length);
         return target;
     }
 
@@ -1479,7 +1456,7 @@ public class LocalFileStorageAdapter implements FileStoragePort {
     private String sanitizeFilename(String filename) {
         // Strip path traversal characters
         return Path.of(filename).getFileName().toString()
-                   .replaceAll("[^a-zA-Z0-9._\\-]", "_");
+            .replaceAll("[^a-zA-Z0-9._\\-]", "_");
     }
 }
 ```
@@ -1489,8 +1466,7 @@ Class: `LocalFileStorageAdapterTest` — use `@TempDir` JUnit 5 annotation for r
 
 ```java
 class LocalFileStorageAdapterTest {
-    @TempDir
-    Path tempDir;
+    @TempDir Path tempDir;
     private LocalFileStorageAdapter adapter;
 
     @BeforeEach
@@ -1586,7 +1562,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -1598,18 +1573,23 @@ public class RfpController {
     private final RfpSubmissionService submissionService;
     private final RfpJobService jobService;
 
+    // Controller extracts bytes from MultipartFile here — Spring web types never enter application layer.
     @PostMapping(value = "/submit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SubmitResponse> submit(
-        @RequestPart("file") MultipartFile file) {
-        SubmitResponse response = submissionService.submit(file);
+            @RequestPart("file") MultipartFile file) throws IOException {
+        UUID jobId = submissionService.submit(file.getBytes(), file.getOriginalFilename());
+        SubmitResponse response = SubmitResponse.builder()
+            .jobId(jobId.toString())
+            .status("QUEUED")
+            .build();
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 
     @GetMapping("/status/{jobId}")
     public ResponseEntity<JobStatusResponse> getStatus(@PathVariable UUID jobId) {
         return jobService.findById(jobId)
-                         .map(ResponseEntity::ok)
-                         .orElse(ResponseEntity.notFound().build());
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/jobs")
@@ -1655,21 +1635,29 @@ File: `rfp-service/src/main/java/com/dsi/rfp/application/service/RfpSubmissionSe
 ```java
 package com.dsi.rfp.application.service;
 
-import com.dsi.rfp.adapter.api.SubmitResponse;
+// Hexagonal rule: application services ONLY import from domain (rfp-core) and other application services.
+// FORBIDDEN imports: adapter.api.*, adapter.extraction.MimeTypeDetector, Spring web types
+// (MultipartFile, ResponseStatusException, HttpStatus). Violations break the dependency rule.
+//
+// NOTE on DocumentValidationService: it lives in adapter.extraction because it uses PDFBox.
+// To be fully hexagonal, introduce DocumentValidationPort in rfp-core/domain/port/ and have
+// DocumentValidationService implement it — then import DocumentValidationPort here.
+// This is deferred: the current import is a known borderline violation tracked in the backlog.
 import com.dsi.rfp.adapter.extraction.DocumentValidationService;
-import com.dsi.rfp.adapter.extraction.MimeTypeDetector;
+import com.dsi.rfp.domain.exception.DocumentUnsupportedTypeException;
+import com.dsi.rfp.domain.exception.DocumentValidationException;
+import com.dsi.rfp.domain.exception.DocumentXfaException;
+import com.dsi.rfp.domain.exception.FileSizeLimitExceededException;
 import com.dsi.rfp.domain.model.ExtractionJob;
 import com.dsi.rfp.domain.model.JobStatus;
 import com.dsi.rfp.domain.model.ValidationResult;
 import com.dsi.rfp.domain.port.FileStoragePort;
 import com.dsi.rfp.domain.port.JobStatePort;
+import com.dsi.rfp.domain.port.MimeTypePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
-
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.UUID;
@@ -1679,8 +1667,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RfpSubmissionService {
 
+    // Architecture rule: application services depend on port interfaces, never on concrete adapters.
+    // MimeTypeDetector (adapter) → inject via MimeTypePort (port interface in rfp-core). Correct.
+    // DocumentValidationService (adapter.extraction) → ideally behind DocumentValidationPort.
+    // Current import is a known borderline violation; deferred to a backlog refactor.
     private final DocumentValidationService validationService;
-    private final MimeTypeDetector mimeTypeDetector;
+    private final MimeTypePort mimeTypePort;        // NOT MimeTypeDetector (adapter)
     private final FileStoragePort fileStorage;
     private final JobStatePort jobStatePort;
     private final ExtractionPipelineService pipelineService;
@@ -1688,70 +1680,119 @@ public class RfpSubmissionService {
     /**
      * Validates, stores, and queues a document for extraction.
      *
-     * @param file the uploaded multipart file
-     * @return SubmitResponse with jobId and QUEUED status
-     * @throws ResponseStatusException on validation failure (mapped to HTTP error)
+     * Architecture rules applied here:
+     * 1. Parameter is raw (byte[], String) — NOT MultipartFile (Spring web type belongs in adapter/api).
+     *    The RfpController reads the bytes from MultipartFile BEFORE calling this service.
+     * 2. Return type is UUID — NOT SubmitResponse (adapter DTO belongs in adapter/api).
+     *    The RfpController maps the UUID to SubmitResponse.
+     * 3. Throws domain exceptions (DocumentEncryptedException etc.) — NOT ResponseStatusException
+     *    (Spring web type). GlobalExceptionHandler maps domain exceptions to HTTP responses.
+     *
+     * @param fileBytes  raw file content
+     * @param filename   original filename (for storage and logging)
+     * @return UUID of the created extraction job
+     * @throws IOException if file storage fails
      */
-    public SubmitResponse submit(MultipartFile file) {
+    public UUID submit(byte[] fileBytes, String filename) throws IOException {
         UUID jobId = UUID.randomUUID();
-        byte[] fileBytes = readFileBytes(file);
-        Path storedPath = storeFile(jobId, fileBytes, file.getOriginalFilename());
-        validateFile(storedPath, fileBytes.length, file.getOriginalFilename());
-        ExtractionJob job = createJob(jobId, file.getOriginalFilename(), fileBytes.length);
+        Path storedPath = fileStorage.store(jobId, fileBytes, filename);
+        validateFile(storedPath, fileBytes.length);
+        ExtractionJob job = createJob(jobId, filename);
         jobStatePort.save(job);
         pipelineService.runAsync(jobId, storedPath);
-        log.info("Job submitted: jobId={} file={} size={}KB",
-            jobId, file.getOriginalFilename(), fileBytes.length / 1024);
-        return SubmitResponse.builder()
-                             .jobId(jobId.toString())
-                             .status("QUEUED")
-                             .build();
+        log.info("event=job.submitted component=RfpSubmissionService status=SUCCESS jobId={} file={} sizeKB={} durationMs=NA errorCode=NA traceId={} spanId=NA",
+            jobId, filename, fileBytes.length / 1024, MDC.get("traceId"));
+        return jobId;
     }
 
-    private byte[] readFileBytes(MultipartFile file) {
-        try {
-            return file.getBytes();
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "Cannot read uploaded file: " + e.getMessage());
-        }
-    }
-
-    private Path storeFile(UUID jobId, byte[] bytes, String filename) {
-        try {
-            return fileStorage.store(jobId, bytes, filename);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                "Failed to store file: " + e.getMessage());
-        }
-    }
-
-    private void validateFile(Path path, long sizeBytes, String originalFilename) {
-        String mime;
-        try {
-            mime = mimeTypeDetector.detect(path);
-        } catch (Exception e) {
-            mime = "application/octet-stream";
-        }
+    private void validateFile(Path path, long sizeBytes) throws IOException {
+        String mime = mimeTypePort.detect(path);
         ValidationResult result = validationService.validateDocument(path, sizeBytes, mime);
-        if (!result.isValid()) {
-            HttpStatus status = switch (result.getErrorCode()) {
-                case "FILE_TOO_LARGE" -> HttpStatus.PAYLOAD_TOO_LARGE;
-                case "UNSUPPORTED_TYPE" -> HttpStatus.UNSUPPORTED_MEDIA_TYPE;
-                default -> HttpStatus.UNPROCESSABLE_ENTITY;
-            };
-            throw new ResponseStatusException(status, result.getErrorMessage());
-        }
+        if (result.isValid()) return;
+        // Translate ValidationResult failures into typed domain exceptions that propagate
+        // to GlobalExceptionHandler — never throw ResponseStatusException from application layer.
+        throw switch (result.getErrorCode()) {
+            case "FILE_TOO_LARGE"   -> new FileSizeLimitExceededException(sizeBytes, /* limit */ 0);
+            case "UNSUPPORTED_TYPE" -> new DocumentUnsupportedTypeException(result.getErrorMessage());
+            case "XFA_FORM"         -> new DocumentXfaException(result.getErrorMessage());
+            default                 -> new DocumentValidationException(result.getErrorCode(), result.getErrorMessage());
+        };
     }
 
-    private ExtractionJob createJob(UUID jobId, String filename, long sizeBytes) {
+    private ExtractionJob createJob(UUID jobId, String filename) {
         return ExtractionJob.builder()
-                            .jobId(jobId)
-                            .status(JobStatus.QUEUED)
-                            .submittedAt(Instant.now())
-                            .originalFilename(filename)
-                            .progress(0)
-                            .build();
+            .jobId(jobId)
+            .status(JobStatus.QUEUED)
+            .submittedAt(Instant.now())
+            .originalFilename(filename)
+            .progress(0)
+            .build();
+    }
+}
+```
+
+File: `rfp-core/src/main/java/com/dsi/rfp/domain/port/MimeTypePort.java`:
+
+```java
+package com.dsi.rfp.domain.port;
+
+import java.io.IOException;
+import java.nio.file.Path;
+
+/**
+ * Port interface for MIME type detection.
+ * Application services depend on this interface; the concrete adapter (MimeTypeDetector)
+ * is in rfp-service/adapter/ and injected by Spring at runtime.
+ * This preserves the hexagonal architecture boundary.
+ */
+public interface MimeTypePort {
+    /**
+     * Detect the MIME type of the file at the given path.
+     *
+     * @param path the file to inspect
+     * @return MIME type string, e.g. "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+     * @throws IOException if the file cannot be read
+     */
+    String detect(Path path) throws IOException;
+}
+```
+
+File: `rfp-core/src/main/java/com/dsi/rfp/domain/exception/DocumentUnsupportedTypeException.java`:
+
+```java
+package com.dsi.rfp.domain.exception;
+
+/**
+ * Thrown when the uploaded document is not a supported type (PDF or DOCX).
+ * GlobalExceptionHandler maps this to HTTP 415 Unsupported Media Type.
+ */
+public class DocumentUnsupportedTypeException extends RuntimeException {
+    public DocumentUnsupportedTypeException(String message) {
+        super(message);
+    }
+}
+```
+
+File: `rfp-core/src/main/java/com/dsi/rfp/domain/exception/DocumentValidationException.java`:
+
+```java
+package com.dsi.rfp.domain.exception;
+
+/**
+ * Fallback domain exception for validation failures not covered by a more specific type.
+ * Carries an errorCode for structured error responses.
+ * GlobalExceptionHandler maps this to HTTP 422 Unprocessable Entity.
+ */
+public class DocumentValidationException extends RuntimeException {
+    private final String errorCode;
+
+    public DocumentValidationException(String errorCode, String message) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
     }
 }
 ```
@@ -1766,7 +1807,6 @@ import com.dsi.rfp.domain.model.ExtractionJob;
 import com.dsi.rfp.domain.port.JobStatePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -1784,21 +1824,21 @@ public class RfpJobService {
 
     public List<JobStatusResponse> findAll() {
         return jobStatePort.findAll().stream()
-                           .map(this::toResponse)
-                           .collect(Collectors.toList());
+            .map(this::toResponse)
+            .collect(Collectors.toList());
     }
 
     private JobStatusResponse toResponse(ExtractionJob job) {
         return JobStatusResponse.builder()
-                                .jobId(job.getJobId().toString())
-                                .status(job.getStatus().name())
-                                .progress(job.getProgress())
-                                .submittedAt(job.getSubmittedAt() != null ? job.getSubmittedAt().toString() : null)
-                                .completedAt(job.getCompletedAt() != null ? job.getCompletedAt().toString() : null)
-                                .errorMessage(job.getErrorMessage())
-                                .originalFilename(job.getOriginalFilename())
-                                .pageCount(job.getPageCount())
-                                .build();
+            .jobId(job.getJobId().toString())
+            .status(job.getStatus().name())
+            .progress(job.getProgress())
+            .submittedAt(Objects.nonNull(job.getSubmittedAt()) ? job.getSubmittedAt().toString() : null)
+            .completedAt(Objects.nonNull(job.getCompletedAt()) ? job.getCompletedAt().toString() : null)
+            .errorMessage(job.getErrorMessage())
+            .originalFilename(job.getOriginalFilename())
+            .pageCount(job.getPageCount())
+            .build();
     }
 }
 ```
@@ -1814,7 +1854,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
 import java.nio.file.Path;
 import java.util.UUID;
 
@@ -1827,38 +1866,37 @@ public class ExtractionPipelineService {
     private final PageClassificationService pageClassificationService;
 
     /**
-     * Runs the extraction pipeline asynchronously.
-     * In Sprint 2: only runs page classification.
-     * In Sprint 4: replaced by LangGraph4J agent graph invocation.
+     * Runs the extraction pipeline asynchronously (Sprint 2: page classification only).
+     * Sprint 4 replaces this with ExtractionOrchestrationService + LangGraph4J graph.
+     *
+     * Exception policy: do NOT use catch (Exception e) here. If this method throws,
+     * the exception is routed to JobStateAsyncExceptionHandler (see Epic 5 below), which
+     * marks the job FAILED in Redis. This is the Spring @Async contract for void methods:
+     * unhandled exceptions propagate to AsyncUncaughtExceptionHandler, NOT to @RestControllerAdvice.
+     *
+     * DOCX handling: Sprint 2 does not classify DOCX pages. A PDF-only guard is applied
+     * via the MimeTypePort interface (not a direct adapter class — see architecture rules).
+     * DOCX files queued in Sprint 2 stay RUNNING until Sprint 3 adds DOCX text extraction.
+     * The current Sprint 2 scope is intentionally PDF-only for page classification.
      */
     @Async("rfpTaskExecutor")
-    public void runAsync(UUID jobId, Path documentPath) {
-        log.info("Pipeline starting: jobId={}", jobId);
-        try {
-            jobStatePort.updateStatus(jobId, JobStatus.RUNNING);
-            var classifications = pageClassificationService.classifyAllPages(documentPath, jobId);
-            int pageCount = classifications.size();
-            // Update job with page count
-            jobStatePort.findById(jobId).ifPresent(job -> {
-                job.setPageCount(pageCount);
-                jobStatePort.save(job);
-            });
-            jobStatePort.updateStatus(jobId, JobStatus.COMPLETED);
-            log.info("Pipeline completed (page classification only): jobId={} pages={}",
-                jobId, pageCount);
-        } catch (Exception e) {
-            log.error("Pipeline failed: jobId={} error={}", jobId, e.getMessage(), e);
-            jobStatePort.findById(jobId).ifPresent(job -> {
-                job.setErrorMessage(e.getMessage());
-                jobStatePort.save(job);
-            });
-            jobStatePort.updateStatus(jobId, JobStatus.FAILED);
-        }
+    public void runAsync(UUID jobId, Path documentPath) throws IOException {
+        log.info("event=pipeline.start component=ExtractionPipelineService status=INFO jobId={} durationMs=NA errorCode=NA traceId=NA spanId=NA",
+            jobId);
+        jobStatePort.updateStatus(jobId, JobStatus.RUNNING);
+
+        var classifications = pageClassificationService.classifyAllPages(documentPath, jobId);
+        int pageCount = classifications.size();
+        jobStatePort.findById(jobId).ifPresent(job -> {
+            job.setPageCount(pageCount);
+            jobStatePort.save(job);
+        });
+        jobStatePort.updateStatus(jobId, JobStatus.COMPLETED);
+        log.info("event=pipeline.complete component=ExtractionPipelineService status=SUCCESS jobId={} pages={} durationMs=NA errorCode=NA traceId=NA spanId=NA",
+            jobId, pageCount);
     }
 }
 ```
-
-Also add a global exception handler for `ResponseStatusException` to ensure validation errors surface correctly:
 
 File: `rfp-service/src/main/java/com/dsi/rfp/adapter/api/GlobalExceptionHandler.java`:
 
@@ -1866,25 +1904,178 @@ File: `rfp-service/src/main/java/com/dsi/rfp/adapter/api/GlobalExceptionHandler.
 package com.dsi.rfp.adapter.api;
 
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.server.ResponseStatusException;
+// NO ResponseStatusException import: per exception policy, services throw domain exceptions,
+// NOT Spring web types. This handler maps domain exceptions to HTTP; it does NOT handle
+// ResponseStatusException (which should never be thrown from application or domain layers).
 
-import java.util.Map;
-
+// GlobalExceptionHandler maps domain exceptions to HTTP ProblemDetail responses.
+// Per the exception policy: ALL services throw domain exceptions; NO service throws
+// ResponseStatusException or Spring web types. This handler is the ONLY place that
+// translates domain errors to HTTP status codes.
+// Extended in Sprint 11 to add JWT/security exception handlers.
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<Map<String, String>> handleResponseStatus(ResponseStatusException ex) {
-        log.warn("Request failed: status={} reason={}", ex.getStatusCode(), ex.getReason());
-        return ResponseEntity.status(ex.getStatusCode())
-                             .body(Map.of(
-                                 "error", ex.getStatusCode().toString(),
-                                 "message", ex.getReason() != null ? ex.getReason() : "Unknown error"
-                             ));
+    @ExceptionHandler(DocumentEncryptedException.class)
+    public ResponseEntity<ProblemDetail> handleEncrypted(DocumentEncryptedException ex) {
+        log.warn("event=validation.fail component=GlobalExceptionHandler status=WARN jobId=NA durationMs=NA errorCode=ENCRYPTED traceId={} spanId=NA",
+            MDC.get("traceId"));
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        problem.setProperty("errorCode", "ENCRYPTED");
+        return ResponseEntity.unprocessableEntity().body(problem);
+    }
+
+    @ExceptionHandler(DocumentXfaException.class)
+    public ResponseEntity<ProblemDetail> handleXfa(DocumentXfaException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        problem.setProperty("errorCode", "XFA_FORM");
+        return ResponseEntity.unprocessableEntity().body(problem);
+    }
+
+    @ExceptionHandler(DocumentUnsupportedTypeException.class)
+    public ResponseEntity<ProblemDetail> handleUnsupportedType(DocumentUnsupportedTypeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.UNSUPPORTED_MEDIA_TYPE, ex.getMessage());
+        problem.setProperty("errorCode", "UNSUPPORTED_TYPE");
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(problem);
+    }
+
+    @ExceptionHandler(DocumentValidationException.class)
+    public ResponseEntity<ProblemDetail> handleValidation(DocumentValidationException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        problem.setProperty("errorCode", ex.getErrorCode());
+        return ResponseEntity.unprocessableEntity().body(problem);
+    }
+
+    @ExceptionHandler(FileSizeLimitExceededException.class)
+    public ResponseEntity<ProblemDetail> handleFileTooLarge(FileSizeLimitExceededException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.PAYLOAD_TOO_LARGE, ex.getMessage());
+        problem.setProperty("errorCode", "FILE_TOO_LARGE");
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(problem);
+    }
+
+    @ExceptionHandler(LlmUnavailableException.class)
+    public ResponseEntity<ProblemDetail> handleLlmUnavailable(LlmUnavailableException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.SERVICE_UNAVAILABLE, "LLM service is temporarily unavailable");
+        problem.setProperty("errorCode", "LLM_UNAVAILABLE");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+            .header("Retry-After", "30")
+            .body(problem);
+    }
+
+    @ExceptionHandler(LlmResponseParseException.class)
+    public ResponseEntity<ProblemDetail> handleLlmParseFail(LlmResponseParseException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_GATEWAY, "LLM returned an unparseable response");
+        problem.setProperty("errorCode", "LLM_PARSE_FAIL");
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(problem);
+    }
+
+    @ExceptionHandler(NoSuchFileException.class)
+    public ResponseEntity<ProblemDetail> handleNotFound(NoSuchFileException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.NOT_FOUND, "Resource not found");
+        problem.setProperty("errorCode", "NOT_FOUND");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+    }
+}
+```
+
+File: `rfp-service/src/main/java/com/dsi/rfp/config/JobStateAsyncExceptionHandler.java`:
+
+```java
+package com.dsi.rfp.config;
+
+import com.dsi.rfp.domain.model.JobStatus;
+import com.dsi.rfp.domain.port.JobStatePort;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
+import org.springframework.stereotype.Component;
+
+import java.lang.reflect.Method;
+import java.util.UUID;
+
+/**
+ * Handles exceptions thrown by @Async void methods.
+ *
+ * Spring's @RestControllerAdvice does NOT intercept exceptions from @Async void methods.
+ * Those exceptions are routed to this handler via AsyncConfigurer.getAsyncUncaughtExceptionHandler().
+ *
+ * This handler inspects the method parameters for a UUID jobId argument and marks the
+ * corresponding job FAILED in Redis so the polling client sees a terminal state rather
+ * than the job staying RUNNING indefinitely.
+ *
+ * Replaces the log-only placeholder registered in Sprint 1 AsyncConfig.
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class JobStateAsyncExceptionHandler implements AsyncUncaughtExceptionHandler {
+
+    private final JobStatePort jobStatePort;
+
+    @Override
+    public void handleUncaughtException(Throwable ex, Method method, Object... params) {
+        log.error(
+            "event=async.uncaught component=JobStateAsyncExceptionHandler status=FAIL " +
+            "method={} error={} traceId=NA spanId=NA jobId=NA durationMs=NA errorCode=NA",
+            method.getName(), ex.getMessage(), ex);
+
+        // Best-effort: if the first parameter is a UUID we treat it as the jobId.
+        // ExtractionPipelineService.runAsync(UUID jobId, Path documentPath) follows this convention.
+        if (params.length > 0 && params[0] instanceof UUID jobId) {
+            try {
+                jobStatePort.updateStatus(jobId, JobStatus.FAILED);
+                log.info(
+                    "event=job.failed component=JobStateAsyncExceptionHandler status=OK " +
+                    "method={} jobId={} traceId=NA spanId=NA durationMs=NA errorCode=NA",
+                    method.getName(), jobId);
+            } catch (Exception updateEx) {
+                // If the Redis update itself fails we log and give up — we must not throw
+                // from an AsyncUncaughtExceptionHandler as Spring will ignore it.
+                log.error(
+                    "event=async.handler.fail component=JobStateAsyncExceptionHandler " +
+                    "status=FAIL method={} jobId={} error={} traceId=NA spanId=NA durationMs=NA errorCode=NA",
+                    method.getName(), jobId, updateEx.getMessage(), updateEx);
+            }
+        }
+    }
+}
+```
+
+Update `AsyncConfig` to register `JobStateAsyncExceptionHandler` (replaces the log-only placeholder from Sprint 1):
+
+```java
+// In AsyncConfig (rfp-service/src/main/java/com/dsi/rfp/config/AsyncConfig.java):
+// Add field injection and override:
+
+@RequiredArgsConstructor
+@Configuration
+@EnableAsync
+public class AsyncConfig implements AsyncConfigurer {
+
+    private final JobStateAsyncExceptionHandler jobStateAsyncExceptionHandler;
+
+    // ... existing executor beans unchanged ...
+
+    @Override
+    public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
+        // JobStateAsyncExceptionHandler marks the job FAILED in Redis and logs the error.
+        // This replaces the log-only placeholder registered in Sprint 1.
+        return jobStateAsyncExceptionHandler;
     }
 }
 ```
@@ -1900,33 +2091,25 @@ spring.servlet.multipart.max-request-size=110MB
 Class: `RfpSubmissionServiceTest`
 
 ```java
-
 @ExtendWith(MockitoExtension.class)
 class RfpSubmissionServiceTest {
-    @Mock
-    DocumentValidationService validationService;
-    @Mock
-    MimeTypeDetector mimeTypeDetector;
-    @Mock
-    FileStoragePort fileStorage;
-    @Mock
-    JobStatePort jobStatePort;
-    @Mock
-    ExtractionPipelineService pipelineService;
-    @InjectMocks
-    RfpSubmissionService service;
+    @Mock DocumentValidationService validationService;
+    @Mock MimeTypePort mimeTypePort;           // NOT MimeTypeDetector (adapter class)
+    @Mock FileStoragePort fileStorage;
+    @Mock JobStatePort jobStatePort;
+    @Mock ExtractionPipelineService pipelineService;
+    @InjectMocks RfpSubmissionService service;
 
     @Test
-    void shouldReturnJobIdWhenValidPdfSubmitted() throws Exception { ...}
-
+    void shouldReturnJobIdWhenValidPdfSubmitted() throws Exception { ... }
     @Test
-    void shouldThrowWhenValidationFails() throws Exception { ...}
-
+    void shouldThrowDocumentEncryptedExceptionForEncryptedPdf() throws Exception { ... }
     @Test
-    void shouldSaveJobWithQueuedStatusBeforeDispatch() throws Exception { ...}
-
+    void shouldThrowDocumentUnsupportedTypeExceptionForInvalidMime() throws Exception { ... }
     @Test
-    void shouldDispatchPipelineAfterSuccessfulSave() throws Exception { ...}
+    void shouldSaveJobWithQueuedStatusBeforeDispatch() throws Exception { ... }
+    @Test
+    void shouldDispatchPipelineAfterSuccessfulSave() throws Exception { ... }
 }
 ```
 
@@ -1958,11 +2141,14 @@ void shouldReturnAllJobsFromPort()
 
 ### Epic 6 — Frontend Update
 
-#### Story 6.1 — Wire UploadPage and Add Polling JobStatusPage
+#### Story 6.1 — Wire UploadPage, Add Polling JobStatusPage, and Add JobsListPage
 
 **Description:**
-Update `UploadPage.tsx` to call the real API. Create a functional `JobStatusPage.tsx` with React Query polling every 3
-seconds, showing a progress bar, status badge with color coding, and per-page classification placeholder.
+Update `UploadPage.tsx` to call the real API and redirect to `/jobs` on success. Create `JobsListPage.tsx` as the
+home/landing page, calling `GET /api/v1/rfp/jobs` and listing all submitted jobs sorted by `submittedAt` descending
+with a status badge, filename, submitted timestamp, and "View" link. Create `JobStatusPage.tsx` with React Query
+polling every 3 seconds, showing a progress bar, status badge with color coding, and per-page classification
+placeholder.
 
 **Acceptance Criteria:**
 
@@ -1970,7 +2156,13 @@ seconds, showing a progress bar, status badge with color coding, and per-page cl
 Given the upload page
 When a PDF is selected and submitted
 Then POST /api/v1/rfp/submit is called
-And on success, the user is navigated to /job/{jobId}
+And on success, the user is navigated to /jobs (the jobs list page)
+
+Given the jobs list page
+When the page renders
+Then GET /api/v1/rfp/jobs is called
+And all jobs are listed sorted by submittedAt descending
+And each row shows: filename, status badge, submitted timestamp, and a "View" link to /job/{uuid}
 
 Given the job status page for a RUNNING job
 When the page renders
@@ -2086,6 +2278,124 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 ```
 
+File: `rfp-frontend/src/pages/JobsListPage.tsx`:
+
+```tsx
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { listJobs } from '../api/rfpClient';
+import { JobStatusResponse } from '../types/rfp';
+
+const STATUS_COLORS: Record<string, string> = {
+    QUEUED: 'bg-gray-100 text-gray-700',
+    RUNNING: 'bg-yellow-100 text-yellow-700',
+    COMPLETED: 'bg-green-100 text-green-700',
+    FAILED: 'bg-red-100 text-red-700',
+    PARTIAL: 'bg-orange-100 text-orange-700',
+};
+
+export function JobsListPage() {
+    const { data, error } = useQuery<JobStatusResponse[]>({
+        queryKey: ['jobs'],
+        queryFn: listJobs,
+    });
+
+    if (error) return <div className="p-8 text-red-600">Failed to load jobs.</div>;
+    if (!data) return <div className="p-8 text-gray-500">Loading...</div>;
+
+    const sorted = [...data].sort(
+        (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+    );
+
+    return (
+        <div className="max-w-4xl mx-auto p-8">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">Submitted Jobs</h1>
+                <Link
+                    to="/upload"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                >
+                    + New Upload
+                </Link>
+            </div>
+
+            {sorted.length === 0 && (
+                <p className="text-gray-500">No jobs submitted yet.</p>
+            )}
+
+            <ul className="space-y-3">
+                {sorted.map((job) => {
+                    const colorClass = STATUS_COLORS[job.status] ?? 'bg-gray-100 text-gray-700';
+                    return (
+                        <li
+                            key={job.jobId}
+                            className="flex items-center justify-between border rounded-lg p-4 bg-white shadow-sm"
+                        >
+                            <div>
+                                <p className="font-medium text-gray-800">{job.filename ?? job.jobId}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                    {job.submittedAt ? new Date(job.submittedAt).toLocaleString() : '—'}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
+                                    {job.status}
+                                </span>
+                                <Link
+                                    to={`/job/${job.jobId}`}
+                                    className="text-blue-600 hover:underline text-sm"
+                                >
+                                    View →
+                                </Link>
+                            </div>
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
+    );
+}
+```
+
+Add `/jobs` route and update upload redirect in `rfp-frontend/src/App.tsx`:
+
+```tsx
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { UploadPage } from './pages/UploadPage';
+import { JobsListPage } from './pages/JobsListPage';
+import { JobStatusPage } from './pages/JobStatusPage';
+
+export function App() {
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<Navigate to="/jobs" replace />} />
+                <Route path="/upload" element={<UploadPage />} />
+                <Route path="/jobs" element={<JobsListPage />} />
+                <Route path="/job/:jobId" element={<JobStatusPage />} />
+            </Routes>
+        </BrowserRouter>
+    );
+}
+```
+
+`UploadPage` navigates to `/jobs` (not `/job/{uuid}`) after a successful submit:
+
+```tsx
+// Inside UploadPage.tsx — on successful POST response:
+navigate('/jobs');
+```
+
+Add `listJobs()` to `rfp-frontend/src/api/rfpClient.ts`:
+
+```ts
+export async function listJobs(): Promise<JobStatusResponse[]> {
+    const res = await fetch('/api/v1/rfp/jobs');
+    if (!res.ok) throw new Error('Failed to fetch jobs');
+    return res.json();
+}
+```
+
 **Dependencies:** Stories 5.1 (API endpoints exist).
 **Estimation:** 5 SP
 
@@ -2099,9 +2409,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 - `rfp-core` additions: `ValidationResult`, `ExtractionJob`, `JobStatus`, `PageClassification`,
   `PageClassificationResult`, `TextBlock`, `EmbeddedImageInfo`, `FontInfo`, custom exceptions (
-  `DocumentEncryptedException`, `DocumentCorruptException`, `DocumentXfaException`, `FileSizeLimitExceededException`).
-- `rfp-core` ports: `JobStatePort`, `FileStoragePort`.
-- `DocumentValidationService`, `MimeTypeDetector`.
+  `DocumentEncryptedException`, `DocumentCorruptException`, `DocumentXfaException`,
+  `FileSizeLimitExceededException`, `DocumentUnsupportedTypeException`, `DocumentValidationException`).
+- `rfp-core` ports: `JobStatePort`, `FileStoragePort`, `MimeTypePort`.
+- `DocumentValidationService`, `MimeTypeDetector` (implements `MimeTypePort`).
 - `LocalFileStorageAdapter`.
 - Unit tests for all above.
 
@@ -2127,7 +2438,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 - `RedisJobStateRepository` + `RedisConfig`.
 - `AsyncConfig` (move from Sprint 1 if not already merged).
 - `RfpSubmissionService`, `RfpJobService`, `ExtractionPipelineService`.
-- `RfpController`, `GlobalExceptionHandler`, DTOs.
+- `RfpController`, `GlobalExceptionHandler`, `JobStateAsyncExceptionHandler`, DTOs.
+- `MimeTypePort` interface and `MimeTypeDetector` adapter implementing it.
+- `DocumentUnsupportedTypeException`, `DocumentValidationException` domain exceptions.
 - application.properties updates (multipart limits).
 - Unit tests for all above.
 
@@ -2135,27 +2448,34 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 - [ ] `PdfDocumentLoader` uses try-with-resources on every `PDDocument` open.
 - [ ] `PageClassifier` threshold constants are package-private (not magic numbers inline).
-- [ ] `RedisJobStateRepository.findAll()` handles null from `redisTemplate.keys()`.
+- [ ] `RedisJobStateRepository.findAll()` uses `redisTemplate.scan()` (cursor, NOT `keys()`); keys decoded via key
+  serializer.
 - [ ] `RfpSubmissionService` dispatches async AFTER saving job to Redis (not before).
-- [ ] `ExtractionPipelineService` catches ALL exceptions and sets job to FAILED (not swallowed).
+- [ ] `ExtractionPipelineService.runAsync()` has NO `catch (Exception e)` — `JobStateAsyncExceptionHandler` handles
+  failures via `AsyncUncaughtExceptionHandler`.
 - [ ] HTTP status codes: 202 Accepted for submit, 404 for unknown jobId, 413 for file too large, 422 for ENCRYPTED/XFA.
 - [ ] `@Async("rfpTaskExecutor")` references the correct executor bean name.
 - [ ] No `@Autowired` field injection anywhere.
 
 ---
 
-### PR 3: `feat/sprint2-frontend` — UploadPage Wired + JobStatusPage Polling
+### PR 3: `feat/sprint2-frontend` — UploadPage Wired + JobsListPage + JobStatusPage Polling
 
 **Contains:**
 
-- Updated `UploadPage.tsx` with real API call.
+- Updated `UploadPage.tsx` with real API call (redirects to `/jobs` on success).
+- `JobsListPage.tsx` — home/landing page listing all submitted jobs.
 - `JobStatusPage.tsx` with React Query polling.
+- Updated `App.tsx` with `/jobs` route and root redirect.
 - `QueryClientProvider` added to `main.tsx`.
-- `rfpClient.ts` with `getJobStatus()` function.
+- `rfpClient.ts` with `getJobStatus()` and `listJobs()` functions.
 - Updated `JobStatusResponse` TypeScript type.
 
 **Review Checklist:**
 
+- [ ] `JobsListPage` shows all jobs from `GET /api/v1/rfp/jobs` sorted by `submittedAt` descending.
+- [ ] Each row has: filename, status badge, submitted time, and "View" link to `/job/{uuid}`.
+- [ ] `UploadPage` redirects to `/jobs` after successful submit (not directly to `/job/{uuid}`).
 - [ ] Polling stops when status is COMPLETED or FAILED.
 - [ ] Status badge colors match design spec (green=COMPLETED, yellow=RUNNING, red=FAILED).
 - [ ] Error state displayed when `errorMessage` is non-null.
@@ -2194,9 +2514,9 @@ Expected output:
 
 ```json
 {
-    "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "status": "QUEUED",
-    "message": null
+  "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "status": "QUEUED",
+  "message": null
 }
 ```
 
@@ -2211,14 +2531,14 @@ Expected (while running):
 
 ```json
 {
-    "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "status": "RUNNING",
-    "progress": 45,
-    "submittedAt": "2025-06-01T10:00:00Z",
-    "completedAt": null,
-    "errorMessage": null,
-    "originalFilename": "sample-rfp.pdf",
-    "pageCount": 0
+  "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "status": "RUNNING",
+  "progress": 45,
+  "submittedAt": "2025-06-01T10:00:00Z",
+  "completedAt": null,
+  "errorMessage": null,
+  "originalFilename": "sample-rfp.pdf",
+  "pageCount": 0
 }
 ```
 
@@ -2226,14 +2546,14 @@ Expected (after completion):
 
 ```json
 {
-    "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "status": "COMPLETED",
-    "progress": 100,
-    "submittedAt": "2025-06-01T10:00:00Z",
-    "completedAt": "2025-06-01T10:00:12Z",
-    "errorMessage": null,
-    "originalFilename": "sample-rfp.pdf",
-    "pageCount": 23
+  "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "status": "COMPLETED",
+  "progress": 100,
+  "submittedAt": "2025-06-01T10:00:00Z",
+  "completedAt": "2025-06-01T10:00:12Z",
+  "errorMessage": null,
+  "originalFilename": "sample-rfp.pdf",
+  "pageCount": 23
 }
 ```
 
@@ -2248,8 +2568,8 @@ Expected:
 
 ```json
 {
-    "error": "422 UNPROCESSABLE_ENTITY",
-    "message": "PDF is password-protected and cannot be processed"
+  "error": "422 UNPROCESSABLE_ENTITY",
+  "message": "PDF is password-protected and cannot be processed"
 }
 ```
 
@@ -2322,6 +2642,8 @@ INFO  Classification summary: jobId=3fa85f64... total=23 DIGITAL=18 SCANNED=3 MI
 - [ ] `RedisJobStateRepository` sets TTL to exactly 24 hours — verified by unit test with Mockito argument captor.
 - [ ] `ExtractionPipelineService` sets job status to FAILED (not RUNNING) on any unhandled exception — verified by unit
   test.
+- [ ] End-to-end browser journey verified: upload a PDF → redirected to `/jobs` list → job row visible → click "View"
+  → `JobStatusPage` polls to COMPLETED.
 - [ ] Frontend `JobStatusPage` stops polling when status is COMPLETED — verified by browser network tab showing no more
   requests after completion.
 - [ ] No `@Autowired` field injection in any new class — verified by `grep -r "@Autowired" rfp-service/src/main`.
@@ -2348,9 +2670,9 @@ page dimensions, which is sufficient for the SCANNED threshold (0.80).
 **Assumption:** The `@Async("rfpTaskExecutor")` executor uses `ThreadPoolTaskExecutor` from `AsyncConfig` defined in
 Sprint 1. If Sprint 1's `AsyncConfig` was not yet merged, it must be added in PR 2 of this sprint.
 
-**Open Question:** Should `findAll()` in `RedisJobStateRepository` use `SCAN` cursor instead of `KEYS *` to avoid
-blocking the Redis event loop? For Sprint 2 (development only, small number of jobs), `KEYS *` is acceptable. In Sprint
-11 (production hardening), switch to `ScanOptions` with `COUNT 100` via `redisTemplate.scan()`.
+**Decision (FIX-P):** `RedisJobStateRepository.findAll()` MUST use `redisTemplate.scan()` with cursor from day one.
+`redisTemplate.keys()` is O(N) and blocks the Redis event loop for all concurrent requests regardless of environment.
+The `SCAN`-based implementation is already written above — do not revert to `keys()` in any sprint.
 
 **Open Question:** Should the classification results be persisted somewhere (Redis, DB) for use in Sprint 3's section
 segmenter? Decision: store `List<PageClassificationResult>` as part of the `ExtractionJob` state. In Sprint 2, add

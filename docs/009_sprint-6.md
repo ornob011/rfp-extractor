@@ -471,7 +471,7 @@ def test_ocr_page_returns_result_for_valid_image(mock_ocr_service):
 ```python
 import logging
 log = logging.getLogger(__name__)
-log.info("[OCR] page processed lang=%s confidence=%.3f method=%s words=%d",
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [OCR] page processed lang=%s confidence=%.3f method=%s words=%d",
     lang, result.page_confidence, result.extraction_method, result.word_count)
 ```
 
@@ -621,7 +621,7 @@ Use `MockRestServiceServer` (Spring Test) or WireMock to stub HTTP responses.
 **Observability:**
 
 ```java
-log.info("[OcrSidecarClient] Page OCR completed: lang={} confidence={} method={} words={}",
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [OcrSidecarClient] Page OCR completed: lang={} confidence={} method={} words={}",
          lang, result.pageConfidence(),result.
 
 extractionMethod(),result.
@@ -759,7 +759,8 @@ public class ScannedPageExtractor {
       `ByteArrayOutputStream baos = new ByteArrayOutputStream(); ImageIO.write(image, "PNG", baos); byte[] pngBytes = baos.toByteArray()`.
     - Call `ocrClient.extractPage(pngBytes, "eng+ben")`.
     - On `Optional.empty()` result → return `new ScannedPageExtractionResult(pageNum, "", 0.0, 0)`.
-    - On `OcrUnavailableException` caught → `log.error("[ScannedPageExtractor] OCR unavailable for page={}", pageNum)`,
+    - On `OcrUnavailableException` caught →
+      `log.error("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=ERROR [ScannedPageExtractor] OCR unavailable for page={}", pageNum)`,
       return degraded result.
     - On success → return `new ScannedPageExtractionResult(pageNum, dto.text(), dto.pageConfidence(), dto.wordCount())`.
 
@@ -777,7 +778,7 @@ subclass).
 **Observability:**
 
 ```java
-log.info("[ScannedPageExtractor] Page={} confidence={} words={} method={}",
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [ScannedPageExtractor] Page={} confidence={} words={} method={}",
          pageNum, result.confidence(),result.
 
 wordCount(), "easyocr|tesseract");
@@ -1127,7 +1128,7 @@ Mock `LlmAdapter`. Test `looksLikeTable` with direct string inputs.
 **Observability:**
 
 ```java
-log.info("[ScannedTableReconstructor] Page={} tabular={} llmSuccess={} confidence={}",
+log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO [ScannedTableReconstructor] Page={} tabular={} llmSuccess={} confidence={}",
          pageNum, looksTabular, llmSuccess, confidence);
 ```
 
