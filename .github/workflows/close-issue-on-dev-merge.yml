@@ -1,0 +1,93 @@
+name: Close Issue on merge to dev
+
+on:
+  pull_request:
+    branches: [ dev ]
+    types: [ closed ]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: close-issue-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  close-issue:
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Close issue referenced by branch name
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+
+            // Skip fork PRs (GITHUB_TOKEN won't have issues:write on "pull_request" from forks)
+            const isFork = pr.head.repo.full_name !== context.repo.owner + "/" + context.repo.repo;
+            if (isFork) {
+              core.notice(`PR is from a fork (${pr.head.repo.full_name}). Skipping auto-close.`);
+              return;
+            }
+
+            const branch = pr.head.ref;
+
+            // Accepted examples:
+            // feat/123-add-thing, feature/456-add-thing, fix/789-cleanup
+            const re = /^(feat|feature|fix|bugfix|hotfix|chore|docs|refactor)\/(?<issue>\d+)(?:[-/].+)?$/i;
+            const m = branch.match(re);
+
+            if (!m?.groups?.issue) {
+              core.notice(`No issue number found in branch '${branch}'. Skipping.`);
+              return;
+            }
+
+            const issue_number = Number(m.groups.issue);
+
+            // Fetch issue; if it doesn't exist, do not fail the workflow (avoid noisy red checks)
+            let issue;
+            try {
+              issue = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number
+              });
+            } catch (e) {
+              core.notice(`Branch '${branch}' implies issue #${issue_number}, but it wasn't found. Skipping.`);
+              return;
+            }
+
+            // Guard: don't close PRs
+            if (issue.data.pull_request) {
+              core.notice(`#${issue_number} is a pull request, not an issue. Skipping.`);
+              return;
+            }
+
+            if (issue.data.state === 'closed') {
+              core.notice(`Issue #${issue_number} already closed. Nothing to do.`);
+              return;
+            }
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              state: 'closed',
+              state_reason: 'completed'
+            });
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              body: [
+                `Closed automatically because PR #${pr.number} was merged into \`dev\`.`,
+                ``,
+                `PR: ${pr.html_url}`
+              ].join('\n')
+            });
+
+            core.notice(`Closed issue #${issue_number} (from branch '${branch}').`);
