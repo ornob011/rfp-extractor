@@ -27,7 +27,7 @@
 
 ## 1) Entry Criteria
 
-- Sprint 10 is merged and green on CI (`mvn clean verify` passes).
+- Sprint 10 is merged and green on CI (`mvn test` passes).
 - All 5 artifact generators operational and writing to `LocalArtifactStorageAdapter`.
 - `AnalysisJobEntity.submittedBy` FK to `UserEntity` exists (set at submission time from Sprint 2+).
 - `DocumentStoragePort` and `ArtifactPort` implemented by plain (non-encrypted) adapters.
@@ -276,8 +276,7 @@ public class SecurityConfig {
 1. Disable CSRF (stateless JWT API).
 2. Set session creation policy to `STATELESS`.
 3. Configure endpoint rules:
-    - `permitAll()`: `POST /api/v1/auth/login`, `POST /api/v1/auth/signup`, `GET /api/v1/health`,
-      `GET /actuator/health`, `GET /actuator/prometheus`
+    - `permitAll()`: `POST /api/v1/auth/login`, `POST /api/v1/auth/signup`, `GET /api/v1/health`
     - `hasAnyRole("ANALYST","ADMIN")`: `POST /api/v1/rfp/submit`, `GET /api/v1/rfp/jobs`
     - `hasAnyRole("ANALYST","ADMIN","AUDITOR")`: `GET /api/v1/rfp/status/**`, `GET /api/v1/rfp/result/**`,
       `GET /api/v1/rfp/artifacts/**`
@@ -994,7 +993,7 @@ Then client-side validation shows "Password must be at least 8 characters"
 6. Update React Router in `App.tsx`: add `<Route path="/signup" element={<SignupPage />} />` — **outside**
    `<ProtectedRoute>`. Wrap all other non-login routes with `<ProtectedRoute>`.
 
-**Test Plan:** Manual browser testing.
+**Test Plan:** Unit tests only (controller/service/security filter tests with mocked dependencies).
 **Story Points:** 8
 
 ---
@@ -1027,7 +1026,7 @@ Then client-side validation shows "Password must be at least 8 characters"
 ```bash
 # 1. Build and verify
 cd rfp-extractor
-mvn clean verify
+mvn test
 
 # 2. Set encryption key in .env
 echo "STORAGE_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
@@ -1089,18 +1088,13 @@ file $PDF_PATH
 # Send a document with injection text in content — submit and check logs
 docker-compose logs rfp-service | grep "Prompt injection"
 # Expected: WARNING log if any injection patterns detected
-
-# 10. Open React UI -> navigate to /login
-echo "Open http://localhost:3000/login"
-echo "Login with analyst1/analyst123. Verify redirect to upload page."
-echo "Navigate directly to /admin — verify 'Access Denied' message."
 ```
 
 ---
 
 ## 6) Exit Criteria
 
-- [ ] `mvn clean verify` passes with zero failures.
+- [ ] `mvn test` passes with zero failures.
 - [ ] `GET /api/v1/rfp/jobs` without JWT returns 401.
 - [ ] ANALYST user cannot access another user's job — returns 403.
 - [ ] ADMIN user can access any job.

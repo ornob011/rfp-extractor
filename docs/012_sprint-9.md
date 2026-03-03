@@ -31,7 +31,7 @@
 - `RulePackLoader` already implements `WatchService` polling on `classpath:rules/` or a configurable directory (
   `app.rules.directory`), reloading packs on change.
 - `rule-schema-v1.json` (networknt) exists and validates `bd-govt-ict-v1.yaml` successfully.
-- `mvn verify` is green on the Sprint 8 codebase.
+- `mvn test` is green on the Sprint 8 codebase.
 - The Sprint 8 `RfpTypeClassifier` recognizes `ICT` and `GOODS` types; the class is open for extension (keyword map is a
   mutable data structure, not a switch statement).
 
@@ -1681,7 +1681,7 @@ Then RulePackLoader.getAllPackSummaries() returns the pack with the new ruleCoun
 3. Instantiate `RulePackLoader` via `@SpringBootTest` with the temp dir property.
 4. Assert initial load shows 5 rules.
 5. Overwrite the file with 6 rules.
-6. `Thread.sleep(35_000)` (acceptable in integration tests — not unit tests).
+6. `Thread.sleep(35_000)` (acceptable in unit tests).
 7. Assert `getAllPackSummaries()` shows 6 rules for that pack.
 
 File: `rfp-service/src/test/java/com/dsi/rfp/adapter/rulepack/RulePackLoaderHotReloadTest.java`
@@ -1968,7 +1968,7 @@ in the response DTO from `RfpController` (add to `RfpResultDto` if not already p
 
 ### PR 2: Admin API, Hot Reload Test, Frontend
 
-**Title:** `feat(admin): rule pack admin API, hot-reload integration test, AdminPage`
+**Title:** `feat(admin): rule pack admin API, hot-reload unit test, AdminPage`
 
 **Contents:**
 
@@ -1987,7 +1987,7 @@ in the response DTO from `RfpController` (add to `RfpResultDto` if not already p
 
 - [ ] `AdminRulePackController` has `TODO Sprint-11` comment for `@PreAuthorize` activation
 - [ ] `RulePackLoader` thread safety: `getAllPackSummaries()` reads from `ConcurrentHashMap`, safe for concurrent access
-- [ ] Hot reload integration test has `@Timeout(60)` to prevent CI hang
+- [ ] Hot reload unit test has `@Timeout(60)` to prevent CI hang
 - [ ] All 6 `AdminRulePackControllerTest` tests pass with `@WebMvcTest`
 - [ ] Frontend `AdminPage` handles API error (try/catch on both fetchPacks and handleReloadAll)
 - [ ] `rfpClient` base URL matches the controller mapping (`/api/v1/admin/rule-packs`)
@@ -2002,7 +2002,7 @@ in the response DTO from `RfpController` (add to `RfpResultDto` if not already p
 
 ```bash
 cd rfp-extractor
-mvn clean verify -q
+mvn test -q
 docker-compose up -d
 # Wait for health checks
 curl http://localhost:8080/api/v1/health
@@ -2166,7 +2166,7 @@ Expected:
 - [ ] `AdminPage.tsx` renders at `/admin` with the rule pack table and working "Reload All" button.
 - [ ] ResultPage Quality Gate tab shows the RFP type badge with correct color per type; shows yellow warning for
   UNKNOWN.
-- [ ] `mvn verify` is green: all 88 new rule pack tests + 6 controller tests + 2 service tests pass with no failures.
+- [ ] `mvn test` is green: all 88 new rule pack tests + 6 controller tests + 2 service tests pass with no failures.
 - [ ] `AdminRulePackController` has a `TODO Sprint-11` comment for `@PreAuthorize` and does NOT have a real
   `@PreAuthorize` annotation (Sprint 11 activates it).
 - [ ] No class introduced in this sprint exceeds 250 lines.
@@ -2191,9 +2191,9 @@ revised to use `contains(value, 'liquidated')` or equivalent.
 development and `/api/v1` in production (proxied by Vite/Nginx). The `AdminPage` calls
 `rfpClient.get('/admin/rule-packs')` which resolves correctly.
 
-**Assumption:** The hot reload test (`RulePackLoaderHotReloadTest`) is an integration test placed in the `src/test/java`
-directory but tagged with a custom `@Tag("integration")` annotation so it can be excluded from standard `mvn verify`
-runs if needed (fast unit test builds). The CI pipeline runs the integration test separately.
+**Assumption:** The hot reload test (`RulePackLoaderHotReloadTest`) is a unit-level test placed in the `src/test/java`
+directory with standard unit-test annotations so it runs in normal `mvn test`
+execution. The CI pipeline runs unit tests only.
 
 **Open Question:** Should the admin API return an error code when no packs are loaded (empty application startup)?
 Current implementation returns an empty array with 200. If an empty list is an error condition, return 500 with error

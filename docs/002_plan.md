@@ -51,67 +51,67 @@ codebase.
 Every issue from `001_research.md` §15 is resolved in a specific sprint. "Resolved" means the sprint's Definition of
 Done includes verifying the fix.
 
-| Issue ID | Description (brief)                 | Resolved In                                              |
-|----------|-------------------------------------|----------------------------------------------------------|
-| A-01     | Tika/PDFBox redundancy              | Sprint 2                                                 |
-| A-02     | No input validation                 | Sprint 2                                                 |
-| A-03     | Mixed pages unhandled               | Sprint 6                                                 |
-| A-04     | image_detect() undefined            | Sprint 2                                                 |
-| A-05     | Section segmenter heuristics fail   | Sprint 3                                                 |
-| A-06     | Clause ID instability               | Sprint 3                                                 |
-| T-01     | No column de-interleaving           | Sprint 6                                                 |
-| T-02     | Multi-page table fragmentation      | Sprint 5                                                 |
-| T-03     | Merged cells corrupt grid           | Sprint 5                                                 |
-| T-04     | Scanned tables have no path         | Sprint 6                                                 |
-| T-05     | Stream mode requires tuning         | Sprint 5                                                 |
-| T-06     | Bangla OCR engine undefined         | Sprint 6                                                 |
-| T-07     | Legacy Bangla encoding corruption   | Sprint 11                                                |
-| T-08     | OCR confidence not propagated       | Sprint 6                                                 |
-| T-09     | Rule pack DSL undefined             | Sprint 8                                                 |
-| D-01     | Clause-to-section link missing      | Sprint 3                                                 |
-| D-02     | Clause page_range missing           | Sprint 3                                                 |
-| D-03     | Cross-clause refs not modeled       | Sprint 3                                                 |
-| D-04     | Tables not linked to sections       | Sprint 5                                                 |
-| D-05     | Tags field undefined                | Sprint 4                                                 |
-| D-06     | Entity provenance missing           | Sprint 4                                                 |
-| D-07     | Confidence structure ambiguous      | Sprint 3                                                 |
-| D-08     | Grid format undefined               | Sprint 5                                                 |
-| R-01     | No rule DSL or schema               | Sprint 8                                                 |
-| R-02     | Deterministic/LLM boundary          | Sprint 8                                                 |
-| R-03     | No domain expert for rules          | Pre-Sprint (user provided checklist)                     |
-| R-04     | Single pack can't cover all types   | Sprint 9                                                 |
-| AG-01    | "Agent" decisions are deterministic | Sprint 4 (LangGraph4J deterministic repair)              |
-| AG-02    | Repair loop no termination          | Sprint 7                                                 |
-| AG-03    | Context window management absent    | Sprint 4                                                 |
-| AG-04    | LLM non-determinism in IDs/tags     | Sprint 3 (deterministic ClauseIdAssigner)                |
-| O-01     | Clarification question generation   | Sprint 10                                                |
-| O-02     | DOCX/XLSX stack undefined           | Sprint 1 (POI + Freemarker locked)                       |
-| O-03     | PDF page refs path-dependent        | Sprint 10 (clause_id + page number as evidence)          |
-| O-04     | Audit log is JSON not readable      | Sprint 10 (HTML audit report)                            |
-| B-01     | Legacy Bangla silent corruption     | Sprint 11 (BanglaEncodingDetector rejects)               |
-| B-02     | No Bangla NER                       | Sprint 13+ (deferred; graceful rejection)                |
-| B-03     | No Bangla heading patterns          | Sprint 13+ (deferred)                                    |
-| B-04     | LLM degraded on Bangla              | Sprint 13+ (deferred)                                    |
-| S-01     | Spring AI no agentic loop           | Sprint 4 (LangGraph4J)                                   |
-| S-02     | Long-running tools block sync       | Sprint 2 (async job infrastructure)                      |
-| S-03     | No state persistence                | Sprint 2 (PostgreSQL-backed ExtractionState checkpoints) |
-| S-04     | Local LLM hardware undefined        | Deployment Tiers (see docs/003)                          |
-| OP-01    | 10-40 min processing time           | Accepted; async background job; Sprint 2                 |
-| OP-02    | No concurrency model                | Sprint 2 (ThreadPoolTaskExecutor, queue=20)              |
-| OP-03    | Model updates change behavior       | Sprint 12 (model version pinning)                        |
-| OP-04    | No monitoring/observability         | Sprint 12 (Micrometer, 7 custom metrics)                 |
-| DIFF-01  | Off-the-shelf tools overlap         | Architectural (self-hosted + GOB rules + Bangla)         |
-| DIFF-02  | Unique value buried                 | 003_implementation-index.md executive summary            |
-| MVP-01   | MVP is actually a full v1.0         | Accepted; scope is correct for a serious pitch           |
-| MVP-02   | Artifacts shouldn't be in MVP       | Accepted; deferred to Sprint 10                          |
-| MVP-03   | Repair loop shouldn't be in MVP     | Sprint 7 (after extraction is proven in Sprints 3-6)     |
-| SEC-01   | No RBAC/audit/encryption            | Sprint 11                                                |
-| SEC-02   | Prompt injection via doc content    | Sprint 11 (PromptInjectionFilter)                        |
-| SEC-03   | Self-hosted not leading pitch       | 003_implementation-index.md executive summary            |
-| TEST-01  | No ground truth dataset             | Wishlist (`wishlist/001_wishlist.md`; non-blocking)      |
-| TEST-02  | No evaluation metrics               | Sprint 3 (fixture assertions + schema + deadline > 90%)  |
-| TEST-03  | Rule pack has no test suite         | Sprint 8 (64 parameterized tests) + Sprint 9 (88 more)   |
-| TEST-04  | Repair loop hard to test            | Sprint 7 (deliberately degraded test docs)               |
+| Issue ID | Description (brief)                 | Resolved In                                                 |
+|----------|-------------------------------------|-------------------------------------------------------------|
+| A-01     | Tika/PDFBox redundancy              | Sprint 2                                                    |
+| A-02     | No input validation                 | Sprint 2                                                    |
+| A-03     | Mixed pages unhandled               | Sprint 6                                                    |
+| A-04     | image_detect() undefined            | Sprint 2                                                    |
+| A-05     | Section segmenter heuristics fail   | Sprint 3                                                    |
+| A-06     | Clause ID instability               | Sprint 3                                                    |
+| T-01     | No column de-interleaving           | Sprint 6                                                    |
+| T-02     | Multi-page table fragmentation      | Sprint 5                                                    |
+| T-03     | Merged cells corrupt grid           | Sprint 5                                                    |
+| T-04     | Scanned tables have no path         | Sprint 6                                                    |
+| T-05     | Stream mode requires tuning         | Sprint 5                                                    |
+| T-06     | Bangla OCR engine undefined         | Sprint 6                                                    |
+| T-07     | Legacy Bangla encoding corruption   | Sprint 11                                                   |
+| T-08     | OCR confidence not propagated       | Sprint 6                                                    |
+| T-09     | Rule pack DSL undefined             | Sprint 8                                                    |
+| D-01     | Clause-to-section link missing      | Sprint 3                                                    |
+| D-02     | Clause page_range missing           | Sprint 3                                                    |
+| D-03     | Cross-clause refs not modeled       | Sprint 3                                                    |
+| D-04     | Tables not linked to sections       | Sprint 5                                                    |
+| D-05     | Tags field undefined                | Sprint 4                                                    |
+| D-06     | Entity provenance missing           | Sprint 4                                                    |
+| D-07     | Confidence structure ambiguous      | Sprint 3                                                    |
+| D-08     | Grid format undefined               | Sprint 5                                                    |
+| R-01     | No rule DSL or schema               | Sprint 8                                                    |
+| R-02     | Deterministic/LLM boundary          | Sprint 8                                                    |
+| R-03     | No domain expert for rules          | Pre-Sprint (user provided checklist)                        |
+| R-04     | Single pack can't cover all types   | Sprint 9                                                    |
+| AG-01    | "Agent" decisions are deterministic | Sprint 4 (LangGraph4J deterministic repair)                 |
+| AG-02    | Repair loop no termination          | Sprint 7                                                    |
+| AG-03    | Context window management absent    | Sprint 4                                                    |
+| AG-04    | LLM non-determinism in IDs/tags     | Sprint 3 (deterministic ClauseIdAssigner)                   |
+| O-01     | Clarification question generation   | Sprint 10                                                   |
+| O-02     | DOCX/XLSX stack undefined           | Sprint 1 (POI + Freemarker locked)                          |
+| O-03     | PDF page refs path-dependent        | Sprint 10 (clause_id + page number as evidence)             |
+| O-04     | Audit log is JSON not readable      | Sprint 10 (HTML audit report)                               |
+| B-01     | Legacy Bangla silent corruption     | Sprint 11 (BanglaEncodingDetector rejects)                  |
+| B-02     | No Bangla NER                       | Sprint 13+ (deferred; graceful rejection)                   |
+| B-03     | No Bangla heading patterns          | Sprint 13+ (deferred)                                       |
+| B-04     | LLM degraded on Bangla              | Sprint 13+ (deferred)                                       |
+| S-01     | Spring AI no agentic loop           | Sprint 4 (LangGraph4J)                                      |
+| S-02     | Long-running tools block sync       | Sprint 2 (async job infrastructure)                         |
+| S-03     | No state persistence                | Sprint 2 (PostgreSQL-backed ExtractionState checkpoints)    |
+| S-04     | Local LLM hardware undefined        | Deployment Tiers (see docs/003)                             |
+| OP-01    | 10-40 min processing time           | Accepted; async background job; Sprint 2                    |
+| OP-02    | No concurrency model                | Sprint 2 (ThreadPoolTaskExecutor, queue=20)                 |
+| OP-03    | Model updates change behavior       | Deferred to wishlist (unit-test-only baseline; no Actuator) |
+| OP-04    | No monitoring/observability         | Deferred to wishlist (unit-test-only baseline; no Actuator) |
+| DIFF-01  | Off-the-shelf tools overlap         | Architectural (self-hosted + GOB rules + Bangla)            |
+| DIFF-02  | Unique value buried                 | 003_implementation-index.md executive summary               |
+| MVP-01   | MVP is actually a full v1.0         | Accepted; scope is correct for a serious pitch              |
+| MVP-02   | Artifacts shouldn't be in MVP       | Accepted; deferred to Sprint 10                             |
+| MVP-03   | Repair loop shouldn't be in MVP     | Sprint 7 (after extraction is proven in Sprints 3-6)        |
+| SEC-01   | No RBAC/audit/encryption            | Sprint 11                                                   |
+| SEC-02   | Prompt injection via doc content    | Sprint 11 (PromptInjectionFilter)                           |
+| SEC-03   | Self-hosted not leading pitch       | 003_implementation-index.md executive summary               |
+| TEST-01  | No ground truth dataset             | Wishlist (`wishlist/001_wishlist.md`; non-blocking)         |
+| TEST-02  | No evaluation metrics               | Sprint 3 (fixture assertions + schema + deadline > 90%)     |
+| TEST-03  | Rule pack has no test suite         | Sprint 8 (64 parameterized tests) + Sprint 9 (88 more)      |
+| TEST-04  | Repair loop hard to test            | Sprint 7 (deliberately degraded test docs)                  |
 
 **Bangla issues B-02, B-03, B-04 are intentionally deferred to Sprint 13+.** The system gracefully rejects
 legacy-encoded Bangla documents with a structured error (Sprint 11 `BanglaEncodingDetector`). Unicode Bangla is accepted
@@ -303,7 +303,7 @@ concrete need visible today, not a hypothetical future requirement.
 
 ### 5. Testing Standards
 
-Unit testing only. No integration, E2E, or contract tests.
+Backend unit testing only. No integration, E2E, contract, or frontend test requirements.
 
 | Concern               | Rule                                                                                              |
 |-----------------------|---------------------------------------------------------------------------------------------------|
@@ -375,8 +375,8 @@ verify no library already provides it.
 | DOCX templating                                                                            | Freemarker + Apache POI XWPF                                                                       | custom template engine              |
 | Scheduled jobs                                                                             | Spring `@Scheduled`                                                                                | custom thread loops                 |
 | Async execution                                                                            | Spring `@Async` + `ThreadPoolTaskExecutor`                                                         | manual `Thread` / `Executor` wiring |
-| Metrics                                                                                    | Micrometer (`MeterRegistry`)                                                                       | custom counters                     |
-| Health checks                                                                              | Spring Actuator                                                                                    | custom `/health` endpoint           |
+| Metrics                                                                                    | Deferred to wishlist (not in current baseline)                                                     | mandatory metrics pipeline          |
+| Health checks                                                                              | Spring Web controller (`GET /api/v1/health`)                                                       | Actuator dependency in baseline     |
 | DB access                                                                                  | Spring Data JPA + Hibernate                                                                        | raw JDBC for standard queries       |
 | Connection pooling                                                                         | HikariCP (auto-configured by Spring Boot)                                                          | manual connection management        |
 | File watching (rule hot-reload)                                                            | Java `WatchService` (standard library)                                                             | polling loops                       |
@@ -1062,7 +1062,6 @@ Hello-world end-to-end.
     - `networknt:json-schema-validator` (for JSON Schema validation)
     - `poi-ooxml` (Apache POI)
     - `freemarker`
-    - `spring-boot-starter-actuator`, `micrometer-registry-prometheus`
 
 **LLM Provider Abstraction**
 
@@ -1071,8 +1070,9 @@ Hello-world end-to-end.
   selected via `@ConditionalOnProperty`
 - [ ] `LlmAdapter.java` (adapter layer) — wraps Spring AI `ChatClient`. Methods: `extractStructured(prompt, schema)`,
   `judgeSnippet(prompt, snippet)`. All callers depend on this adapter, never on Spring AI directly
-- [ ] Validate: a JUnit integration test that calls `LlmAdapter.extractStructured()` and gets valid JSON back from
-  OpenRouter Gemini
+- [ ] Validate: a JUnit unit test that calls `LlmAdapter.extractStructured()` with mocked provider responses and
+  verifies
+  JSON parsing + exception mapping
 
 **Python OCR Sidecar**
 
@@ -1585,52 +1585,10 @@ propagated.
 
 ---
 
-### Sprint 12 — Operational Hardening & Production Readiness
+### Sprint 12 — Deferred (Out of Scope in Current Baseline)
 
-**Delivers:** Monitored, observable, deployable system with SLA documentation and director pitch doc.
-
-**Metrics & Observability** (fixes OP-04)
-
-- [ ] `RfpMetrics.java` — Micrometer `MeterRegistry` custom metrics:
-    - `rfp.jobs.queued` (Gauge — current queue depth)
-    - `rfp.jobs.completed` (Counter — by status: COMPLETED, FAILED, PARTIAL)
-    - `rfp.processing.duration` (Timer — histogram per job)
-    - `rfp.confidence.score` (DistributionSummary — doc_completeness_score per job)
-    - `rfp.llm.tokens.used` (Counter — per LLM call, tagged by provider + model)
-    - `rfp.rule_pack.findings` (Counter — tagged by severity + rule_id)
-- [ ] `GET /actuator/prometheus` — Prometheus scrape endpoint
-- [ ] `GET /actuator/health` — includes database, OCR sidecar, LLM provider connectivity checks
-
-**Job Queue Backpressure** (fixes OP-02)
-
-- [ ] `JobQueueGuard.java` — intercepted at `RfpSubmissionService`: if `executor.getQueueSize() >= 20` → throw
-  `ServiceUnavailableException` → 503 response with `Retry-After` header
-
-**Model Version Management** (fixes OP-03)
-
-- [ ] For OpenRouter: store `app.llm.openrouter.model` value in each job's `doc_meta.extraction_model`
-- [ ] For Ollama: pin model by digest (`app.llm.ollama.model.digest=sha256:...`); on startup, verify digest matches
-- [ ] On startup: log active provider + model to application log
-
-**SLA Documentation**
-
-- [ ] `docs/sla.md`: 200-page digital doc ≈ 4–8 min, 200-page mixed ≈ 12–25 min (benchmarked estimates after Sprint 6)
-- [ ] `docs/security-pitch.md` (fixes SEC-03, DIFF-01, DIFF-02):
-    - Why self-hosted (Ollama path) matters for GOB contract data residency
-    - What the rule pack provides that SaaS cannot (bd-govt-rfp-v1 specificity)
-    - Why Bangla + GOB context is irreplaceable as competitive moat
-    - Director pitch: lead with security → domain specificity → not "agentic"
-
-**Docker Compose — Production Config**
-
-- [ ] Resource limits per service in `docker-compose.yml`
-- [ ] Environment variable documentation in `docs/deployment.md`
-- [ ] `OPENROUTER_API_KEY` and `app.storage.encryption-key` from `.env` file (not committed)
-
-**Frontend**
-
-- [ ] `AdminPage.tsx` — rule pack stats, job queue depth, metrics summary (from `/actuator/metrics`)
-- [ ] Error boundary components with user-friendly messages
+Sprint 12 operational hardening is deferred to wishlist (unit-test-only baseline; no Actuator, no mandatory
+Prometheus/Micrometer deliverables).
 
 ---
 
@@ -1648,54 +1606,54 @@ Deferred. Bangla v1.0 gracefully rejects legacy-encoded documents. This sprint i
 
 ## Issue Resolution Traceability
 
-| Issue IDs                                  | Sprint                                              |
-|--------------------------------------------|-----------------------------------------------------|
-| A-01 (Tika/PDFBox redundancy)              | Sprint 2                                            |
-| A-02 (no input validation)                 | Sprint 2                                            |
-| A-03 (mixed pages)                         | Sprint 6                                            |
-| A-04 (image_detect undefined)              | Sprint 2                                            |
-| A-05 (section segmenter fragile)           | Sprint 3 + Sprint 7                                 |
-| A-06 (unstable clause IDs)                 | Sprint 3                                            |
-| T-01 (multi-column)                        | Sprint 6                                            |
-| T-02 (multi-page tables)                   | Sprint 5                                            |
-| T-03 (merged cells)                        | Sprint 5                                            |
-| T-04 (scanned tables)                      | Sprint 6                                            |
-| T-05 (stream mode tuning)                  | Sprint 5                                            |
-| T-06 (OCR engine)                          | Sprint 6                                            |
-| T-07 (legacy Bangla encoding)              | Sprint 11 (placeholder) + Sprint 13                 |
-| T-08 (OCR confidence propagation)          | Sprint 6                                            |
-| T-09 (rule pack undefined)                 | Sprint 8                                            |
-| D-01 through D-08 (schema issues)          | Sprint 1 (schema defined)                           |
-| R-01 (rule DSL)                            | Sprint 1 (DSL defined) + Sprint 8 (implemented)     |
-| R-02 (deterministic/LLM boundary)          | Sprint 8                                            |
-| R-03 (rule authorship)                     | Sprint 8 + Sprint 9                                 |
-| R-04 (single rule pack for all types)      | Sprint 8 + Sprint 9                                 |
-| AG-01 (agentic framing)                    | Sprint 4 (graph defined correctly)                  |
-| AG-02 (repair loop termination)            | Sprint 7                                            |
-| AG-03 (context window)                     | Sprint 4                                            |
-| AG-04 (LLM non-determinism)                | Sprint 4                                            |
-| O-01 (clarification questions)             | Sprint 10                                           |
-| O-02 (artifact stack)                      | Sprint 1 (decision locked)                          |
-| O-03 (page references)                     | Sprint 10                                           |
-| O-04 (audit log format)                    | Sprint 10                                           |
-| B-01 through B-04                          | Sprint 13 (deferred)                                |
-| S-01 (Spring AI + LangGraph4J loop)        | Sprint 4                                            |
-| S-02 (async execution)                     | Sprint 2                                            |
-| S-03 (state persistence)                   | Sprint 2 + Sprint 4                                 |
-| S-04 (LLM provider config)                 | Sprint 1                                            |
-| OP-01 (processing time SLA)                | Sprint 12                                           |
-| OP-02 (concurrency model)                  | Sprint 12                                           |
-| OP-03 (model version pinning)              | Sprint 12                                           |
-| OP-04 (monitoring)                         | Sprint 12                                           |
-| DIFF-01, DIFF-02 (differentiation framing) | Sprint 12                                           |
-| MVP-01, MVP-02, MVP-03 (scope)             | Resolved by sprint model                            |
-| SEC-01 (RBAC + encryption)                 | Sprint 11                                           |
-| SEC-02 (prompt injection)                  | Sprint 11                                           |
-| SEC-03 (security pitch)                    | Sprint 12                                           |
-| TEST-01 (ground truth)                     | Wishlist (`wishlist/001_wishlist.md`; non-blocking) |
-| TEST-02 (metrics definition)               | Sprint 3 + Sprint 12                                |
-| TEST-03 (rule pack tests)                  | Sprint 8                                            |
-| TEST-04 (repair loop testability)          | Sprint 7 (deterministic routing makes it testable)  |
+| Issue IDs                                  | Sprint                                                      |
+|--------------------------------------------|-------------------------------------------------------------|
+| A-01 (Tika/PDFBox redundancy)              | Sprint 2                                                    |
+| A-02 (no input validation)                 | Sprint 2                                                    |
+| A-03 (mixed pages)                         | Sprint 6                                                    |
+| A-04 (image_detect undefined)              | Sprint 2                                                    |
+| A-05 (section segmenter fragile)           | Sprint 3 + Sprint 7                                         |
+| A-06 (unstable clause IDs)                 | Sprint 3                                                    |
+| T-01 (multi-column)                        | Sprint 6                                                    |
+| T-02 (multi-page tables)                   | Sprint 5                                                    |
+| T-03 (merged cells)                        | Sprint 5                                                    |
+| T-04 (scanned tables)                      | Sprint 6                                                    |
+| T-05 (stream mode tuning)                  | Sprint 5                                                    |
+| T-06 (OCR engine)                          | Sprint 6                                                    |
+| T-07 (legacy Bangla encoding)              | Sprint 11 (placeholder) + Sprint 13                         |
+| T-08 (OCR confidence propagation)          | Sprint 6                                                    |
+| T-09 (rule pack undefined)                 | Sprint 8                                                    |
+| D-01 through D-08 (schema issues)          | Sprint 1 (schema defined)                                   |
+| R-01 (rule DSL)                            | Sprint 1 (DSL defined) + Sprint 8 (implemented)             |
+| R-02 (deterministic/LLM boundary)          | Sprint 8                                                    |
+| R-03 (rule authorship)                     | Sprint 8 + Sprint 9                                         |
+| R-04 (single rule pack for all types)      | Sprint 8 + Sprint 9                                         |
+| AG-01 (agentic framing)                    | Sprint 4 (graph defined correctly)                          |
+| AG-02 (repair loop termination)            | Sprint 7                                                    |
+| AG-03 (context window)                     | Sprint 4                                                    |
+| AG-04 (LLM non-determinism)                | Sprint 4                                                    |
+| O-01 (clarification questions)             | Sprint 10                                                   |
+| O-02 (artifact stack)                      | Sprint 1 (decision locked)                                  |
+| O-03 (page references)                     | Sprint 10                                                   |
+| O-04 (audit log format)                    | Sprint 10                                                   |
+| B-01 through B-04                          | Sprint 13 (deferred)                                        |
+| S-01 (Spring AI + LangGraph4J loop)        | Sprint 4                                                    |
+| S-02 (async execution)                     | Sprint 2                                                    |
+| S-03 (state persistence)                   | Sprint 2 + Sprint 4                                         |
+| S-04 (LLM provider config)                 | Sprint 1                                                    |
+| OP-01 (processing time SLA)                | Deferred to wishlist (unit-test-only baseline; no Actuator) |
+| OP-02 (concurrency model)                  | Deferred to wishlist (unit-test-only baseline; no Actuator) |
+| OP-03 (model version pinning)              | Deferred to wishlist (unit-test-only baseline; no Actuator) |
+| OP-04 (monitoring)                         | Deferred to wishlist (unit-test-only baseline; no Actuator) |
+| DIFF-01, DIFF-02 (differentiation framing) | Deferred to wishlist (unit-test-only baseline; no Actuator) |
+| MVP-01, MVP-02, MVP-03 (scope)             | Resolved by sprint model                                    |
+| SEC-01 (RBAC + encryption)                 | Sprint 11                                                   |
+| SEC-02 (prompt injection)                  | Sprint 11                                                   |
+| SEC-03 (security pitch)                    | Deferred to wishlist (unit-test-only baseline; no Actuator) |
+| TEST-01 (ground truth)                     | Wishlist (`wishlist/001_wishlist.md`; non-blocking)         |
+| TEST-02 (metrics definition)               | Sprint 3 (unit-level confidence and schema checks)          |
+| TEST-03 (rule pack tests)                  | Sprint 8                                                    |
+| TEST-04 (repair loop testability)          | Sprint 7 (deterministic routing makes it testable)          |
 
 ---
 
@@ -1703,8 +1661,8 @@ Deferred. Bangla v1.0 gracefully rejects legacy-encoded documents. This sprint i
 
 Each sprint must pass before merging to `main`:
 
-1. `mvn clean verify` — all unit + integration tests pass
-2. `docker-compose up` — all services start healthy
+1. `mvn test` — unit tests pass
+2. Static contract checks pass (schema files, prompt versions, rule DSL validation)
 3. Upload a known fixture RFP via `POST /api/v1/rfp/submit`
 4. Poll `GET /api/v1/rfp/status/{jobId}` until COMPLETED
 5. `GET /api/v1/rfp/result/{jobId}` — validate response against `rfp-schema-v1.json`
@@ -1713,4 +1671,4 @@ Each sprint must pass before merging to `main`:
 7. **Sprint 8+**: verify rule pack fires FATAL on a document known to be missing a mandatory section
 8. **Sprint 10+**: download artifacts; open DOCX/XLSX, verify clause references are correct page numbers
 9. **Sprint 11+**: attempt access as wrong role → verify 403 returned
-10. **Sprint 12+**: `GET /actuator/prometheus` — verify custom metrics are present
+10. **Sprint 12+**: N/A (operational hardening deferred in current baseline)

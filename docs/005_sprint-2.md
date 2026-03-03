@@ -25,7 +25,7 @@
 
 ## 1) Entry Criteria
 
-- Sprint 1 is fully complete: `mvn clean verify` passes, Docker Compose stack starts, `GET /api/v1/health` returns 200.
+- Sprint 1 is fully complete: `mvn test` passes, Docker Compose stack starts, `GET /api/v1/health` returns 200.
 - `LlmAdapter`, `LlmResilienceConfig`, `LlmProviderConfig` are functional.
 - PostgreSQL is running and reachable for job state and execution metadata.
 - PostgreSQL is running and reachable (DataSource bean initializes — schema not yet created via Flyway/Liquibase, using
@@ -701,7 +701,7 @@ class PdfDocumentLoaderTest {
 **Observability:**
 
 - Log DEBUG: `"PdfDocumentLoader: loading page {} of {} from {}"` (not INFO — too verbose).
-- Micrometer timer: `pdf.load.duration` with tag `operation=fullText|pageText|images`.
+- Deferred to wishlist (unit-test-only baseline; no Actuator). Use unit tests + logs.
 
 **Estimation:** 8 SP
 
@@ -909,7 +909,7 @@ class PageClassifierTest {
 **Observability:**
 
 - Log DEBUG per page: `"Page {} classified as {} (charDensity={}, rasterCoverage={})"`
-- Micrometer counter: `page.classification` with tag `result=DIGITAL|SCANNED|MIXED`
+- Deferred to wishlist (unit-test-only baseline; no Actuator). Keep classification trace in logs.
 
 **Estimation:** 5 SP
 
@@ -2098,7 +2098,7 @@ void shouldReturnAllJobsFromPort()
 - Log INFO: `"Pipeline starting: jobId={}"`
 - Log INFO: `"Pipeline completed (page classification only): jobId={} pages={}"`
 - Log ERROR: `"Pipeline failed: jobId={} error={}"`
-- Micrometer counter: `rfp.submissions` with tag `result=success|validation_fail`
+- Deferred to wishlist (unit-test-only baseline; no Actuator). Use persisted job rows + unit tests.
 
 **Estimation:** 8 SP
 
@@ -2456,7 +2456,7 @@ export async function listJobs(): Promise<JobStatusResponse[]> {
 
 ```bash
 cd rfp-extractor
-mvn clean verify
+mvn test
 # Expected: BUILD SUCCESS, all tests pass
 ```
 
@@ -2591,7 +2591,7 @@ INFO  Classification summary: jobId=3fa85f64... total=23 DIGITAL=18 SCANNED=3 MI
 
 ## 6) Exit Criteria (NON-NEGOTIABLE)
 
-- [ ] `mvn clean verify` exits with code 0. Minimum 30 unit tests across all new classes. Zero failures.
+- [ ] `mvn test` exits with code 0. Minimum 30 unit tests across all new classes. Zero failures.
 - [ ] `POST /api/v1/rfp/submit` returns HTTP 202 with `{"jobId":"...","status":"QUEUED"}` for a valid PDF — verified by
   curl.
 - [ ] `GET /api/v1/rfp/status/{jobId}` returns HTTP 404 for an unknown UUID — verified by curl.
@@ -2607,10 +2607,7 @@ INFO  Classification summary: jobId=3fa85f64... total=23 DIGITAL=18 SCANNED=3 MI
 - [ ] `JpaJobStateRepository` persists and retrieves jobs via `AnalysisJobRepository` with mapper conversion — verified by unit tests.
 - [ ] `ExtractionPipelineService` sets job status to FAILED (not RUNNING) on any unhandled exception — verified by unit
   test.
-- [ ] End-to-end browser journey verified: upload a PDF → redirected to `/jobs` list → job row visible → click "View"
-  → `JobStatusPage` polls to COMPLETED.
-- [ ] Frontend `JobStatusPage` stops polling when status is COMPLETED — verified by browser network tab showing no more
-  requests after completion.
+- [ ] Frontend polling logic is covered by unit tests with mocked query hooks and API responses.
 - [ ] No `@Autowired` field injection in any new class — verified by `grep -r "@Autowired" rfp-service/src/main`.
 - [ ] Each new Java class is under 250 lines. Verified during code review.
 - [ ] `rfp-core` module still has zero Spring framework dependencies after Sprint 2 additions — verified by

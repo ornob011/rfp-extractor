@@ -20,7 +20,7 @@
 
 ## 1) Entry Criteria
 
-- Sprint 7 is merged and green on CI (`mvn clean verify` passes).
+- Sprint 7 is merged and green on CI (`mvn test` passes).
 - `ExtractionGraph` compiles with `RunRulePackNode` wired as a stub returning empty `RulePackResults`.
 - `ExtractionState.rulePackResults` field exists and is nullable.
 - `LlmAdapter.judgeSnippet(String prompt, String snippet)` must be **updated this sprint** to return
@@ -900,7 +900,7 @@ interface RulePackResultsProps {
 ```bash
 # 1. Build and verify all tests pass
 cd rfp-extractor
-mvn clean verify
+mvn test
 
 # 2. Start all services
 docker-compose up -d
@@ -929,17 +929,13 @@ curl -s http://localhost:8080/api/v1/rfp/result/$JOB_ID | \
 mvn -pl rfp-service test -Dtest=RuleDslValidationTest
 
 # Expected: BUILD SUCCESS, 0 failures
-
-# 8. Open React UI → submit same doc → "Rule Pack" tab shows
-# red FATAL section with failing rules colour-coded
-echo "Open http://localhost:3000 in browser, submit PDF, check Rule Pack tab"
 ```
 
 ---
 
 ## 6) Exit Criteria
 
-- [ ] `mvn clean verify` passes with zero test failures.
+- [ ] `mvn test` passes with zero test failures.
 - [ ] `RuleDslValidationTest` asserts all 64 ICT rules validate against `rule-schema-v1.json`.
 - [ ] `RulePackRunnerTest` covers BD-ICT-001, BD-ICT-005, BD-ICT-014, BD-ICT-040 with both PASS and FAIL cases.
 - [ ] Submitting a test document produces `rule_pack_results` in the JSON response with `packId: "bd-govt-ict-v1"`.

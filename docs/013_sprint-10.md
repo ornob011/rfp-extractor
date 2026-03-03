@@ -21,7 +21,7 @@
 
 ## 1) Entry Criteria
 
-- Sprint 9 is merged and green on CI (`mvn clean verify` passes).
+- Sprint 9 is merged and green on CI (`mvn test` passes).
 - `FinalizeNode` assembles `RfpDocument` and saves to `DocumentStoragePort` (Sprint 4).
 - `RulePackResults` is populated in `ExtractionState` and accessible from `FinalizeNode` (Sprint 8).
 - `LlmAdapter.judgeSnippet()` is Resilience4j-wrapped and available (Sprint 1).
@@ -559,7 +559,7 @@ Given a completed RfpDocument and ExtractionState with 10 pages
 When AuditReportGenerator.generate(doc, state, results) is called
 Then a non-empty HTML string is returned
 
-Given the HTML is opened in a browser
+Given generated HTML is parsed in unit tests
 When the page-by-page table is examined
 Then each row shows page number, classification, extraction method, confidence colour bar, retry count
 
@@ -820,7 +820,7 @@ When the Artifacts tab is opened in ResultPage
 Then 5 artifact cards are displayed with filename, type icon, size, and Download button
 
 When the Download button for clarification-questions.docx is clicked
-Then the browser downloads the file
+Then the download endpoint returns expected headers and non-empty bytes
 ```
 
 **Interfaces / Contracts:**
@@ -863,7 +863,7 @@ interface AuditReportViewerProps {
     - Add "Artifacts" tab → renders `<ArtifactDownload jobId={jobId} />`.
     - Add "Audit Report" tab → renders `<AuditReportViewer jobId={jobId} />`.
 
-**Test Plan:** Manual visual verification.
+**Test Plan:** Frontend unit tests and writer unit tests with fixture assertions.
 **Story Points:** 5
 
 ---
@@ -888,7 +888,7 @@ interface AuditReportViewerProps {
 ```bash
 # 1. Build and verify
 cd rfp-extractor
-mvn clean verify
+mvn test
 
 # 2. Start services
 docker-compose up -d
@@ -926,33 +926,26 @@ curl -s -o /tmp/clarification-questions.docx \
 file /tmp/clarification-questions.docx
 # Expected: .../clarification-questions.docx: Microsoft Word 2007+
 
-# 7. Download and open HTML audit report in browser
+# 7. Validate HTML audit report content via unit tests
 curl -s -o /tmp/audit-report.html \
   http://localhost:8080/api/v1/rfp/artifacts/$JOB_ID/audit-report.html
 wc -l /tmp/audit-report.html
 # Expected: > 100 lines
-
-# 8. Open React UI → submit same doc → check "Artifacts" tab
-echo "Open http://localhost:3000, navigate to completed job, click Artifacts tab"
-echo "Verify 5 download cards appear. Click Download on DOCX."
-
-# 9. Open "Audit Report" tab in UI
-echo "Click Audit Report tab. Verify iframe loads with page breakdown table."
 ```
 
 ---
 
 ## 6) Exit Criteria
 
-- [ ] `mvn clean verify` passes with zero failures.
-- [ ] `docker-compose up` starts all services healthy.
+- [ ] `mvn test` passes with zero failures.
+- [ ] Unit tests for artifact generators and artifact API adapters pass with mocked dependencies.
 - [ ] Submitting a test RFP produces all 5 artifacts under `{storage-base-path}/{jobId}/artifacts/`.
 - [ ] `GET /api/v1/rfp/artifacts/{jobId}` returns 5 entries.
 - [ ] `GET /api/v1/rfp/artifacts/{jobId}/clarification-questions.docx` streams a valid DOCX (not 404, not HTML error
   page).
 - [ ] DOCX opens in LibreOffice/Word with numbered questions and clause source references.
 - [ ] XLSX Ambiguity Register has colour-coded rows sorted by severity.
-- [ ] HTML audit report renders in browser with summary stats and page-by-page table.
+- [ ] HTML audit report unit tests assert summary stats and page-by-page table markers.
 - [ ] `ArtifactApplicationService` unit test asserts 5 artifacts stored.
 - [ ] `ClarificationQuestionTrigger` unit test covers MANDATORY, CONFIRMATION, and CONTRADICTION cases.
 - [ ] Frontend "Artifacts" tab shows 5 download cards.

@@ -72,9 +72,8 @@ A sprint is **Done** when ALL of the following are true:
 - [ ] All tasks in the sprint's Work Breakdown are implemented
 - [ ] Every public method in `application/service/` and `adapter/` has at least one JUnit 5 unit test (Mockito mocked
   dependencies)
-- [ ] `mvn clean verify` passes on the main branch with zero failures
-- [ ] Docker Compose `docker-compose up` starts all services healthy (`/api/v1/health` returns 200)
-- [ ] Demo script in the sprint's `§5 Validation & Demo Script` section produces expected output
+- [ ] `mvn test` passes on the main branch with zero failures
+- [ ] Any demo script remains non-blocking and informational only
 - [ ] No class > 250 lines, no method > 20 lines
 - [ ] No `@Autowired` field injection — constructor injection everywhere
 - [ ] All new configuration keys documented in `docs/configuration.md`
@@ -97,8 +96,8 @@ A sprint is **Done** when ALL of the following are true:
 | 9      | `012`  | **Additional Rule Packs & Hot Reload**         | Works, consultancy, goods rule packs; hot-reload without restart; admin API for rule pack management                                                                                                                                                                  | Sprint 8 done  | Works/consultancy/goods rules run on respective doc types; hot-reload verified                                                           | Edit a rule YAML, reload without restart, see new result               |
 | 10     | `013`  | **Bid Clarity Pack Artifacts**                 | Clarification Questions DOCX, Ambiguity Register XLSX, Compliance Checklist XLSX, Risk Log XLSX, HTML audit report, artifact download API                                                                                                                             | Sprint 9 done  | All 5 artifacts generated and downloadable; clause references correct                                                                    | Download all 5 artifacts; open DOCX, verify page references            |
 | 11     | `014`  | **Security & RBAC**                            | Spring Security layer on existing `UserEntity` (Sprint 1): JWT auth, `JpaUserDetailsService`, BCrypt, RBAC (ANALYST/ADMIN/AUDITOR), per-document ownership, AES-256 encryption at rest, data retention (PostgreSQL), prompt injection filter, legacy Bangla rejection | Sprint 10 done | Signup/login/refresh/logout flow works; ANALYST cannot access another user's doc; encryption verified; rejection error for legacy Bangla | Demo role-based access and signup/login flow                           |
-| 12     | `015`  | **Operational Hardening**                      | Micrometer metrics (7 custom), Prometheus endpoint, model version pinning, job queue backpressure, SLA docs, security pitch doc                                                                                                                                       | Sprint 11 done | All metrics scraped by Prometheus; 503 on full queue; model digest logged                                                                | Show Grafana-ready metrics; trigger queue full error                   |
-| W-001  | `N/A`  | **Benchmark Dataset Wishlist**                 | Real-document ground-truth collection, annotation workflow, optional benchmark reporting                                                                                                                                                                              | Sprint 12 done | Benchmark suite executes when dataset is present; no impact on release gating                                                            | Run benchmark profile and publish scorecard                            |
+| 12     | `015`  | **Deferred (Out of Scope)**                    | Operational hardening deferred to wishlist (unit-test-only baseline; no Actuator)                                                                                                                                                                                     | Sprint 11 done | N/A                                                                                                                                      | N/A                                                                    |
+| W-001  | `N/A`  | **Benchmark Dataset Wishlist**                 | Real-document ground-truth collection, annotation workflow, optional benchmark reporting                                                                                                                                                                              | Sprint 11 done | Benchmark suite executes when dataset is present; no impact on release gating                                                            | Run benchmark profile and publish scorecard                            |
 
 ---
 
@@ -117,8 +116,8 @@ A sprint is **Done** when ALL of the following are true:
 | [012_sprint-9.md](012_sprint-9.md)             | Sprint 9  | Additional Rule Packs & Hot Reload         |
 | [013_sprint-10.md](013_sprint-10.md)           | Sprint 10 | Bid Clarity Pack Artifacts                 |
 | [014_sprint-11.md](014_sprint-11.md)           | Sprint 11 | Security & RBAC                            |
-| [015_sprint-12.md](015_sprint-12.md)           | Sprint 12 | Operational Hardening                      |
 | [001_wishlist.md](../wishlist/001_wishlist.md) | Wishlist  | Benchmark Dataset Wishlist (Non-Blocking)  |
+| [002_wishlist.md](../wishlist/002_wishlist.md) | Wishlist  | Deferred Operational Hardening             |
 
 ---
 

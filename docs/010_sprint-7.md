@@ -6,7 +6,8 @@ Make the LangGraph4J repair loop fully operational: `ScoreConfidenceNode` popula
 per-component scoring rules, `RepairLoopNode` executes a bounded deterministic decision-table strategy (max 3
 retries/item, 20 total iterations), and `LlmSectionSegmentFallback` handles documents where heuristic segmentation found
 too few sections. Every repair action writes a structured audit entry to `state.repairLog`. `ExtractionState` is
-serialized to PostgreSQL checkpoints at every node boundary so the job is resumable on service restart. The job status API is extended to
+serialized to PostgreSQL checkpoints at every node boundary so the job is resumable on service restart. The job status
+API is extended to
 expose repair events in real time, and the React frontend displays them in a collapsible `AuditPanel`.
 
 ---
@@ -35,25 +36,25 @@ expose repair events in real time, and the React frontend displays them in a col
 
 ## 2) Deliverables
 
-| #    | Deliverable                                   | Type              | Location                                                                  |
-|------|-----------------------------------------------|-------------------|---------------------------------------------------------------------------|
-| D-01 | `RepairStrategy` enum                         | Java enum         | `rfp-core/.../domain/model/RepairStrategy.java`                           |
-| D-02 | `RepairLogEntry` domain model                 | Java class        | `rfp-core/.../domain/model/RepairLogEntry.java`                           |
-| D-03 | `RepairableComponent` domain model            | Java class        | `rfp-core/.../domain/model/RepairableComponent.java`                      |
-| D-04 | `ExtractionState` updates                     | Java class        | `rfp-core/.../domain/model/ExtractionState.java`                          |
-| D-05 | `RepairDecisionTable`                         | Java class        | `rfp-service/.../adapter/extraction/RepairDecisionTable.java`             |
-| D-06 | `LlmSectionSegmentFallback`                   | Java class        | `rfp-service/.../adapter/extraction/LlmSectionSegmentFallback.java`       |
-| D-07 | `ScoreConfidenceNode` (full impl)             | Java class        | `rfp-service/.../agent/ScoreConfidenceNode.java`                          |
-| D-08 | `RepairLoopNode` (full impl)                  | Java class        | `rfp-service/.../agent/RepairLoopNode.java`                               |
-| D-09 | `RepairAuditService`                          | Java class        | `rfp-service/.../application/service/RepairAuditService.java`             |
-| D-10 | `ExtractionStateCheckpointRepository`              | Java class        | `rfp-service/.../adapter/persistence/ExtractionStateCheckpointRepository.java` |
-| D-11 | `AnalysisJobRepository` updates             | Java class        | `rfp-service/.../adapter/persistence/AnalysisJobRepository.java`        |
-| D-12 | `RfpController` status endpoint update        | Java class        | `rfp-service/.../adapter/api/RfpController.java`                          |
-| D-13 | `JobStatusDto` update                         | Java class        | `rfp-service/.../adapter/api/dto/JobStatusDto.java`                       |
-| D-14 | `prompts/section-segmentation-fallback-v1.md` | Prompt file       | `prompts/section-segmentation-fallback-v1.md`                             |
-| D-15 | `AuditPanel.tsx`                              | React component   | `rfp-frontend/src/components/AuditPanel.tsx`                              |
-| D-16 | `JobStatusPage.tsx` update                    | React update      | `rfp-frontend/src/pages/JobStatusPage.tsx`                                |
-| D-17 | Unit tests                                    | Java test classes | `rfp-service/src/test/java/.../agent/` and `.../adapter/extraction/`      |
+| #    | Deliverable                                   | Type              | Location                                                                       |
+|------|-----------------------------------------------|-------------------|--------------------------------------------------------------------------------|
+| D-01 | `RepairStrategy` enum                         | Java enum         | `rfp-core/.../domain/model/RepairStrategy.java`                                |
+| D-02 | `RepairLogEntry` domain model                 | Java class        | `rfp-core/.../domain/model/RepairLogEntry.java`                                |
+| D-03 | `RepairableComponent` domain model            | Java class        | `rfp-core/.../domain/model/RepairableComponent.java`                           |
+| D-04 | `ExtractionState` updates                     | Java class        | `rfp-core/.../domain/model/ExtractionState.java`                               |
+| D-05 | `RepairDecisionTable`                         | Java class        | `rfp-service/.../adapter/extraction/RepairDecisionTable.java`                  |
+| D-06 | `LlmSectionSegmentFallback`                   | Java class        | `rfp-service/.../adapter/extraction/LlmSectionSegmentFallback.java`            |
+| D-07 | `ScoreConfidenceNode` (full impl)             | Java class        | `rfp-service/.../agent/ScoreConfidenceNode.java`                               |
+| D-08 | `RepairLoopNode` (full impl)                  | Java class        | `rfp-service/.../agent/RepairLoopNode.java`                                    |
+| D-09 | `RepairAuditService`                          | Java class        | `rfp-service/.../application/service/RepairAuditService.java`                  |
+| D-10 | `ExtractionStateCheckpointRepository`         | Java class        | `rfp-service/.../adapter/persistence/ExtractionStateCheckpointRepository.java` |
+| D-11 | `AnalysisJobRepository` updates               | Java class        | `rfp-service/.../adapter/persistence/AnalysisJobRepository.java`               |
+| D-12 | `RfpController` status endpoint update        | Java class        | `rfp-service/.../adapter/api/RfpController.java`                               |
+| D-13 | `JobStatusDto` update                         | Java class        | `rfp-service/.../adapter/api/dto/JobStatusDto.java`                            |
+| D-14 | `prompts/section-segmentation-fallback-v1.md` | Prompt file       | `prompts/section-segmentation-fallback-v1.md`                                  |
+| D-15 | `AuditPanel.tsx`                              | React component   | `rfp-frontend/src/components/AuditPanel.tsx`                                   |
+| D-16 | `JobStatusPage.tsx` update                    | React update      | `rfp-frontend/src/pages/JobStatusPage.tsx`                                     |
+| D-17 | Unit tests                                    | Java test classes | `rfp-service/src/test/java/.../agent/` and `.../adapter/extraction/`           |
 
 ---
 
@@ -129,7 +130,7 @@ public class RepairableComponent {
 ```java
 // Fields to add to ExtractionState in rfp-core/.../domain/model/ExtractionState.java
 @Builder.Default
-private List<String> lowConfidenceQueue = new ArrayList<>();
+private final List<String> lowConfidenceQueue = new ArrayList<>();
 
 @Builder.Default
 private final int totalRepairIterations = 0;
@@ -968,7 +969,8 @@ public class ExtractionStateCheckpointRepository {
 1. `save(jobId, state)`:
     - `String json = objectMapper.writeValueAsString(state)`.
     - Persist checkpoint row with `jobId`, `sequence`, `stateJson`, and `createdAt`.
-    - On `JsonProcessingException` or `DataAccessException` → `log.error(...)`, do not rethrow (state persistence failure must not abort extraction).
+    - On `JsonProcessingException` or `DataAccessException` → `log.error(...)`, do not rethrow (state persistence
+      failure must not abort extraction).
 
 2. `load(jobId)`:
     - Query latest checkpoint row by `jobId` and descending sequence.
@@ -994,7 +996,7 @@ shouldRespectRetentionPolicyOnOldCheckpoints
 shouldHandleJsonSerializationErrorGracefully
 ```
 
-Use PostgreSQL testcontainers or mock `ExtractionStateCheckpointJpaRepository`.
+Mock `ExtractionStateCheckpointJpaRepository` in unit tests.
 
 **Observability:**
 
@@ -1281,7 +1283,8 @@ export function AuditPanel({repairEvents, totalRepairIterations}: AuditPanelProp
 
 ### PR 3 — Checkpoint Persistence + API Extension + Frontend (Stories F-1, G-1, H-1, I-1)
 
-**Title:** `feat(repair): ExtractionState checkpoint persistence, audit service, extended status API, AuditPanel frontend`
+**Title:**
+`feat(repair): ExtractionState checkpoint persistence, audit service, extended status API, AuditPanel frontend`
 
 **Contents:**
 
@@ -1407,20 +1410,20 @@ curl http://localhost:8080/api/v1/rfp/result/$JOB_ID \
 
 ## 6) Exit Criteria (NON-NEGOTIABLE)
 
-| #     | Criterion                                                                                                     | Measure                                                                                                                                          |
-|-------|---------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| EC-01 | `RepairLoopNode` never exceeds 20 total iterations on any document                                            | `state.totalRepairIterations <= 20` asserted in `RepairLoopNodeTest.shouldReturnStateUnchangedAndWarnWhenHardStopReached` AND in end-to-end test |
-| EC-02 | `RepairDecisionTable` test covers all 8 decision paths                                                        | `RepairDecisionTableTest` has exactly 8 test methods, all passing                                                                                |
-| EC-03 | `ScoreConfidenceNode` correctly identifies low-confidence entities on 3 deterministic fixture documents       | Manual check: `confidenceMap` values match expected scores for known entities                                                                    |
-| EC-04 | `ExtractionState` survives serialize → deserialize round-trip through PostgreSQL checkpoints with no field loss                | `ExtractionStateCheckpointRepositoryTest.shouldSaveAndLoadExtractionState` passes with all fields asserted                                            |
-| EC-05 | Checkpoint retention policy is applied correctly                                                                            | `ExtractionStateCheckpointRepositoryTest.shouldExpireAfterTwoHours` passes                                                                            |
-| EC-06 | `LlmSectionSegmentFallback` deduplicates by Levenshtein < 3 (not exact match)                                 | `LlmSectionSegmentFallbackTest.shouldMergeLlmSectionsDeduplicatingByLevenshtein` passes                                                          |
-| EC-07 | `GET /api/v1/rfp/status/{jobId}` returns `repairEvents`, `totalRepairIterations`, `lowConfidenceCount` fields | `RfpControllerStatusTest.shouldReturnRepairEventsInStatusResponse` passes                                                                        |
-| EC-08 | `AuditPanel.tsx` is collapsed by default; toggle opens it                                                     | Code review confirms `useState(false)` initial state                                                                                             |
-| EC-09 | All Java unit tests pass with `mvn test`                                                                      | 0 failures                                                                                                                                       |
-| EC-10 | No class exceeds 250 lines; `RepairLoopNode.execute` is ≤ 20 lines                                            | Manual code review; `execute` method line count verified                                                                                         |
-| EC-11 | `RepairAuditService` formats "IMPROVED"/"NOT IMPROVED" label based on before/after confidence delta           | `RepairAuditServiceTest.shouldFormatImprovedEntryWithImprovedLabel` passes                                                                       |
-| EC-12 | On service restart mid-repair, job can resume from PostgreSQL checkpoint state (manual test)                                  | Stop Spring Boot during repair phase, restart, re-poll status — status continues incrementing `totalRepairIterations`                            |
+| #     | Criterion                                                                                                       | Measure                                                                                                                   |
+|-------|-----------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| EC-01 | `RepairLoopNode` never exceeds 20 total iterations on any document                                              | `state.totalRepairIterations <= 20` asserted in `RepairLoopNodeTest.shouldReturnStateUnchangedAndWarnWhenHardStopReached` |
+| EC-02 | `RepairDecisionTable` test covers all 8 decision paths                                                          | `RepairDecisionTableTest` has exactly 8 test methods, all passing                                                         |
+| EC-03 | `ScoreConfidenceNode` correctly identifies low-confidence entities on 3 deterministic fixture documents         | Manual check: `confidenceMap` values match expected scores for known entities                                             |
+| EC-04 | `ExtractionState` survives serialize → deserialize round-trip through PostgreSQL checkpoints with no field loss | `ExtractionStateCheckpointRepositoryTest.shouldSaveAndLoadExtractionState` passes with all fields asserted                |
+| EC-05 | Checkpoint retention policy is applied correctly                                                                | `ExtractionStateCheckpointRepositoryTest.shouldExpireAfterTwoHours` passes                                                |
+| EC-06 | `LlmSectionSegmentFallback` deduplicates by Levenshtein < 3 (not exact match)                                   | `LlmSectionSegmentFallbackTest.shouldMergeLlmSectionsDeduplicatingByLevenshtein` passes                                   |
+| EC-07 | `GET /api/v1/rfp/status/{jobId}` returns `repairEvents`, `totalRepairIterations`, `lowConfidenceCount` fields   | `RfpControllerStatusTest.shouldReturnRepairEventsInStatusResponse` passes                                                 |
+| EC-08 | `AuditPanel.tsx` is collapsed by default; toggle opens it                                                       | Code review confirms `useState(false)` initial state                                                                      |
+| EC-09 | All Java unit tests pass with `mvn test`                                                                        | 0 failures                                                                                                                |
+| EC-10 | No class exceeds 250 lines; `RepairLoopNode.execute` is ≤ 20 lines                                              | Manual code review; `execute` method line count verified                                                                  |
+| EC-11 | `RepairAuditService` formats "IMPROVED"/"NOT IMPROVED" label based on before/after confidence delta             | `RepairAuditServiceTest.shouldFormatImprovedEntryWithImprovedLabel` passes                                                |
+| EC-12 | On service restart mid-repair, job can resume from PostgreSQL checkpoint state (manual test)                    | Stop Spring Boot during repair phase, restart, re-poll status — status continues incrementing `totalRepairIterations`     |
 
 ---
 
@@ -1440,7 +1443,8 @@ exist. It must be added in this sprint. The implementation should: identify whic
 path, call that sub-extractor with `contextText` as input, and return updated `RfpEntities`. Estimated effort: 3 SP
 added to `RepairLoopNode` story.
 
-**Assumption:** `ExtractionState.jobId` is a `String` (not a UUID object) for easy use as checkpoint identifier. If it is a
+**Assumption:** `ExtractionState.jobId` is a `String` (not a UUID object) for easy use as checkpoint identifier. If it
+is a
 `UUID`, call `.toString()` before persistence.
 
 **Assumption:** `JavaTimeModule` is already registered on the shared `ObjectMapper` bean (needed for `Instant`
@@ -1451,9 +1455,8 @@ serialization in `RepairLogEntry`). If not, add `objectMapper.registerModule(new
 `GET /api/v1/rfp/result/{jobId}` response)? Current plan: yes, add a `extractionMetadata.manualReviewRequired` array to
 the result DTO. Confirm with product owner before implementation.
 
-**Open Question:** Should `ScoreConfidenceNode` emit a Micrometer metric (`repair.queue.size`) for Prometheus/Grafana
-monitoring? Deferred to Sprint 11 (security/observability sprint). Add a `// TODO(Sprint 11)` comment at the enqueue
-point.
+**Open Question:** Should `ScoreConfidenceNode` expose queue depth in the status API for UI-only visibility? Deferred to
+wishlist (unit-test-only baseline; no Actuator).
 
 **Non-Goal:** LLM-based routing of repair strategies. The decision table is permanently static. Adding an LLM-based "
 meta-planner" is explicitly out of scope for this project.

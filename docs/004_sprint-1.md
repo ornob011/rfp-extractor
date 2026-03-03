@@ -55,7 +55,7 @@
   rfp-frontend).
   Redis is NOT in the stack.
 - `prompts/` directory with `README.md` and `prompts/entity-general-v1.md` placeholder.
-- CI (`mvn verify`) passes with zero test failures (at least 10 unit tests covering LlmAdapter and LlmResilienceConfig).
+- CI (`mvn test`) passes with zero test failures (at least 10 unit tests covering LlmAdapter and LlmResilienceConfig).
 
 **New in this plan — DB Schema deliverables (D-27 through D-43):**
 
@@ -309,7 +309,6 @@ File: `rfp-extractor/rfp-service/pom.xml`
 - Full dependency list:
     - `spring-boot-starter-web`
     - `spring-boot-starter-data-jpa`
-    - `spring-boot-starter-actuator`
     - `spring-boot-starter-security`
     - `spring-boot-starter-oauth2-resource-server`
     - `spring-ai-openai-spring-boot-starter`
@@ -326,7 +325,6 @@ File: `rfp-extractor/rfp-service/pom.xml`
     - `json-schema-validator`
     - `poi-ooxml`
     - `freemarker`
-    - `micrometer-registry-prometheus`
     - `resilience4j-spring-boot3`
     - `lombok` (provided)
     - `postgresql` (runtime scope)
@@ -378,7 +376,7 @@ public class RfpApplication {
 
 **Test Plan:**
 
-- No unit tests for POM files; verified by `mvn clean verify` succeeding.
+- No unit tests for POM files; verified by `mvn test` succeeding.
 - Manual check: `mvn dependency:analyze -pl rfp-core` shows zero unused declared / used undeclared violations.
 
 **Observability:** N/A for build artifact.
@@ -488,9 +486,6 @@ spring.datasource.password=${POSTGRES_PASSWORD:rfppass}
 spring.datasource.driver-class-name=org.postgresql.Driver
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
-# Actuator
-management.endpoints.web.exposure.include=health,info,prometheus,metrics
-management.endpoint.health.show-details=always
 # Resilience4j (overridden in LlmResilienceConfig programmatically, but defaults here for reference)
 resilience4j.retry.instances.llm-retry.max-attempts=3
 resilience4j.circuitbreaker.instances.llm-cb.sliding-window-size=10
@@ -969,11 +964,7 @@ class LlmResilienceConfigTest {
 }
 ```
 
-**Observability:** On circuit breaker state change, Resilience4j emits Micrometer metrics automatically:
-
-- `resilience4j.circuitbreaker.state{name="llm-cb"}` — gauge
-- `resilience4j.retry.calls{name="llm-retry",kind="successful|failed|retry"}` — counter
-- `resilience4j.ratelimiter.available.permissions{name="llm-rl"}` — gauge
+**Observability:** Deferred to wishlist (unit-test-only baseline; no Actuator).
 
 **Estimation:** 5 SP
 
@@ -1244,7 +1235,7 @@ private void logLlmCall(String operation, String model,
         log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN LLM_CALL op={} model={} provider={} latencyMs={} status=FAIL reason={}",
             operation, model, props.getProvider(), latencyMs, failReason);
     }
-    // Micrometer counter
+    // Optional future metrics hook (deferred to wishlist; unit-test-only baseline)
     // Metrics.counter("llm.calls",
     //     "operation", operation, "model", model, "status", success ? "success" : "fail")
     //     .increment();
@@ -1319,8 +1310,7 @@ void setUp() {
 **Observability:**
 
 - Log format: `LLM_CALL op={} model={} provider={} latencyMs={} status=SUCCESS|FAIL reason={}`
-- Micrometer counter: `llm.calls` with tags `operation`, `model`, `status`
-- Micrometer timer: `llm.latency` with tags `operation`
+- Deferred to wishlist (unit-test-only baseline; no Actuator).
 
 **Estimation:** 8 SP
 
@@ -1686,8 +1676,7 @@ npm install -D @tailwindcss/vite tailwindcss @types/node
 
 **Description:**
 Implement the health check endpoint that returns provider info, model name, and OCR sidecar reachability. The endpoint
-is non-blocking (OCR ping has a 2s timeout). This is separate from Spring Actuator `/actuator/health` — it is
-application-level health for the UI and integration tests.
+application-level health for the UI.
 
 **Acceptance Criteria:**
 
@@ -2697,7 +2686,7 @@ repository. Minimum 2 tests per repository covering the custom query methods.
 - [ ] `AnalysisResultEntity.resultJson` is `columnDefinition = "JSONB"`.
 - [ ] No Spring Security imports in any entity class — `UserEntity` is plain JPA only.
 - [ ] `@EnableJpaAuditing` is present (in `JpaConfig` or equivalent).
-- [ ] `mvn clean verify` — Hibernate DDL auto-creates all 6 tables on startup.
+- [ ] `mvn test` — Hibernate DDL auto-creates all 6 tables on startup.
 - [ ] `grep -r "RedisTemplate\|RedisConnectionFactory\|spring-boot-starter-data-redis" rfp-service/` returns nothing.
 
 ---
@@ -2708,7 +2697,7 @@ repository. Minimum 2 tests per repository covering the custom query methods.
 
 ```bash
 cd rfp-extractor
-mvn clean verify
+mvn test
 # Expected: BUILD SUCCESS, 0 failures, 0 errors
 # Expected: at least 10 tests run
 ```
@@ -2763,23 +2752,7 @@ Expected output:
 }
 ```
 
-### Step 5: Verify Spring Actuator
-
-```bash
-curl -s http://localhost:8080/actuator/health | jq .status
-```
-
-Expected: `"UP"`
-
-### Step 6: Verify Prometheus Metrics
-
-```bash
-curl -s http://localhost:8080/actuator/prometheus | grep resilience4j_circuitbreaker_state
-```
-
-Expected: metric lines for `llm-cb` circuit breaker.
-
-### Step 7: Verify Frontend
+### Step 5: Verify Frontend
 
 ```bash
 curl -s http://localhost:3000 | grep -o '<title>.*</title>'
@@ -2787,7 +2760,7 @@ curl -s http://localhost:3000 | grep -o '<title>.*</title>'
 
 Expected: `<title>Vite + React + TS</title>` (or configured title)
 
-### Step 8: Verify OCR Stub Raises NotImplementedError
+### Step 6: Verify OCR Stub Raises NotImplementedError
 
 ```bash
 docker compose exec rfp-python-ocr python3 -c "
@@ -2802,7 +2775,7 @@ except NotImplementedError as e:
 
 Expected: `PASS: OCR not yet implemented, coming Sprint 6`
 
-### Step 9: LLM Resilience Manual Test (optional — requires API key)
+### Step 7: LLM Resilience Manual Test (optional — requires API key)
 
 ```bash
 # Simulate the LLM being called from the health check (if health check makes LLM test call)
@@ -2817,7 +2790,7 @@ Expected log line:
 INFO  LLM_CALL op=health-ping model=google/gemini-2.0-flash-001 provider=openrouter latencyMs=1234 status=SUCCESS
 ```
 
-### Step 10: Verify DB Schema (PostgreSQL tables auto-created)
+### Step 8: Verify DB Schema (PostgreSQL tables auto-created)
 
 ```bash
 # Connect to PostgreSQL and verify all 6 tables exist
@@ -2864,19 +2837,19 @@ docker compose exec postgres psql -U rfpuser -d rfpdb \
 
 - Spring Boot startup time < 15s.
 - `GET /api/v1/health` response time < 3s (OCR ping has 2s timeout).
-- `mvn clean verify` completes in < 3 minutes on a standard laptop.
+- `mvn test` completes in < 3 minutes on a standard laptop.
 
 ---
 
 ## 6) Exit Criteria (NON-NEGOTIABLE)
 
-- [ ] `mvn clean verify` exits with code 0 on all modules. Zero compilation errors. Zero test failures.
+- [ ] `mvn test` exits with code 0 on all modules. Zero compilation errors. Zero test failures.
 - [ ] `rfp-core` module has zero dependencies with `groupId` starting with `org.springframework`, `dev.langchain4j`, or
   `org.bsc.langgraph4j`. Verified by `mvn dependency:analyze`.
 - [ ] `GET /api/v1/health` returns HTTP 200 with `status`, `provider`, `model`, and `ocrSidecar` fields — verified by
   `curl` in demo script.
 - [ ] `GET /health` on port 8000 returns `{"status":"ok","version":"1.0.0"}` — verified by `curl`.
-- [ ] `docker compose up --build` brings all **four** services to healthy state within 120s. No Redis service defined.
+- [ ] Runtime smoke checks are optional and non-blocking (unit-test-only baseline).
 - [ ] `LlmAdapter.extractStructured()` returns `Optional.empty()` (not null, not exception) when LLM returns malformed
   JSON — verified by unit test `shouldReturnEmptyWhenLlmReturnsInvalidJson`.
 - [ ] Resilience4j retry is configured with exactly 3 max attempts — verified by

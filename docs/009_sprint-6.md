@@ -687,7 +687,7 @@ app.ocr.sidecar.url=http://rfp-python-ocr:8000
    per-page call pattern).
 3. No rate limiter (OCR calls are naturally serialized per page).
 
-**Test Plan:** Integration tested via `OcrSidecarClientTest` with mock server that fails first attempt.
+**Test Plan:** Backend unit tests only via `OcrSidecarClientTest` with mocked HTTP behavior for retry/failure paths.
 
 **Story Points:** 2
 

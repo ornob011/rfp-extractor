@@ -1239,7 +1239,7 @@ class SectionSegmenterTest {
 
 - Log INFO: `"SectionSegmenter using strategy={} with {} candidates"`
 - Log WARN: `"SectionSegmenter: no strategy produced {} headings — returning empty"`
-- Micrometer counter: `section.detection` with tag `strategy=BookmarkHeadingStrategy|...`
+- Deferred to wishlist (unit-test-only baseline; no Actuator). Strategy choice remains visible through logs.
 
 **Estimation:** 8 SP
 
@@ -3115,7 +3115,7 @@ export function ResultPage() {
 
 ```bash
 cd rfp-extractor
-mvn clean verify
+mvn test
 # Expected: BUILD SUCCESS, minimum 40 new unit tests, zero failures
 ```
 
@@ -3211,13 +3211,13 @@ mvn test -pl rfp-service -Dtest=SectionExtractionEvaluatorTest -Dtest.fixture.pa
 - 50-page PDF with bookmarks: segmentation completes in < 5s (most time is page text loading).
 - `ClauseIdAssigner.assignClauseId()` for 100 calls: < 10ms total.
 - `RfpSchemaValidator.validate()` on a 10KB JSON: < 50ms.
-- Section tree with 30 sections renders in < 100ms in browser (React DevTools).
+- Section tree rendering logic is validated via component unit tests with representative 30-section fixtures.
 
 ---
 
 ## 6) Exit Criteria (NON-NEGOTIABLE)
 
-- [ ] `mvn clean verify` exits with code 0. Minimum 40 new unit tests. Zero failures.
+- [ ] `mvn test` exits with code 0. Minimum 40 new unit tests. Zero failures.
 - [ ] `SectionSegmenter` uses `BookmarkHeadingStrategy` for a bookmarked PDF — verified by checking `confidence.method`
   in the result JSON.
 - [ ] `SectionSegmenter` skips a strategy that returns fewer than 3 headings — verified by unit test
@@ -3234,7 +3234,7 @@ mvn test -pl rfp-service -Dtest=SectionExtractionEvaluatorTest -Dtest.fixture.pa
 - [ ] `AllCapsHeadingStrategy` rejects lines NOT surrounded by blank lines — verified by unit test.
 - [ ] `GET /api/v1/rfp/result/{jobId}` returns `sections` array with at least 1 element for a typical GOB RFP — verified
   by curl demo.
-- [ ] `SectionTree` component collapses children when parent is clicked — verified in browser.
+- [ ] `SectionTree` component collapse/expand behavior is covered by frontend unit tests.
 - [ ] `testdata/pdfs/` is in `.gitignore` — verified by `git check-ignore testdata/pdfs/`.
 - [ ] No class exceeds 250 lines. No method exceeds 20 lines. Verified during code review.
 - [ ] `rfp-schema-v1.json` allows `null` for all entity fields — verified by submitting an RFP JSON with all entity

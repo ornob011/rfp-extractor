@@ -466,7 +466,7 @@ on success
 `log.error("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=ERROR extraction.failed jobId={} error={}", jobId, e.getMessage())`
 on failure
 
-- Micrometer counter: `rfp.extraction.started`, `rfp.extraction.completed`, `rfp.extraction.failed`
+- Deferred to wishlist (unit-test-only baseline; no Actuator). Use logs + persisted state transitions.
 
 **Story Points:** 5
 
@@ -1186,7 +1186,7 @@ public class EntityExtractor {
 -
 `log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO entity.extractAll.done jobId={} fields={}", state.getJobId(), merged.size())`
 
-- Micrometer timer: `rfp.entity.extraction.duration` tagged `extractor=general|submission|...`
+- Deferred to wishlist (unit-test-only baseline; no Actuator). Validate latency behavior in unit tests.
 
 **Story Points:** 5
 
@@ -1413,12 +1413,10 @@ const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({score}) => {
 8. Add REST endpoint `GET /api/v1/rfp/result/{jobId}` in `rfp-service` that returns
    `{entities: RfpEntities, confidenceMap: Map<String,Double>, sections: List<Section>}`.
 
-**Test Plan (Vitest + React Testing Library):**
+**Test Plan:**
 
-- `shouldRenderSevenTabsWhenEntityTableMounted()` — query all tab buttons, assert 7 present
-- `shouldShowCorrectFieldsWhenTabClicked()` — click "Financial" tab, assert `technical_financial_split` label visible
-- `shouldRenderGreenBadgeWhenConfidenceAbove0_8()` — render badge with `score=1.0`, assert `bg-green-500` class
-- `shouldRenderRedBadgeWhenConfidenceIsZero()` — render badge with `score=0.0`, assert `bg-red-500` class
+- No frontend unit tests required in this baseline.
+- Backend coverage only: add/update unit tests for `GET /api/v1/rfp/result/{jobId}` controller/service mapping and DTO shape.
 
 **Observability:** Client-side only. No server-side observability needed for the component itself.
 
@@ -1454,7 +1452,6 @@ mvn clean test -pl rfp-core,rfp-service
 # ── 2. Confirm graph compiles at startup ────────────────────────────────────
 mvn spring-boot:run -pl rfp-service &
 sleep 8
-curl -s http://localhost:8080/actuator/health | jq '.status'
 # Expected: "UP"
 # Log should contain: "graph=ExtractionGraph compiled nodes=10"
 
@@ -1496,23 +1493,6 @@ psql -U rfp -d rfpdb -c "SELECT status FROM analysis_jobs WHERE id = '$JOB_ID';"
 # Expected: "COMPLETED"
 psql -U rfp -d rfpdb -c "SELECT doc_completeness_score FROM analysis_results WHERE analysis_job_id = '$JOB_ID';"
 # Expected: completeness score as a float string
-
-# ── 7. Frontend smoke test ──────────────────────────────────────────────────
-cd rfp-frontend
-npm run dev &
-sleep 3
-# Open browser to http://localhost:5173
-# Navigate to result page for $JOB_ID
-# Verify: EntityTable renders with 7 tabs
-# Verify: "General" tab shows client_name, submission_deadline
-# Verify: Confidence badges appear (green/yellow/red)
-
-# ── 8. Verify Resilience4j metrics ─────────────────────────────────────────
-curl -s http://localhost:8080/actuator/metrics/rfp.extraction.completed | jq '.measurements[0].value'
-# Expected: >= 1 (at least one completed extraction)
-
-curl -s http://localhost:8080/actuator/metrics/rfp.entity.extraction.duration | jq '.'
-# Expected: timer metrics present for all 7 extractor tags
 ```
 
 ---

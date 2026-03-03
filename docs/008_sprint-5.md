@@ -973,7 +973,7 @@ export function TableViewer({table}: TableViewerProps): JSX.Element { ...
 |------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
 | Overlapping grid areas when rowspan+colspan conflict | Sort cells and place them in grid — CSS grid handles overlap gracefully; add `overflow: hidden` on cells |
 
-**Test Plan:** Manual smoke test in browser with a known multi-table document. No automated browser tests in Sprint 5.
+**Test Plan:** Frontend unit tests with representative table fixtures (including merged cells and badges).
 
 **Story Points:** 8
 
@@ -1115,10 +1115,10 @@ curl http://localhost:8080/api/v1/rfp/result/$JOB_ID \
 
 ### Step 5: Verify frontend renders
 
-Open browser at `http://localhost:5173`. Navigate to the job result. Click "Tables" tab. Verify:
+Run frontend unit tests for `TableViewer` fixture rendering. Verify:
 
 - Tables listed with caption and type badge.
-- Merged cells span visually (wider cells in grid).
+- Merged cells map to correct span props in rendered output.
 - Confidence badge shows method and score bar.
 
 ---
@@ -1132,7 +1132,7 @@ Open browser at `http://localhost:5173`. Navigate to the job result. Click "Tabl
 | EC-03 | `TableContinuationDetector` merges two-page-spanning table fragments in 3 of 3 deterministic fixture documents with known continuation tables | Manual verification against `testdata/fixtures/`                                      |
 | EC-04 | Every `TableExtractionResult` in the API response has a non-null `sectionId` when a section covers its page                                   | Verified via `jq '[.tables[]                                                          | select(.sectionId == null)] | length'` == 0 on 10 test docs |
 | EC-05 | `ExtractTablesNode` does not throw exceptions; all errors captured in `state.errors`                                                          | Integration verified by running full graph on a corrupt-table PDF                     |
-| EC-06 | `TableViewer.tsx` renders merged cells using CSS grid `gridColumn: span N`                                                                    | Code review + visual browser inspection                                               |
+| EC-06 | `TableViewer.tsx` renders merged cells using CSS grid `gridColumn: span N`                                                                    | Frontend unit test assertions + code review                                           |
 | EC-07 | `TableType` classification: EVALUATION correctly identified on 8 of 10 fixture tables                                                         | Manual check against fixture expectations                                             |
 | EC-08 | No class exceeds 250 lines; no method exceeds 20 lines                                                                                        | `mvn checkstyle:check` or manual audit                                                |
 | EC-09 | `rfp-core` has zero Spring framework imports in domain model classes                                                                          | `grep -r "springframework" rfp-core/src/main/java/com/dsi/rfp/domain` returns 0 lines |
