@@ -15,7 +15,8 @@
 **Non-goals:**
 
 - OAuth2 / OpenID Connect / social login (not required).
-- Full-featured user management UI (admin can manage users via properties file this sprint).
+- Full-featured user management UI. Role elevation (ANALYST → ADMIN) requires a direct DB update or
+  a future admin endpoint — not in scope this sprint.
 - Multi-factor authentication.
 - Full Bangla Unicode processing (Sprint 13).
 
@@ -37,28 +38,35 @@
 
 ## 2) Deliverables
 
-| #    | Deliverable                           | Type                    | Location                                                   |
-|------|---------------------------------------|-------------------------|------------------------------------------------------------|
-| D-01 | `SecurityConfig`                      | Spring `@Configuration` | `config/SecurityConfig.java`                               |
-| D-02 | `JwtTokenService`                     | Spring component        | `adapter/security/JwtTokenService.java`                    |
-| D-03 | `RfpUserDetails`                      | UserDetails impl        | `adapter/security/RfpUserDetails.java`                     |
-| D-04 | `InMemoryUserDetailsService`          | UserDetailsService impl | `adapter/security/InMemoryUserDetailsService.java`         |
-| D-05 | `AuthController`                      | REST controller         | `adapter/api/AuthController.java`                          |
-| D-06 | `LoginRequest` / `LoginResponse` DTOs | Java records            | `adapter/api/dto/LoginRequest.java`, `LoginResponse.java`  |
-| D-07 | `UserAuditEvent` domain model         | Java class              | `rfp-core/.../domain/model/UserAuditEvent.java`            |
-| D-08 | `AuditAction` enum                    | Java enum               | `rfp-core/.../domain/model/AuditAction.java`               |
-| D-09 | `UserAuditPort` port interface        | Java interface          | `rfp-core/.../domain/port/UserAuditPort.java`              |
-| D-10 | `RedisUserAuditRepository`            | Spring component        | `adapter/persistence/RedisUserAuditRepository.java`        |
-| D-11 | `UserAuditService`                    | Application service     | `application/service/UserAuditService.java`                |
-| D-12 | `@Auditable` annotation               | Custom annotation       | `adapter/security/Auditable.java`                          |
-| D-13 | `AuditingAspect`                      | Spring AOP aspect       | `adapter/security/AuditingAspect.java`                     |
-| D-14 | `FileEncryptionService`               | Spring component        | `adapter/security/FileEncryptionService.java`              |
-| D-15 | `EncryptedDocumentStorageAdapter`     | Spring component        | `adapter/persistence/EncryptedDocumentStorageAdapter.java` |
-| D-16 | `EncryptedArtifactStorageAdapter`     | Spring component        | `adapter/persistence/EncryptedArtifactStorageAdapter.java` |
-| D-17 | `PromptInjectionFilter`               | Spring component        | `adapter/security/PromptInjectionFilter.java`              |
-| D-18 | `BanglaEncodingDetector`              | Spring component        | `adapter/extraction/BanglaEncodingDetector.java`           |
-| D-19 | `DataRetentionScheduler`              | Spring component        | `adapter/persistence/DataRetentionScheduler.java`          |
-| D-20 | `GlobalExceptionHandler` (extended)   | REST advice (extended)  | `adapter/api/GlobalExceptionHandler.java`                  |
+| #     | Deliverable                           | Type                    | Location                                                      |
+|-------|---------------------------------------|-------------------------|---------------------------------------------------------------|
+| D-01  | `SecurityConfig`                      | Spring `@Configuration` | `config/SecurityConfig.java`                                  |
+| D-02  | `JwtTokenService`                     | Spring component        | `adapter/security/JwtTokenService.java`                       |
+| D-03  | `RfpUserDetails`                      | UserDetails impl        | `adapter/security/RfpUserDetails.java`                        |
+| D-04  | `UserRole`                            | Java enum               | `rfp-core/.../domain/model/UserRole.java`                     |
+| D-04a | `UserEntity`                          | JPA `@Entity`           | `rfp-service/.../adapter/persistence/entity/UserEntity.java`  |
+| D-04b | `UserRepository`                      | Spring Data JPA iface   | `rfp-service/.../adapter/persistence/UserRepository.java`     |
+| D-04c | `JpaUserDetailsService`               | `UserDetailsService`    | `rfp-service/.../adapter/security/JpaUserDetailsService.java` |
+| D-04d | `admin_seed.sql`                      | SQL DML seed file       | `rfp-service/src/main/resources/db/seed/admin_seed.sql`       |
+| D-05  | `AuthController`                      | REST controller         | `adapter/api/AuthController.java`                             |
+| D-06  | `LoginRequest` / `LoginResponse` DTOs | Java records            | `adapter/api/dto/LoginRequest.java`, `LoginResponse.java`     |
+| D-07  | `UserAuditEvent` domain model         | Java class              | `rfp-core/.../domain/model/UserAuditEvent.java`               |
+| D-08  | `AuditAction` enum                    | Java enum               | `rfp-core/.../domain/model/AuditAction.java`                  |
+| D-09  | `UserAuditPort` port interface        | Java interface          | `rfp-core/.../domain/port/UserAuditPort.java`                 |
+| D-10  | `RedisUserAuditRepository`            | Spring component        | `adapter/persistence/RedisUserAuditRepository.java`           |
+| D-11  | `UserAuditService`                    | Application service     | `application/service/UserAuditService.java`                   |
+| D-12  | `@Auditable` annotation               | Custom annotation       | `adapter/security/Auditable.java`                             |
+| D-13  | `AuditingAspect`                      | Spring AOP aspect       | `adapter/security/AuditingAspect.java`                        |
+| D-14  | `FileEncryptionService`               | Spring component        | `adapter/security/FileEncryptionService.java`                 |
+| D-15  | `EncryptedDocumentStorageAdapter`     | Spring component        | `adapter/persistence/EncryptedDocumentStorageAdapter.java`    |
+| D-16  | `EncryptedArtifactStorageAdapter`     | Spring component        | `adapter/persistence/EncryptedArtifactStorageAdapter.java`    |
+| D-17  | `PromptInjectionFilter`               | Spring component        | `adapter/security/PromptInjectionFilter.java`                 |
+| D-18  | `BanglaEncodingDetector`              | Spring component        | `adapter/extraction/BanglaEncodingDetector.java`              |
+| D-19  | `DataRetentionScheduler`              | Spring component        | `adapter/persistence/DataRetentionScheduler.java`             |
+| D-20  | `GlobalExceptionHandler` (extended)   | REST advice (extended)  | `adapter/api/GlobalExceptionHandler.java`                     |
+| D-24  | `SignupRequest`                       | Java record (DTO)       | `rfp-service/.../adapter/api/dto/SignupRequest.java`          |
+| D-25  | `SignupResponse`                      | Java record (DTO)       | `rfp-service/.../adapter/api/dto/SignupResponse.java`         |
+| D-26  | `SignupPage.tsx`                      | React page              | `rfp-frontend/src/pages/SignupPage.tsx`                       |
 
 <!-- NOTE: GlobalExceptionHandler was introduced in Sprint 2 per the exception policy.
      Sprint 11 extends it with security-specific handlers:
@@ -71,6 +79,154 @@
 `rfp-frontend/src/api/authClient.ts`                       |
 | D-23 | `ProtectedRoute.tsx`                  | React component |
 `rfp-frontend/src/components/ProtectedRoute.tsx`           |
+
+---
+
+## 2b) Interfaces / Contracts for New Deliverables (D-04 through D-26)
+
+### `UserRole` enum (`rfp-core`)
+
+```java
+public enum UserRole {
+    ANALYST,
+    ADMIN,
+    AUDITOR
+}
+```
+
+### `BaseEntity` (shared JPA base in `rfp-service`)
+
+All JPA entities extend this. Add `@EnableJpaAuditing` to `SecurityConfig` or a separate `JpaConfig`.
+
+Location: `rfp-service/.../adapter/persistence/entity/BaseEntity.java`
+
+```java
+
+@MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
+@Data
+public abstract class BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private Instant updatedAt;
+}
+```
+
+### `UserEntity` (JPA entity in `rfp-service` adapter)
+
+`@Table(name = "users")` — avoids collision with PostgreSQL reserved word `user`.
+`id`, `createdAt`, `updatedAt` inherited from `BaseEntity`.
+Hibernate DDL auto creates the `users` table on startup.
+
+```java
+
+@Entity
+@Table(name = "users")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserEntity extends BaseEntity {
+
+    @Column(unique = true, nullable = false)
+    private String username;
+
+    @Column(nullable = false)
+    private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role;
+
+    @Column(nullable = false)
+    private boolean enabled;
+}
+```
+
+### `UserRepository`
+
+```java
+public interface UserRepository extends JpaRepository<UserEntity, UUID> {
+    Optional<UserEntity> findByUsername(String username);
+
+    boolean existsByUsername(String username);
+}
+```
+
+### `JpaUserDetailsService`
+
+```java
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class JpaUserDetailsService implements UserDetailsService {
+
+    private final UserRepository userRepository;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
+    // Throws UsernameNotFoundException if user not found or not enabled.
+    // Returns RfpUserDetails wrapping the UserEntity.
+}
+```
+
+### `admin_seed.sql` — one-time admin bootstrap
+
+Location: `rfp-service/src/main/resources/db/seed/admin_seed.sql`
+
+```sql
+-- Default admin user. CHANGE THE PASSWORD before production deployment.
+-- Password shown below is bcrypt hash of "Admin@1234" (cost 10).
+-- Generate a new hash: htpasswd -bnBC 10 "" newpassword | tr -d ':\n'
+INSERT INTO users (id, username, password_hash, role, enabled, created_at, updated_at)
+VALUES (gen_random_uuid(),
+        'admin',
+        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        'ADMIN',
+        true,
+        NOW(),
+        NOW()) ON CONFLICT (username) DO NOTHING;
+```
+
+Run once manually after the first `docker-compose up`:
+
+```bash
+docker exec -i rfp-postgres psql -U rfp -d rfpdb < rfp-service/src/main/resources/db/seed/admin_seed.sql
+```
+
+`ON CONFLICT (username) DO NOTHING` makes the script idempotent — safe to re-run.
+Document the default password and the change-it instruction in `docs/configuration.md`.
+
+### `SignupRequest` / `SignupResponse` DTOs
+
+Public signup always creates `ANALYST` role. Role elevation requires a future admin endpoint — out of scope here.
+
+```java
+public record SignupRequest(
+    @NotBlank String username,
+    @NotBlank @Size(min = 8) String password
+) {
+}
+
+public record SignupResponse(
+    UUID userId,
+    String username,
+    UserRole role,
+    Instant createdAt
+) {
+}
+```
 
 ---
 
@@ -122,7 +278,8 @@ public class SecurityConfig {
 1. Disable CSRF (stateless JWT API).
 2. Set session creation policy to `STATELESS`.
 3. Configure endpoint rules:
-    - `permitAll()`: `POST /api/v1/auth/login`, `GET /api/v1/health`, `GET /actuator/health`, `GET /actuator/prometheus`
+    - `permitAll()`: `POST /api/v1/auth/login`, `POST /api/v1/auth/signup`, `GET /api/v1/health`,
+      `GET /actuator/health`, `GET /actuator/prometheus`
     - `hasAnyRole("ANALYST","ADMIN")`: `POST /api/v1/rfp/submit`, `GET /api/v1/rfp/jobs`
     - `hasAnyRole("ANALYST","ADMIN","AUDITOR")`: `GET /api/v1/rfp/status/**`, `GET /api/v1/rfp/result/**`,
       `GET /api/v1/rfp/artifacts/**`
@@ -210,7 +367,7 @@ public class JwtTokenService {
 
 ---
 
-#### Story 11.1.3 — Auth Controller & In-Memory User Store
+#### Story 11.1.3 — Auth Controller, Signup Endpoint & Database-Backed User Store
 
 **Acceptance Criteria (Gherkin):**
 
@@ -222,6 +379,18 @@ Then HTTP 200 is returned with a JWT token and expiresAt
 Given invalid credentials
 When POST /api/v1/auth/login is called
 Then HTTP 401 is returned
+
+Given a new username "alice" and password "securePass1"
+When POST /api/v1/auth/signup is called
+Then HTTP 201 Created is returned with userId, username, role=ANALYST, createdAt
+
+Given username "alice" already exists
+When POST /api/v1/auth/signup is called again
+Then HTTP 409 Conflict is returned
+
+Given a password shorter than 8 characters
+When POST /api/v1/auth/signup is called
+Then HTTP 400 Bad Request is returned
 ```
 
 **Interfaces / Contracts:**
@@ -241,6 +410,9 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request);
 
+    @PostMapping("/signup")
+    public ResponseEntity<SignupResponse> signup(@RequestBody @Valid SignupRequest request);
+
     @PostMapping("/refresh")
     public ResponseEntity<LoginResponse> refresh(@RequestBody String token);
 }
@@ -248,23 +420,27 @@ public class AuthController {
 
 **Implementation Plan:**
 
-1. `InMemoryUserDetailsService` reads user list from `app.security.users` property list (YAML format):
-   ```yaml
-   app.security.users:
-     - username: analyst1
-       password: $2a$10$... (bcrypt hash)
-       roles: ANALYST
-   ```
-2. `AuthController.login()`: load `UserDetails` by username, verify password with `PasswordEncoder.matches()`. If valid:
-   call `JwtTokenService.generateToken()`, return `LoginResponse`.
-3. On invalid credentials: throw `BadCredentialsException` → mapped to 401 by `GlobalExceptionHandler`.
-4. `refresh()`: validate existing token, if not expired by > 1h, issue new token.
+1. `JpaUserDetailsService.loadUserByUsername()`: call `userRepository.findByUsername()`. If empty or `!enabled`:
+   throw `UsernameNotFoundException`. Build `RfpUserDetails` from the entity.
+2. `AuthController.login()`: unchanged flow — `JpaUserDetailsService` is now the `UserDetailsService` Spring
+   Security uses. Verify password with `BCryptPasswordEncoder.matches()`, call `JwtTokenService.generateToken()`.
+3. `AuthController.signup()`:
+    - Validate `SignupRequest` with `@Valid`.
+    - If `userRepository.existsByUsername(request.username())`: throw `UsernameAlreadyExistsException` → 409.
+    - Hash password: `passwordEncoder.encode(request.password())`.
+    - Build and save `UserEntity` with `role=ANALYST`, `enabled=true`.
+    - Return `SignupResponse` with HTTP 201.
+4. Add `UsernameAlreadyExistsException` (extends `RuntimeException`). Map to HTTP 409 in `GlobalExceptionHandler`.
+5. `refresh()`: validate existing token, if not expired by > 1h, issue new token.
 
 **Test Plan:**
 
-- `shouldReturn200WithTokenOnValidLogin()`.
-- `shouldReturn401OnInvalidPassword()`.
-- `shouldReturn401WhenUsernameNotFound()`.
+- `shouldReturn201AndCreateAnalystUserOnValidSignup()`.
+- `shouldReturn409WhenUsernameAlreadyTaken()`.
+- `shouldReturn400WhenPasswordTooShort()`.
+- `shouldReturn200WithTokenOnValidLogin()` (unchanged — now uses JPA-backed store).
+- `shouldReturn401OnInvalidPassword()` (unchanged).
+- `shouldReturn401WhenUsernameNotFound()` (unchanged).
 
 **Story Points:** 5
 
@@ -732,7 +908,7 @@ public class DataRetentionScheduler {
 
 ### Epic 11.7 — Frontend Auth
 
-#### Story 11.7.1 — Login Page & Token Storage
+#### Story 11.7.1 — Login Page, Signup Page & Token Storage
 
 **Acceptance Criteria (Gherkin):**
 
@@ -746,6 +922,23 @@ And the user is redirected to the upload page
 Given an invalid password
 When login is attempted
 Then an error message "Invalid username or password" is displayed
+
+Given the LoginPage
+When the user clicks "Create account"
+Then they are navigated to /signup
+
+Given valid username and password on SignupPage
+When the signup button is clicked
+Then POST /api/v1/auth/signup is called
+And on success (201) the user is redirected to /login with a success message
+
+Given username already taken (409 response)
+When signup is attempted
+Then error message "Username already taken" is shown inline
+
+Given a password shorter than 8 characters
+When signup is attempted
+Then client-side validation shows "Password must be at least 8 characters"
 ```
 
 **Implementation Plan:**
@@ -753,34 +946,40 @@ Then an error message "Invalid username or password" is displayed
 1. `authClient.ts`:
     - `login(username, password)`: `POST /api/v1/auth/login` via axios, store `response.data.token` in
       `localStorage.setItem("jwt", ...)`. Store `roles` in `localStorage.setItem("roles", ...)`.
+    - `signup(username, password)`: `POST /api/v1/auth/signup`, returns `SignupResponse` on 201.
     - `getToken()`: `localStorage.getItem("jwt")`.
     - `logout()`: `localStorage.removeItem("jwt")`, `localStorage.removeItem("roles")`.
     - `getRoles()`: `JSON.parse(localStorage.getItem("roles") || "[]")`.
 2. Update `rfpClient.ts`: add Axios request interceptor that reads `authClient.getToken()` and sets
    `Authorization: Bearer {token}`.
 3. `LoginPage.tsx`: username + password fields, login button. On success → `navigate("/")`. On 401 error → show inline
-   error message. No placeholder empty space — clean form layout.
-4. `ProtectedRoute.tsx`: check `authClient.getToken()`. If null → `<Navigate to="/login" />`. Else → render
+   error message. Add "Create account" link to `/signup` below the form. Display
+   `location.state?.message` (from signup redirect) as a success banner.
+4. `SignupPage.tsx`: username + password fields with client-side validation (`password.length >= 8`).
+   On success → `navigate("/login", { state: { message: "Account created. Please log in." } })`.
+   On 409 → inline error "Username already taken".
+5. `ProtectedRoute.tsx`: check `authClient.getToken()`. If null → `<Navigate to="/login" />`. Else → render
    `<Outlet />`.
-5. Update React Router in `App.tsx`: wrap all non-login routes with `<ProtectedRoute>`.
+6. Update React Router in `App.tsx`: add `<Route path="/signup" element={<SignupPage />} />` — **outside**
+   `<ProtectedRoute>`. Wrap all other non-login routes with `<ProtectedRoute>`.
 
 **Test Plan:** Manual browser testing.
-**Story Points:** 5
+**Story Points:** 8
 
 ---
 
 ## 4) PR Plan
 
-| PR#      | Title                                           | Files Changed                                                                                                                                                      | Merge Order | Dependencies |
-|----------|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|--------------|
-| PR-11-01 | feat: JWT token service & security config       | `SecurityConfig.java`, `JwtTokenService.java`, `RfpUserDetails.java`, `InMemoryUserDetailsService.java`                                                            | 1st         | None         |
-| PR-11-02 | feat: auth controller & login endpoint          | `AuthController.java`, `LoginRequest.java`, `LoginResponse.java`                                                                                                   | 2nd         | PR-11-01     |
-| PR-11-03 | feat: RBAC document ownership enforcement       | `RfpJobService.java` (updated), `RfpController.java` (updated), `GlobalExceptionHandler.java`                                                                      | 3rd         | PR-11-01     |
-| PR-11-04 | feat: user audit trail (domain + Redis + AOP)   | `UserAuditEvent.java`, `AuditAction.java`, `UserAuditPort.java`, `RedisUserAuditRepository.java`, `UserAuditService.java`, `Auditable.java`, `AuditingAspect.java` | 4th         | PR-11-02     |
-| PR-11-05 | feat: AES-256-GCM encryption at rest            | `FileEncryptionService.java`, `EncryptedDocumentStorageAdapter.java`, `EncryptedArtifactStorageAdapter.java`                                                       | 5th         | None         |
-| PR-11-06 | feat: prompt injection filter                   | `PromptInjectionFilter.java`, `LlmAdapter.java` (updated to call filter)                                                                                           | 6th         | None         |
-| PR-11-07 | feat: Bangla encoding detector + data retention | `BanglaEncodingDetector.java`, `DataRetentionScheduler.java`, `DocumentValidationService.java` (updated)                                                           | 6th         | None         |
-| PR-11-08 | feat: frontend auth (login page + route guards) | `LoginPage.tsx`, `authClient.ts`, `ProtectedRoute.tsx`, `rfpClient.ts`, `App.tsx`                                                                                  | 7th         | PR-11-02     |
+| PR#      | Title                                               | Files Changed                                                                                                                                                                                           | Merge Order | Dependencies |
+|----------|-----------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|--------------|
+| PR-11-01 | feat: JWT token service, security config & UserRole | `SecurityConfig.java`, `JwtTokenService.java`, `RfpUserDetails.java`, `UserRole.java`, `BaseEntity.java`                                                                                                | 1st         | None         |
+| PR-11-02 | feat: user entity, repository & auth controller     | `UserEntity.java`, `UserRepository.java`, `JpaUserDetailsService.java`, `admin_seed.sql`, `AuthController.java`, `SignupRequest.java`, `SignupResponse.java`, `LoginRequest.java`, `LoginResponse.java` | 2nd         | PR-11-01     |
+| PR-11-03 | feat: RBAC document ownership enforcement           | `RfpJobService.java` (updated), `RfpController.java` (updated), `GlobalExceptionHandler.java`                                                                                                           | 3rd         | PR-11-01     |
+| PR-11-04 | feat: user audit trail (domain + Redis + AOP)       | `UserAuditEvent.java`, `AuditAction.java`, `UserAuditPort.java`, `RedisUserAuditRepository.java`, `UserAuditService.java`, `Auditable.java`, `AuditingAspect.java`                                      | 4th         | PR-11-02     |
+| PR-11-05 | feat: AES-256-GCM encryption at rest                | `FileEncryptionService.java`, `EncryptedDocumentStorageAdapter.java`, `EncryptedArtifactStorageAdapter.java`                                                                                            | 5th         | None         |
+| PR-11-06 | feat: prompt injection filter                       | `PromptInjectionFilter.java`, `LlmAdapter.java` (updated to call filter)                                                                                                                                | 6th         | None         |
+| PR-11-07 | feat: Bangla encoding detector + data retention     | `BanglaEncodingDetector.java`, `DataRetentionScheduler.java`, `DocumentValidationService.java` (updated)                                                                                                | 6th         | None         |
+| PR-11-08 | feat: frontend auth (login + signup + route guards) | `LoginPage.tsx`, `SignupPage.tsx`, `authClient.ts`, `ProtectedRoute.tsx`, `rfpClient.ts`, `App.tsx`                                                                                                     | 7th         | PR-11-02     |
 
 ---
 
@@ -799,7 +998,19 @@ echo "OPENROUTER_API_KEY=your-key" >> .env
 docker-compose up -d
 sleep 15
 
-# 4. Login as analyst
+# 4a. Sign up as a new analyst
+curl -s -X POST http://localhost:8080/api/v1/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"username":"analyst1","password":"analyst123"}' | jq .
+# Expected: {"userId":"...","username":"analyst1","role":"ANALYST","createdAt":"..."}
+
+# 4b. Try duplicate signup — expect 409
+curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8080/api/v1/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"username":"analyst1","password":"analyst123"}'
+# Expected: 409
+
+# 4c. Login as analyst
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"analyst1","password":"analyst123"}' | jq -r .token)
@@ -872,8 +1083,11 @@ echo "Navigate directly to /admin — verify 'Access Denied' message."
 - **RSA key generation**: Keys are generated offline and stored as PEM files. `app.security.jwt.private-key-path` and
   `app.security.jwt.public-key-path` point to files on the Docker volume. Key generation command:
   `openssl genrsa -out jwt-private.pem 2048 && openssl rsa -in jwt-private.pem -pubout -out jwt-public.pem`.
-- **In-memory user store**: User credentials are configured in `application.properties` (bcrypt hashed passwords). A
-  full database-backed user management system is out of scope — DSI has a small team and the app is internal-only.
+- **Database user store**: Users are persisted in PostgreSQL via `UserEntity` (JPA). Hibernate DDL auto creates the
+  `users` table on first startup. Signup always creates ANALYST role. An initial admin user is seeded by running
+  `db/seed/admin_seed.sql` once after first deployment (default password documented in `docs/configuration.md`;
+  must be changed before production use). Role elevation (to ADMIN or AUDITOR) requires a direct DB UPDATE — a
+  future admin endpoint is out of scope for Sprint 11.
 - **Encryption format**: The `.enc` file format is `[12 bytes IV][remaining: ciphertext+16-byte GCM tag]`. No separate
   tag field on disk — Java GCM appends the tag to ciphertext automatically in `doFinal()`.
 - **`@Primary` adapter selection**: `EncryptedDocumentStorageAdapter` is `@Primary` over `LocalDocumentStorageAdapter`.
