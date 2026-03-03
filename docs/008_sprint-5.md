@@ -17,7 +17,7 @@ is fully operational and the `ExtractionGraph` produces a populated `state.table
   has `x, y, width, height, text` fields.
 - `PageClassifier` correctly labels pages as `DIGITAL`, `SCANNED`, or `MIXED`.
 - `Section` and `Clause` domain objects exist with `pageStart`, `pageEnd`, and `id` (UUID) fields.
-- Redis and PostgreSQL are running in Docker Compose.
+- PostgreSQL is running in Docker Compose.
 - JUnit 5 + AssertJ + Mockito on classpath.
 - `LlmAdapter` is Resilience4j-wrapped (Sprint 1).
 

@@ -20,7 +20,7 @@
 - Repair loop activation (RepairLoopNode is a stub that passes through; active in Sprint 7).
 - Rule-pack evaluation (RunRulePackNode is a stub; active in Sprint 8).
 - Authentication or JWT (Sprint 11).
-- Export to DOCX/XLSX (Sprint 9).
+- Export to DOCX/XLSX (Sprint 10).
 
 ---
 
@@ -33,7 +33,7 @@
 - `LlmAdapter` (Spring AI, Resilience4j-wrapped) is available in `rfp-service` adapter layer: 30s timeout, 3 retries,
   circuit breaker, 60/min rate limiter.
 - `PageClassifier` and `PageClassificationTaskRunner` are operational.
-- `RedisJobStateRepository` implements `JobStatePort`, `LocalDocumentStorageAdapter` implements `DocumentStoragePort`.
+- `JpaJobStateRepository` implements `JobStatePort`, `LocalDocumentStorageAdapter` implements `DocumentStoragePort`.
 - All domain models (`RfpDocument`, `Section`, `Clause`, `ExtractionJob`, `JobStatus`, `PageClassification`,
   `PageSummary`, `RfpEntities`) are compiled and present in `rfp-core`.
 - Port interfaces `ExtractionPort`, `JobStatePort`, `DocumentStoragePort`, `SectionSegmentationPort` are defined in
@@ -365,11 +365,11 @@ at startup.
 **Acceptance Criteria (Gherkin):**
 
 ```gherkin
-Given a valid jobId and documentPath stored in Redis
+Given a valid jobId and documentPath stored in PostgreSQL
 When ExtractionOrchestrationService.runExtraction(jobId, documentPath) is called
 Then an ExtractionState.initial() is built and passed to the compiled graph
 And graph.invoke(initialState) is called exactly once
-And the job status in Redis is updated to RUNNING before invocation (JobStatus.RUNNING — not IN_PROGRESS)
+And the job status in PostgreSQL is updated to RUNNING before invocation (JobStatus.RUNNING — not IN_PROGRESS)
 And the job status is updated to COMPLETED after successful invocation
 And if graph.invoke() throws an exception, AsyncUncaughtExceptionHandler sets the job status to FAILED
 And the exception message is stored in the job's errorMessage field by JobStateAsyncExceptionHandler
@@ -595,7 +595,7 @@ at entry of each non-trivial node
 `log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO node.complete node={} jobId={} items={}", nodeName, jobId, resultCount)`
 at exit
 
-- Redis key pattern: `job:{jobId}:currentNode` updated at each node entry for progress tracking
+- Database row `agent_steps` updated at each node entry for progress tracking
 
 **Story Points:** 8
 
@@ -1315,7 +1315,7 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
 `log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO confidence.score jobId={} completeness={:.2f} lowConfFields={}",...)`
 on every invocation
 
-- Redis key `job:{jobId}:confidence` storing completeness score as `HSET` field
+- `analysis_results.doc_completeness_score` stores completeness score in PostgreSQL
 
 **Story Points:** 5
 
@@ -1409,8 +1409,8 @@ const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({score}) => {
    `onClauseClick` prop scrolls to the clause in `SectionTree`.
 7. Update `ResultPage.tsx` to split into left (SectionTree) and right (EntityTable) panels using
    `<div className="grid grid-cols-2 gap-4">`. Add `confidenceMap` and `entities` to the data fetched from
-   `GET /api/results/{jobId}`.
-8. Add REST endpoint `GET /api/results/{jobId}` in `rfp-service` that returns
+   `GET /api/v1/rfp/result/{jobId}`.
+8. Add REST endpoint `GET /api/v1/rfp/result/{jobId}` in `rfp-service` that returns
    `{entities: RfpEntities, confidenceMap: Map<String,Double>, sections: List<Section>}`.
 
 **Test Plan (Vitest + React Testing Library):**
@@ -1439,7 +1439,7 @@ const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({score}) => {
 | 7   | feat: LangGraph4J ExtractionGraph skeleton + all node stubs                             | `ExtractionGraph.java`, `ConfidenceRouter.java`, `ValidateNode.java`, `ClassifyPagesNode.java`, `ExtractTextNode.java`, `SegmentSectionsNode.java`, `ExtractTablesNode.java` (stub), `RepairLoopNode.java` (stub), `RunRulePackNode.java` (stub), `FinalizeNode.java`, `RfpDocumentAssembler.java` | 7           | PR #6        |
 | 8   | feat: ScoreConfidenceNode + ConfidenceRouter                                            | `ScoreConfidenceNode.java`, `ConfidenceRouter.java` (updated)                                                                                                                                                                                                                                      | 8           | PR #7        |
 | 9   | feat: ExtractionOrchestrationService + AsyncConfig + wire to RfpSubmissionService       | `ExtractionOrchestrationService.java`, `AsyncConfig.java`, updated `RfpSubmissionService.java`                                                                                                                                                                                                     | 9           | PR #8        |
-| 10  | feat: EntityTable.tsx + ResultPage two-panel layout + GET /api/results/{jobId} endpoint | `EntityTable.tsx`, updated `ResultPage.tsx`, new REST controller method                                                                                                                                                                                                                            | 10          | PR #9        |
+| 10  | feat: EntityTable.tsx + ResultPage two-panel layout + GET /api/v1/rfp/result/{jobId} endpoint | `EntityTable.tsx`, updated `ResultPage.tsx`, new REST controller method                                                                                                                                                                                                                            | 10          | PR #9        |
 
 ---
 
@@ -1472,14 +1472,14 @@ for i in $(seq 1 30); do
 done
 
 # ── 4. Inspect extracted entities ───────────────────────────────────────────
-curl -s http://localhost:8080/api/results/$JOB_ID | jq '.entities'
+curl -s http://localhost:8080/api/v1/rfp/result/$JOB_ID | jq '.entities'
 # Expected: JSON object with keys: client_name, submission_deadline, etc.
 
-curl -s http://localhost:8080/api/results/$JOB_ID | jq '.confidenceMap'
+curl -s http://localhost:8080/api/v1/rfp/result/$JOB_ID | jq '.confidenceMap'
 # Expected: JSON object with scores between 0.0 and 1.0
 # Expected: doc_completeness_score key present
 
-curl -s http://localhost:8080/api/results/$JOB_ID | jq '.confidenceMap.doc_completeness_score'
+curl -s http://localhost:8080/api/v1/rfp/result/$JOB_ID | jq '.confidenceMap.doc_completeness_score'
 # Expected: float between 0.0 and 1.0
 
 # ── 5. Verify low confidence queue routing ─────────────────────────────────
@@ -1491,10 +1491,10 @@ curl -s http://localhost:8080/api/status/$JOB_ID_2 | jq '.'
 # Expected: status COMPLETED (repair stub passes through)
 # Log should contain: "repair.stub jobId=... — skipped (Sprint 7)"
 
-# ── 6. Verify Redis job state ───────────────────────────────────────────────
-redis-cli HGET "job:$JOB_ID:state" status
+# ── 6. Verify PostgreSQL job state ───────────────────────────────────────────
+psql -U rfp -d rfpdb -c "SELECT status FROM analysis_jobs WHERE id = '$JOB_ID';"
 # Expected: "COMPLETED"
-redis-cli GET "job:$JOB_ID:confidence"
+psql -U rfp -d rfpdb -c "SELECT doc_completeness_score FROM analysis_results WHERE analysis_job_id = '$JOB_ID';"
 # Expected: completeness score as a float string
 
 # ── 7. Frontend smoke test ──────────────────────────────────────────────────
@@ -1536,7 +1536,7 @@ curl -s http://localhost:8080/actuator/metrics/rfp.entity.extraction.duration | 
 - [ ] `EntityTable` React component renders 7 tabs with correct field groupings.
 - [ ] Confidence badges render green (HIGH ≥ 0.8), yellow (MED ≥ 0.5), red (LOW < 0.5).
 - [ ] `ResultPage` shows left panel (SectionTree) and right panel (EntityTable) side by side.
-- [ ] `GET /api/results/{jobId}` returns `{entities, confidenceMap, sections}`.
+- [ ] `GET /api/v1/rfp/result/{jobId}` returns `{entities, confidenceMap, sections}`.
 - [ ] No service class exceeds 250 lines. No method exceeds 20 lines. No constructor has more than 3 parameters
   injected (use method injection or config classes where needed).
 - [ ] Lombok annotations (`@Value`, `@Builder`, `@Slf4j`, `@RequiredArgsConstructor`) used on all domain and DTO

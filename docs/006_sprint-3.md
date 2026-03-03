@@ -25,7 +25,7 @@
 
 ## 1) Entry Criteria
 
-- Sprint 2 is fully complete: `POST /api/v1/rfp/submit` works, job state in Redis, page classification runs for all
+- Sprint 2 is fully complete: `POST /api/v1/rfp/submit` works, job state in PostgreSQL, page classification runs for all
   pages.
 - `PdfDocumentLoader` is implemented with `loadPageText()`, `loadPageBoundingBoxes()`, `loadFontMetadata()`, and
   `getPageCount()` working.
@@ -50,7 +50,7 @@
 - `SectionExtractionEvaluator` + `FixtureExpectationLoader` — deterministic evaluation harness (non-blocking benchmark
   support for ground-truth profile remains optional).
 - `ResultPage.tsx` with `SectionTree.tsx` rendering the section hierarchy.
-- Integration of segmentation into the async pipeline (section tree stored in Redis job state by Sprint 3 end).
+- Integration of segmentation into the async pipeline (section tree stored in PostgreSQL-backed job state by Sprint 3 end).
 - At least 40 unit tests covering all strategies, the segmenter orchestrator, the ID assigner, and the schema validator.
 
 ---
@@ -2834,7 +2834,7 @@ class SectionExtractionEvaluatorTest {
 
 **Description:**
 Update `ExtractionPipelineService` to call `SectionSegmenter` after page classification. Store the resulting sections in
-the job state (serialized as JSON in Redis). Section tree will be fetched and used by Sprint 4's agent graph.
+the job state (serialized in PostgreSQL JSONB columns). Section tree will be fetched and used by Sprint 4's agent graph.
 
 **Acceptance Criteria:**
 
@@ -2855,7 +2855,7 @@ Then sections[] in job state has confidence.method = "BookmarkHeadingStrategy"
 - Add `SectionSegmenter` injection to `ExtractionPipelineService`.
 - After page classification, call `segmenter.segment(documentPath, pdfLoader, pageCount)`.
 - Serialize `List<Section>` to JSON string.
-- Store in Redis under a new key `rfp:sections:{jobId}` with 24h TTL (or add `sections` field to `ExtractionJob` as a
+- Store in PostgreSQL as part of the analysis job aggregate (or add `sections` field to `ExtractionJob` as a
   JSON string — simpler for Sprint 3).
 - Add `String sectionsJson` field to `ExtractionJob`.
 - Update `ExtractionPipelineService` to set `sectionsJson` on the job.
@@ -3089,7 +3089,7 @@ export function ResultPage() {
 
 **Contains:**
 
-- Updated `ExtractionPipelineService` (calls segmenter, stores sections in Redis job state).
+- Updated `ExtractionPipelineService` (calls segmenter, stores sections in PostgreSQL-backed job state).
 - Updated `ExtractionJob` (added `sectionsJson` field).
 - Updated `RfpController` (`GET /result/{jobId}` returns sections).
 - `ResultPage.tsx` (3 tabs).
@@ -3100,7 +3100,7 @@ export function ResultPage() {
 **Review Checklist:**
 
 - [ ] Pipeline does not fail if `SectionSegmenter` returns empty list — job still COMPLETED.
-- [ ] Sections serialized/deserialized correctly through Redis (UUID fields preserved).
+- [ ] Sections serialized/deserialized correctly through PostgreSQL persistence (UUID fields preserved).
 - [ ] `SectionTree` renders without crashing when `children` is empty.
 - [ ] Confidence score percentage is rounded to 0 decimal places.
 - [ ] Collapsing level-1 sections hides all descendants.

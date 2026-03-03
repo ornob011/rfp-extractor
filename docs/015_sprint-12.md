@@ -5,7 +5,7 @@
 - Instrument the system with 7 custom Micrometer metrics (queue depth gauge, job counters, processing timer, confidence
   distribution, LLM token counter, rule finding counter, OCR page counter) exposed via Prometheus-compatible
   `/actuator/prometheus`.
-- Add three custom Spring Actuator health indicators (Redis, OCR sidecar, LLM provider) so that `GET /actuator/health`
+- Add three custom Spring Actuator health indicators (database, OCR sidecar, LLM provider) so that `GET /actuator/health`
   reflects the true system state.
 - Implement job queue backpressure: reject new submissions with HTTP 503 + `Retry-After` header when the async executor
   queue is full, and add a `GlobalExceptionHandler` covering all expected error conditions.
@@ -47,7 +47,7 @@
 | #    | Deliverable                        | Type                  | Location                                           |
 |------|------------------------------------|-----------------------|----------------------------------------------------|
 | D-01 | `RfpMetrics`                       | Spring component      | `adapter/RfpMetrics.java`                          |
-| D-02 | `RedisHealthIndicator`             | Health indicator      | `adapter/health/RedisHealthIndicator.java`         |
+| D-02 | `DatabaseHealthIndicator`             | Health indicator      | `adapter/health/DatabaseHealthIndicator.java`         |
 | D-03 | `OcrSidecarHealthIndicator`        | Health indicator      | `adapter/health/OcrSidecarHealthIndicator.java`    |
 | D-04 | `LlmProviderHealthIndicator`       | Health indicator      | `adapter/health/LlmProviderHealthIndicator.java`   |
 | D-05 | `JobQueueGuard`                    | Application component | `application/service/JobQueueGuard.java`           |
@@ -192,27 +192,27 @@ And rfp_confidence_score_count is at least 1
 
 ### Epic 12.2 — Custom Health Indicators
 
-#### Story 12.2.1 — Redis Health Indicator
+#### Story 12.2.1 — Database Health Indicator
 
 **Acceptance Criteria (Gherkin):**
 
 ```gherkin
-Given Redis is running and accessible
+Given PostgreSQL is running and accessible
 When GET /actuator/health is called
-Then the response contains "redis": {"status": "UP"}
+Then the response contains "database": {"status": "UP"}
 
-Given Redis is down (connection refused)
+Given database is down (connection refused)
 When GET /actuator/health is called
-Then "redis": {"status": "DOWN"} is in the response
+Then "database": {"status": "DOWN"} is in the response
 ```
 
 **Interfaces / Contracts:**
 
 ```java
 
-@Component("rfpRedis")
+@Component("database")
 @RequiredArgsConstructor
-public class RedisHealthIndicator implements HealthIndicator {
+public class DatabaseHealthIndicator implements HealthIndicator {
 
     @Override
     public Health health();
@@ -221,16 +221,15 @@ public class RedisHealthIndicator implements HealthIndicator {
 
 **Implementation Plan:**
 
-1. Inject `RedisTemplate<String, String>`.
-2. `health()`: call `redisTemplate.hasKey("__health_probe__")`. If no exception: return
-   `Health.up().withDetail("latency_ms", latency).build()`.
-3. On `RedisConnectionFailureException` or any exception: return `Health.down(ex).build()`.
-4. Wrap call in try-catch with a 2-second timeout (set via `RedisTemplate` configuration or via `@Timed` if needed).
+1. Inject `DataSource` or `JdbcTemplate`.
+2. `health()`: execute lightweight query `SELECT 1` and measure latency.
+3. On any `DataAccessException` (or connection exception): return `Health.down(ex).build()`.
+4. Wrap call with a 2-second query timeout.
 
 **Test Plan:**
 
-- `shouldReturnUpWhenRedisResponds()` — mock `RedisTemplate`, return normally.
-- `shouldReturnDownWhenRedisThrows()` — mock `RedisTemplate` throwing `RedisConnectionFailureException`.
+- `shouldReturnUpWhenDatabaseResponds()` — mock `JdbcTemplate`, return normally.
+- `shouldReturnDownWhenDatabaseThrows()` — mock `JdbcTemplate` throwing `DataAccessException`.
 
 **Story Points:** 2
 
@@ -532,7 +531,7 @@ JWT_PUBLIC_KEY_PATH=/secrets/jwt-public.pem
     - 200-page mixed PDF (50% scanned): ~8–16 min
 - LLM API constraints: OpenRouter rate limit 60 calls/min (configurable). Estimate ~3–5 LLM calls per 10-page section.
 - Concurrent job capacity: queue depth 20 (configurable `app.job.queue-max`). Async pool: 2 core, 4 max threads.
-- Redis job retention: 24h by default (`app.job.ttl-hours`).
+- Job state retention is managed by PostgreSQL data-retention policy (`app.retention.days`).
 - Data retention: 90 days (`app.retention.days`), hard-delete 7 days after soft-delete.
 - Artifact storage: no auto-cleanup — grow monotonically until data retention kicks in.
 
@@ -623,7 +622,7 @@ interface MetricsDashboardProps {
     - Queue Depth card: orange if > 10, red if > 18.
 3. `SystemHealth.tsx`:
     - Calls `GET /actuator/health` every 30s.
-    - Renders a status badge per indicator: Redis, OCR Sidecar, LLM Provider.
+    - Renders a status badge per indicator: Database, OCR Sidecar, LLM Provider.
     - Badge: green dot = UP, red dot = DOWN, grey dot = UNKNOWN.
 4. `AdminPage.tsx` updated tabs:
     - "Metrics" tab → `<MetricsDashboard />` + `<SystemHealth />`.
@@ -642,7 +641,7 @@ interface MetricsDashboardProps {
 |----------|-----------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|-------------|--------------|
 | PR-12-01 | feat: RfpMetrics component (7 metrics)                                            | `RfpMetrics.java`                                                                                                     | 1st         | None         |
 | PR-12-02 | feat: wire metrics into FinalizeNode, LlmAdapter, RulePackRunner, ExtractTextNode | `FinalizeNode.java`, `LlmAdapter.java`, `RulePackRunner.java`, `ExtractTextNode.java`                                 | 2nd         | PR-12-01     |
-| PR-12-03 | feat: custom health indicators (Redis, OCR, LLM)                                  | `RedisHealthIndicator.java`, `OcrSidecarHealthIndicator.java`, `LlmProviderHealthIndicator.java`                      | 2nd         | None         |
+| PR-12-03 | feat: custom health indicators (Database, OCR, LLM)                                  | `DatabaseHealthIndicator.java`, `OcrSidecarHealthIndicator.java`, `LlmProviderHealthIndicator.java`                      | 2nd         | None         |
 | PR-12-04 | feat: job queue backpressure + global exception handler                           | `JobQueueGuard.java`, `QueueFullException.java`, `GlobalExceptionHandler.java`, `RfpSubmissionService.java` (updated) | 3rd         | None         |
 | PR-12-05 | feat: model version pinning + startup logging                                     | `LlmProviderConfig.java`, `ExtractionGraph.java`, `FinalizeNode.java`                                                 | 3rd         | PR-12-02     |
 | PR-12-06 | chore: Docker Compose resource limits + .env.example                              | `docker-compose.yml`, `.env.example`                                                                                  | 4th         | None         |
@@ -666,7 +665,7 @@ sleep 20
 # 3. Verify health endpoint shows all indicators
 curl -s http://localhost:8080/actuator/health | jq '{
   status: .status,
-  redis: .components.rfpRedis.status,
+  database: .components.database.status,
   ocr: .components.ocrSidecar.status,
   llm: .components.llmProvider.status
 }'
@@ -732,7 +731,7 @@ docker-compose logs rfp-service | grep "LLM provider:"
 # 10. Open AdminPage in browser
 echo "Open http://localhost:3000/admin"
 echo "Login as admin user. Go to Metrics tab."
-echo "Verify: Queue Depth, Completed Jobs, System Health badges (Redis/OCR/LLM all green)."
+echo "Verify: Queue Depth, Completed Jobs, System Health badges (DB/OCR/LLM all green)."
 ```
 
 ---
@@ -741,12 +740,12 @@ echo "Verify: Queue Depth, Completed Jobs, System Health badges (Redis/OCR/LLM a
 
 - [ ] `mvn clean verify` passes with zero failures.
 - [ ] `GET /actuator/prometheus` returns all 7 custom metric families (grep `rfp_`).
-- [ ] `GET /actuator/health` shows `rfpRedis`, `ocrSidecar`, and `llmProvider` indicators with correct statuses.
+- [ ] `GET /actuator/health` shows `database`, `ocrSidecar`, and `llmProvider` indicators with correct statuses.
 - [ ] Submitting 21 jobs in rapid succession causes the 21st to return HTTP 503 with `Retry-After: 30` header.
 - [ ] `GET /api/v1/rfp/result/{jobId}` includes `doc_meta.extraction_model = "google/gemini-2.0-flash-001"` (or
   configured model).
 - [ ] Application startup log contains `"LLM provider: ..."` line with provider and both model IDs.
-- [ ] `docker-compose.yml` has `deploy.resources.limits` for all 5 services.
+- [ ] `docker-compose.yml` has `deploy.resources.limits` for all 4 services.
 - [ ] `.env.example` exists at project root with all required env vars documented.
 - [ ] `docs/sla.md` exists with processing time estimates.
 - [ ] `docs/security-pitch.md` exists with 4 sections (compliance, rule pack, practical value, director pitch).

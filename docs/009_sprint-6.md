@@ -1535,8 +1535,8 @@ that passes the model ID to OpenRouter.
 **Open Question:** Should `ColumnDetector` handle 3-column layouts (some Bangladesh gazette documents)? Current sprint:
 detect only 1 or 2 columns. Log a `WARN` if 3+ potential column gaps are detected so we can revisit in a later sprint.
 
-**Open Question:** Should OCR results be cached per page (by PDF hash + page number) in Redis to avoid re-OCRing the
-same document on retry? Deferred to Sprint 7 (Repair Loop) where Redis persistence of `ExtractionState` is introduced.
+**Open Question:** Should OCR results be cached per page (by PDF hash + page number) in PostgreSQL to avoid re-OCRing the
+same document on retry? Deferred to Sprint 7 (Repair Loop) where checkpoint persistence of `ExtractionState` is introduced.
 
 **Non-Goal:** Bangla text segmentation / word segmentation. EasyOCR handles Bangla as a sequence of characters;
 downstream entity extractors receive the raw Bangla text. Dedicated Bangla NLP (morphological analysis) is deferred

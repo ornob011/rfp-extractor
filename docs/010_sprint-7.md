@@ -6,7 +6,7 @@ Make the LangGraph4J repair loop fully operational: `ScoreConfidenceNode` popula
 per-component scoring rules, `RepairLoopNode` executes a bounded deterministic decision-table strategy (max 3
 retries/item, 20 total iterations), and `LlmSectionSegmentFallback` handles documents where heuristic segmentation found
 too few sections. Every repair action writes a structured audit entry to `state.repairLog`. `ExtractionState` is
-serialized to Redis at every node boundary so the job is resumable on service restart. The job status API is extended to
+serialized to PostgreSQL checkpoints at every node boundary so the job is resumable on service restart. The job status API is extended to
 expose repair events in real time, and the React frontend displays them in a collapsible `AuditPanel`.
 
 ---
@@ -23,13 +23,13 @@ expose repair events in real time, and the React frontend displays them in a col
 - `RepairLoopNode` has a basic stub (Sprint 4); full implementation is this sprint.
 - `LangGraph4J` conditional edge exists:
   `ScoreConfidenceNode → RepairLoopNode if lowConfidenceQueue not empty AND totalRepairIterations < 20; else → RunRulePackNode`.
-- `RedisJobStateRepository` exists (Sprint 2) and can serialize/deserialize `ExtractionJob`.
+- `AnalysisJobRepository` exists (Sprint 2) and can serialize/deserialize `ExtractionJob`.
 - `SectionSegmenter` (Sprint 3) with its chain-of-responsibility is available.
 - `TableExtractor` (Sprint 5) with lattice/stream modes is available.
 - `ScannedPageExtractor` (Sprint 6) is available.
 - Entity sub-extractors (Sprint 4) accept a `contextWindow` parameter (or must be updated in this sprint to accept one).
 - `LlmAdapter` is Resilience4j-wrapped.
-- Redis is running and accessible at `spring.data.redis.host`.
+- PostgreSQL is running and accessible at `spring.datasource.url`.
 
 ---
 
@@ -46,8 +46,8 @@ expose repair events in real time, and the React frontend displays them in a col
 | D-07 | `ScoreConfidenceNode` (full impl)             | Java class        | `rfp-service/.../agent/ScoreConfidenceNode.java`                          |
 | D-08 | `RepairLoopNode` (full impl)                  | Java class        | `rfp-service/.../agent/RepairLoopNode.java`                               |
 | D-09 | `RepairAuditService`                          | Java class        | `rfp-service/.../application/service/RepairAuditService.java`             |
-| D-10 | `ExtractionStateRedisSerializer`              | Java class        | `rfp-service/.../adapter/persistence/ExtractionStateRedisSerializer.java` |
-| D-11 | `RedisJobStateRepository` updates             | Java class        | `rfp-service/.../adapter/persistence/RedisJobStateRepository.java`        |
+| D-10 | `ExtractionStateCheckpointRepository`              | Java class        | `rfp-service/.../adapter/persistence/ExtractionStateCheckpointRepository.java` |
+| D-11 | `AnalysisJobRepository` updates             | Java class        | `rfp-service/.../adapter/persistence/AnalysisJobRepository.java`        |
 | D-12 | `RfpController` status endpoint update        | Java class        | `rfp-service/.../adapter/api/RfpController.java`                          |
 | D-13 | `JobStatusDto` update                         | Java class        | `rfp-service/.../adapter/api/dto/JobStatusDto.java`                       |
 | D-14 | `prompts/section-segmentation-fallback-v1.md` | Prompt file       | `prompts/section-segmentation-fallback-v1.md`                             |
@@ -915,57 +915,50 @@ size());
 
 ---
 
-#### Story F-1: Persist `ExtractionState` to Redis at node boundaries
+#### Story F-1: Persist `ExtractionState` to PostgreSQL checkpoints at node boundaries
 
-**Description:** Serialize `ExtractionState` as JSON to Redis after each LangGraph4J node completes. Key:
-`rfp:state:{jobId}`. TTL: 2 hours. Load state on `RepairLoopNode` entry if job resumes.
+**Description:** Persist `ExtractionState` as JSONB checkpoint rows after each LangGraph4J node completes. Key:
+keyed by `job_id` and `checkpoint_sequence`; retention controlled by DB retention policy. Load state on `RepairLoopNode` entry if job resumes.
 
 **Acceptance Criteria (Gherkin):**
 
 ```gherkin
-Scenario: State written to Redis after each node
+Scenario: State checkpoint written after each node
   Given a document is being processed
   When ScoreConfidenceNode completes
-  Then Redis key "rfp:state:{jobId}" exists
+  Then checkpoint row exists for jobId
   And the value is valid JSON deserializable to ExtractionState
 
 Scenario: State recoverable after service restart
   Given RepairLoopNode is mid-iteration and the service restarts
   When the job is resubmitted with the same jobId
-  Then the ExtractionState is loaded from Redis
+  Then the ExtractionState is loaded from PostgreSQL checkpoints
   And totalRepairIterations continues from where it left off
 
-Scenario: Redis key expires after 2 hours
+Scenario: Old checkpoints are removed by retention policy
   Given a job completed 2 hours and 1 minute ago
-  When Redis key "rfp:state:{jobId}" is checked
-  Then the key does not exist (TTL expired)
+  When checkpoint retention window is checked
+  Then the old checkpoint rows are removed according to retention policy
 ```
 
 **Interfaces / Contracts:**
 
 ```java
-// rfp-service/.../adapter/persistence/ExtractionStateRedisSerializer.java
+// rfp-service/.../adapter/persistence/ExtractionStateCheckpointRepository.java
 @Component
-public class ExtractionStateRedisSerializer {
+public class ExtractionStateCheckpointRepository {
 
     private final ObjectMapper objectMapper;
-    private final StringRedisTemplate redisTemplate;
+    private final ExtractionStateCheckpointJpaRepository checkpointRepository;
 
-    private static final String KEY_PREFIX = "rfp:state:";
-    private static final Duration TTL = Duration.ofHours(2);
-
-    public ExtractionStateRedisSerializer(ObjectMapper objectMapper,
-                                          StringRedisTemplate redisTemplate) { ...}
+    public ExtractionStateCheckpointRepository(ObjectMapper objectMapper,
+                                               ExtractionStateCheckpointJpaRepository checkpointRepository) { ...}
 
     public void save(String jobId, ExtractionState state) { ...}
 
     public Optional<ExtractionState> load(String jobId) { ...}
 
-    public void delete(String jobId) { ...}
-
-    private String key(String jobId) {
-        return KEY_PREFIX + jobId;
-    }
+    public void deleteByJobId(String jobId) { ...}
 }
 ```
 
@@ -973,40 +966,39 @@ public class ExtractionStateRedisSerializer {
 
 1. `save(jobId, state)`:
     - `String json = objectMapper.writeValueAsString(state)`.
-    - `redisTemplate.opsForValue().set(key(jobId), json, TTL)`.
-    - On `JsonProcessingException` or `RedisConnectionFailureException` → `log.error(...)`, do not rethrow (state
-      persistence failure must not abort extraction).
+    - Persist checkpoint row with `jobId`, `sequence`, `stateJson`, and `createdAt`.
+    - On `JsonProcessingException` or `DataAccessException` → `log.error(...)`, do not rethrow (state persistence failure must not abort extraction).
 
 2. `load(jobId)`:
-    - `String json = redisTemplate.opsForValue().get(key(jobId))`.
-    - If null → return `Optional.empty()`.
-    - `return Optional.of(objectMapper.readValue(json, ExtractionState.class))`.
+    - Query latest checkpoint row by `jobId` and descending sequence.
+    - If missing → return `Optional.empty()`.
+    - `return Optional.of(objectMapper.readValue(stateJson, ExtractionState.class))`.
     - On parse error → `log.error(...)`, return `Optional.empty()`.
 
-3. `delete(jobId)`: called on job finalization (`FinalizeNode`).
+3. `deleteByJobId(jobId)`: called on job finalization (`FinalizeNode`).
 
-4. **Wire into agent nodes:** Add `ExtractionStateRedisSerializer` as a collaborator to `ScoreConfidenceNode` and
+4. **Wire into agent nodes:** Add `ExtractionStateCheckpointRepository` as a collaborator to `ScoreConfidenceNode` and
    `RepairLoopNode`. At the end of each `execute(state)` call, call `serializer.save(state.jobId, state)`.
 
 5. `ExtractionState` must be Jackson-serializable. Ensure all fields have either public getters (via Lombok `@Data` or
    `@Getter`) or `@JsonProperty`. `UUID` and `Instant` require `JavaTimeModule` + `JavaUUIDModule` on the shared
-   `ObjectMapper` — confirm in `RedisConfig`.
+   `ObjectMapper` — confirm in `DatabasePersistenceConfig`.
 
-**Test Plan — `ExtractionStateRedisSerializerTest.java`:**
+**Test Plan — `ExtractionStateCheckpointRepositoryTest.java`:**
 
-```
+```text
 shouldSaveAndLoadExtractionState
-shouldReturnEmptyOptionalWhenKeyNotFound
-shouldExpireAfterTwoHours
+shouldReturnEmptyOptionalWhenCheckpointMissing
+shouldRespectRetentionPolicyOnOldCheckpoints
 shouldHandleJsonSerializationErrorGracefully
 ```
 
-Use `EmbeddedRedis` (testcontainers or embedded-redis) or mock `StringRedisTemplate`.
+Use PostgreSQL testcontainers or mock `ExtractionStateCheckpointJpaRepository`.
 
 **Observability:**
 
 ```java
-log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG [ExtractionStateRedisSerializer] Saved state for jobId={} size={}bytes ttl=2h",jobId, json.length());
+log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG [ExtractionStateCheckpointRepository] Saved checkpoint for jobId={} size={}bytes",jobId, json.length());
 ```
 
 **Story Points:** 5
@@ -1097,13 +1089,13 @@ No mocking — pure string computation.
 #### Story H-1: Extend `GET /api/v1/rfp/status/{jobId}` with repair event fields
 
 **Description:** The job status endpoint now returns additional fields: `repairEvents`, `totalRepairIterations`,
-`lowConfidenceCount`, loaded from `ExtractionStateRedisSerializer`.
+`lowConfidenceCount`, loaded from `ExtractionStateCheckpointRepository`.
 
 **Acceptance Criteria (Gherkin):**
 
 ```gherkin
 Scenario: Status response includes repair events during repair phase
-  Given a job in REPAIR state with 2 repair log entries in Redis state
+  Given a job in REPAIR state with 2 repair log entries in checkpoint state
   When GET /api/v1/rfp/status/{jobId} is called
   Then the response body contains "repairEvents" array with 2 entries
   And each entry has fields: componentId, attempt, strategy, result ("IMPROVED"|"NOT IMPROVED")
@@ -1139,7 +1131,7 @@ public record RepairEventDto(
 **Implementation Plan:**
 
 1. In `RfpJobService.getJobStatus(jobId)` (or equivalent application service):
-    - Load `ExtractionState` from `ExtractionStateRedisSerializer.load(jobId)`.
+    - Load `ExtractionState` from `ExtractionStateCheckpointRepository.load(jobId)`.
     - If `Optional.present()`: map `state.repairLog` → `List<RepairEventDto>` using `RepairAuditService` result
       categorization.
     - Set `totalRepairIterations = state.totalRepairIterations`.
@@ -1156,10 +1148,10 @@ public record RepairEventDto(
 ```
 shouldReturnRepairEventsInStatusResponse
 shouldReturnZeroIterationsWhenNoRepairOccurred
-shouldHandleMissingRedisStateGracefully
+shouldHandleMissingCheckpointStateGracefully
 ```
 
-Use MockMvc. Mock `ExtractionStateRedisSerializer`.
+Use MockMvc. Mock `ExtractionStateCheckpointRepository`.
 
 **Story Points:** 5
 
@@ -1286,25 +1278,25 @@ export function AuditPanel({repairEvents, totalRepairIterations}: AuditPanelProp
 
 ---
 
-### PR 3 — Redis Persistence + API Extension + Frontend (Stories F-1, G-1, H-1, I-1)
+### PR 3 — Checkpoint Persistence + API Extension + Frontend (Stories F-1, G-1, H-1, I-1)
 
-**Title:** `feat(repair): ExtractionState Redis persistence, audit service, extended status API, AuditPanel frontend`
+**Title:** `feat(repair): ExtractionState checkpoint persistence, audit service, extended status API, AuditPanel frontend`
 
 **Contents:**
 
-- `ExtractionStateRedisSerializer.java`
+- `ExtractionStateCheckpointRepository.java`
 - `RepairAuditService.java`
 - Updated `RfpController.java` and `JobStatusDto.java`
 - `RepairEventDto.java`
 - `AuditPanel.tsx`
 - Updated `JobStatusPage.tsx`
-- Unit tests: `ExtractionStateRedisSerializerTest`, `RepairAuditServiceTest`, `RfpControllerStatusTest` (additions)
+- Unit tests: `ExtractionStateCheckpointRepositoryTest`, `RepairAuditServiceTest`, `RfpControllerStatusTest` (additions)
 
 **Review Checklist:**
 
-- [ ] Redis TTL is 2 hours (not 2 days, not 20 minutes)
-- [ ] Redis key prefix is `"rfp:state:"` (no extra colons)
-- [ ] `ExtractionStateRedisSerializer.save` does NOT throw on Redis failure (logs and returns)
+- [ ] Checkpoint retention policy is configured and verified
+- [ ] 
+- [ ] `ExtractionStateCheckpointRepository.save` does NOT throw on transient DB persistence failure (logs and returns)
 - [ ] `JobStatusDto` new fields have JSON defaults (empty array, 0) for backward compatibility
 - [ ] `AuditPanel` is collapsed by default (`useState(false)`)
 - [ ] TypeScript strict mode: no `any` types in new frontend files
@@ -1364,14 +1356,14 @@ curl http://localhost:8080/api/v1/rfp/status/$JOB_ID | jq '.repairEvents'
 # ]
 ```
 
-### Step 4: Verify Redis state key exists during processing
+### Step 4: Verify checkpoint rows exist during processing
 
 ```bash
-docker exec rfp-redis redis-cli KEYS "rfp:state:*"
-# Expected (during processing): 1) "rfp:state:e5f6a7b8-..."
+docker exec -it rfp-postgres psql -U rfp -d rfpdb -c "SELECT job_id, checkpoint_sequence FROM extraction_state_checkpoints ORDER BY created_at DESC LIMIT 5;"
+# Expected: at least one row for the active job
 
-docker exec rfp-redis redis-cli TTL "rfp:state:e5f6a7b8-..."
-# Expected: 7200 (2 hours in seconds, minus elapsed time)
+docker exec -it rfp-postgres psql -U rfp -d rfpdb -c "SELECT job_id, created_at FROM extraction_state_checkpoints WHERE job_id = 'e5f6a7b8-...' ORDER BY created_at DESC LIMIT 1;"
+# Expected: recent timestamp for active checkpoint
 ```
 
 ### Step 5: Verify LLM section fallback fires on known sparse document
@@ -1419,15 +1411,15 @@ curl http://localhost:8080/api/v1/rfp/result/$JOB_ID \
 | EC-01 | `RepairLoopNode` never exceeds 20 total iterations on any document                                            | `state.totalRepairIterations <= 20` asserted in `RepairLoopNodeTest.shouldReturnStateUnchangedAndWarnWhenHardStopReached` AND in end-to-end test |
 | EC-02 | `RepairDecisionTable` test covers all 8 decision paths                                                        | `RepairDecisionTableTest` has exactly 8 test methods, all passing                                                                                |
 | EC-03 | `ScoreConfidenceNode` correctly identifies low-confidence entities on 3 deterministic fixture documents       | Manual check: `confidenceMap` values match expected scores for known entities                                                                    |
-| EC-04 | `ExtractionState` survives serialize → deserialize round-trip through Redis with no field loss                | `ExtractionStateRedisSerializerTest.shouldSaveAndLoadExtractionState` passes with all fields asserted                                            |
-| EC-05 | Redis state TTL is exactly 2 hours                                                                            | `ExtractionStateRedisSerializerTest.shouldExpireAfterTwoHours` passes                                                                            |
+| EC-04 | `ExtractionState` survives serialize → deserialize round-trip through PostgreSQL checkpoints with no field loss                | `ExtractionStateCheckpointRepositoryTest.shouldSaveAndLoadExtractionState` passes with all fields asserted                                            |
+| EC-05 | Checkpoint retention policy is applied correctly                                                                            | `ExtractionStateCheckpointRepositoryTest.shouldExpireAfterTwoHours` passes                                                                            |
 | EC-06 | `LlmSectionSegmentFallback` deduplicates by Levenshtein < 3 (not exact match)                                 | `LlmSectionSegmentFallbackTest.shouldMergeLlmSectionsDeduplicatingByLevenshtein` passes                                                          |
 | EC-07 | `GET /api/v1/rfp/status/{jobId}` returns `repairEvents`, `totalRepairIterations`, `lowConfidenceCount` fields | `RfpControllerStatusTest.shouldReturnRepairEventsInStatusResponse` passes                                                                        |
 | EC-08 | `AuditPanel.tsx` is collapsed by default; toggle opens it                                                     | Code review confirms `useState(false)` initial state                                                                                             |
 | EC-09 | All Java unit tests pass with `mvn test`                                                                      | 0 failures                                                                                                                                       |
 | EC-10 | No class exceeds 250 lines; `RepairLoopNode.execute` is ≤ 20 lines                                            | Manual code review; `execute` method line count verified                                                                                         |
 | EC-11 | `RepairAuditService` formats "IMPROVED"/"NOT IMPROVED" label based on before/after confidence delta           | `RepairAuditServiceTest.shouldFormatImprovedEntryWithImprovedLabel` passes                                                                       |
-| EC-12 | On service restart mid-repair, job can resume from Redis state (manual test)                                  | Stop Spring Boot during repair phase, restart, re-poll status — status continues incrementing `totalRepairIterations`                            |
+| EC-12 | On service restart mid-repair, job can resume from PostgreSQL checkpoint state (manual test)                                  | Stop Spring Boot during repair phase, restart, re-poll status — status continues incrementing `totalRepairIterations`                            |
 
 ---
 
@@ -1447,8 +1439,8 @@ exist. It must be added in this sprint. The implementation should: identify whic
 path, call that sub-extractor with `contextText` as input, and return updated `RfpEntities`. Estimated effort: 3 SP
 added to `RepairLoopNode` story.
 
-**Assumption:** `ExtractionState.jobId` is a `String` (not a UUID object) for easy use as Redis key suffix. If it is a
-`UUID`, call `.toString()` before use as Redis key.
+**Assumption:** `ExtractionState.jobId` is a `String` (not a UUID object) for easy use as checkpoint identifier. If it is a
+`UUID`, call `.toString()` before persistence.
 
 **Assumption:** `JavaTimeModule` is already registered on the shared `ObjectMapper` bean (needed for `Instant`
 serialization in `RepairLogEntry`). If not, add `objectMapper.registerModule(new JavaTimeModule())` in the

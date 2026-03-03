@@ -33,7 +33,7 @@ codebase.
 | Artifact generation  | Apache POI (XLSX + DOCX) + Freemarker templates                                                                                                                                                                                                                                                                     |
 | Frontend             | React 18, Tailwind v4, Vite                                                                                                                                                                                                                                                                                         |
 | Build                | Maven (parent POM + modules)                                                                                                                                                                                                                                                                                        |
-| State store          | Redis (Spring Data Redis) for job state                                                                                                                                                                                                                                                                             |
+| State store          | PostgreSQL (Spring Data JPA) for job state and extraction checkpoints                                                                                                                                                                                                                                               |
 | Table grid format    | Cell-object array: `[{row, col, value, rowspan, colspan}]`                                                                                                                                                                                                                                                          |
 | Clause ID scheme     | Deterministic composite: `{procurement_ref}:{section_num}:{clause_num}` — NEVER LLM-assigned                                                                                                                                                                                                                        |
 | Context chunking     | Section-level, max 4000 tokens/call. Doc summary header prepended each chunk                                                                                                                                                                                                                                        |
@@ -51,67 +51,67 @@ codebase.
 Every issue from `001_research.md` §15 is resolved in a specific sprint. "Resolved" means the sprint's Definition of
 Done includes verifying the fix.
 
-| Issue ID | Description (brief)                 | Resolved In                                             |
-|----------|-------------------------------------|---------------------------------------------------------|
-| A-01     | Tika/PDFBox redundancy              | Sprint 2                                                |
-| A-02     | No input validation                 | Sprint 2                                                |
-| A-03     | Mixed pages unhandled               | Sprint 6                                                |
-| A-04     | image_detect() undefined            | Sprint 2                                                |
-| A-05     | Section segmenter heuristics fail   | Sprint 3                                                |
-| A-06     | Clause ID instability               | Sprint 3                                                |
-| T-01     | No column de-interleaving           | Sprint 6                                                |
-| T-02     | Multi-page table fragmentation      | Sprint 5                                                |
-| T-03     | Merged cells corrupt grid           | Sprint 5                                                |
-| T-04     | Scanned tables have no path         | Sprint 6                                                |
-| T-05     | Stream mode requires tuning         | Sprint 5                                                |
-| T-06     | Bangla OCR engine undefined         | Sprint 6                                                |
-| T-07     | Legacy Bangla encoding corruption   | Sprint 11                                               |
-| T-08     | OCR confidence not propagated       | Sprint 6                                                |
-| T-09     | Rule pack DSL undefined             | Sprint 8                                                |
-| D-01     | Clause-to-section link missing      | Sprint 3                                                |
-| D-02     | Clause page_range missing           | Sprint 3                                                |
-| D-03     | Cross-clause refs not modeled       | Sprint 3                                                |
-| D-04     | Tables not linked to sections       | Sprint 5                                                |
-| D-05     | Tags field undefined                | Sprint 4                                                |
-| D-06     | Entity provenance missing           | Sprint 4                                                |
-| D-07     | Confidence structure ambiguous      | Sprint 3                                                |
-| D-08     | Grid format undefined               | Sprint 5                                                |
-| R-01     | No rule DSL or schema               | Sprint 8                                                |
-| R-02     | Deterministic/LLM boundary          | Sprint 8                                                |
-| R-03     | No domain expert for rules          | Pre-Sprint (user provided checklist)                    |
-| R-04     | Single pack can't cover all types   | Sprint 9                                                |
-| AG-01    | "Agent" decisions are deterministic | Sprint 4 (LangGraph4J deterministic repair)             |
-| AG-02    | Repair loop no termination          | Sprint 7                                                |
-| AG-03    | Context window management absent    | Sprint 4                                                |
-| AG-04    | LLM non-determinism in IDs/tags     | Sprint 3 (deterministic ClauseIdAssigner)               |
-| O-01     | Clarification question generation   | Sprint 10                                               |
-| O-02     | DOCX/XLSX stack undefined           | Sprint 1 (POI + Freemarker locked)                      |
-| O-03     | PDF page refs path-dependent        | Sprint 10 (clause_id + page number as evidence)         |
-| O-04     | Audit log is JSON not readable      | Sprint 10 (HTML audit report)                           |
-| B-01     | Legacy Bangla silent corruption     | Sprint 11 (BanglaEncodingDetector rejects)              |
-| B-02     | No Bangla NER                       | Sprint 13+ (deferred; graceful rejection)               |
-| B-03     | No Bangla heading patterns          | Sprint 13+ (deferred)                                   |
-| B-04     | LLM degraded on Bangla              | Sprint 13+ (deferred)                                   |
-| S-01     | Spring AI no agentic loop           | Sprint 4 (LangGraph4J)                                  |
-| S-02     | Long-running tools block sync       | Sprint 2 (async job infrastructure)                     |
-| S-03     | No state persistence                | Sprint 2 (Redis-backed ExtractionState)                 |
-| S-04     | Local LLM hardware undefined        | Deployment Tiers (see docs/003)                         |
-| OP-01    | 10-40 min processing time           | Accepted; async background job; Sprint 2                |
-| OP-02    | No concurrency model                | Sprint 2 (ThreadPoolTaskExecutor, queue=20)             |
-| OP-03    | Model updates change behavior       | Sprint 12 (model version pinning)                       |
-| OP-04    | No monitoring/observability         | Sprint 12 (Micrometer, 7 custom metrics)                |
-| DIFF-01  | Off-the-shelf tools overlap         | Architectural (self-hosted + GOB rules + Bangla)        |
-| DIFF-02  | Unique value buried                 | 003_implementation-index.md executive summary           |
-| MVP-01   | MVP is actually a full v1.0         | Accepted; scope is correct for a serious pitch          |
-| MVP-02   | Artifacts shouldn't be in MVP       | Accepted; deferred to Sprint 10                         |
-| MVP-03   | Repair loop shouldn't be in MVP     | Sprint 7 (after extraction is proven in Sprints 3-6)    |
-| SEC-01   | No RBAC/audit/encryption            | Sprint 11                                               |
-| SEC-02   | Prompt injection via doc content    | Sprint 11 (PromptInjectionFilter)                       |
-| SEC-03   | Self-hosted not leading pitch       | 003_implementation-index.md executive summary           |
-| TEST-01  | No ground truth dataset             | Wishlist (`wishlist/001_wishlist.md`; non-blocking)     |
-| TEST-02  | No evaluation metrics               | Sprint 3 (fixture assertions + schema + deadline > 90%) |
-| TEST-03  | Rule pack has no test suite         | Sprint 8 (64 parameterized tests) + Sprint 9 (88 more)  |
-| TEST-04  | Repair loop hard to test            | Sprint 7 (deliberately degraded test docs)              |
+| Issue ID | Description (brief)                 | Resolved In                                              |
+|----------|-------------------------------------|----------------------------------------------------------|
+| A-01     | Tika/PDFBox redundancy              | Sprint 2                                                 |
+| A-02     | No input validation                 | Sprint 2                                                 |
+| A-03     | Mixed pages unhandled               | Sprint 6                                                 |
+| A-04     | image_detect() undefined            | Sprint 2                                                 |
+| A-05     | Section segmenter heuristics fail   | Sprint 3                                                 |
+| A-06     | Clause ID instability               | Sprint 3                                                 |
+| T-01     | No column de-interleaving           | Sprint 6                                                 |
+| T-02     | Multi-page table fragmentation      | Sprint 5                                                 |
+| T-03     | Merged cells corrupt grid           | Sprint 5                                                 |
+| T-04     | Scanned tables have no path         | Sprint 6                                                 |
+| T-05     | Stream mode requires tuning         | Sprint 5                                                 |
+| T-06     | Bangla OCR engine undefined         | Sprint 6                                                 |
+| T-07     | Legacy Bangla encoding corruption   | Sprint 11                                                |
+| T-08     | OCR confidence not propagated       | Sprint 6                                                 |
+| T-09     | Rule pack DSL undefined             | Sprint 8                                                 |
+| D-01     | Clause-to-section link missing      | Sprint 3                                                 |
+| D-02     | Clause page_range missing           | Sprint 3                                                 |
+| D-03     | Cross-clause refs not modeled       | Sprint 3                                                 |
+| D-04     | Tables not linked to sections       | Sprint 5                                                 |
+| D-05     | Tags field undefined                | Sprint 4                                                 |
+| D-06     | Entity provenance missing           | Sprint 4                                                 |
+| D-07     | Confidence structure ambiguous      | Sprint 3                                                 |
+| D-08     | Grid format undefined               | Sprint 5                                                 |
+| R-01     | No rule DSL or schema               | Sprint 8                                                 |
+| R-02     | Deterministic/LLM boundary          | Sprint 8                                                 |
+| R-03     | No domain expert for rules          | Pre-Sprint (user provided checklist)                     |
+| R-04     | Single pack can't cover all types   | Sprint 9                                                 |
+| AG-01    | "Agent" decisions are deterministic | Sprint 4 (LangGraph4J deterministic repair)              |
+| AG-02    | Repair loop no termination          | Sprint 7                                                 |
+| AG-03    | Context window management absent    | Sprint 4                                                 |
+| AG-04    | LLM non-determinism in IDs/tags     | Sprint 3 (deterministic ClauseIdAssigner)                |
+| O-01     | Clarification question generation   | Sprint 10                                                |
+| O-02     | DOCX/XLSX stack undefined           | Sprint 1 (POI + Freemarker locked)                       |
+| O-03     | PDF page refs path-dependent        | Sprint 10 (clause_id + page number as evidence)          |
+| O-04     | Audit log is JSON not readable      | Sprint 10 (HTML audit report)                            |
+| B-01     | Legacy Bangla silent corruption     | Sprint 11 (BanglaEncodingDetector rejects)               |
+| B-02     | No Bangla NER                       | Sprint 13+ (deferred; graceful rejection)                |
+| B-03     | No Bangla heading patterns          | Sprint 13+ (deferred)                                    |
+| B-04     | LLM degraded on Bangla              | Sprint 13+ (deferred)                                    |
+| S-01     | Spring AI no agentic loop           | Sprint 4 (LangGraph4J)                                   |
+| S-02     | Long-running tools block sync       | Sprint 2 (async job infrastructure)                      |
+| S-03     | No state persistence                | Sprint 2 (PostgreSQL-backed ExtractionState checkpoints) |
+| S-04     | Local LLM hardware undefined        | Deployment Tiers (see docs/003)                          |
+| OP-01    | 10-40 min processing time           | Accepted; async background job; Sprint 2                 |
+| OP-02    | No concurrency model                | Sprint 2 (ThreadPoolTaskExecutor, queue=20)              |
+| OP-03    | Model updates change behavior       | Sprint 12 (model version pinning)                        |
+| OP-04    | No monitoring/observability         | Sprint 12 (Micrometer, 7 custom metrics)                 |
+| DIFF-01  | Off-the-shelf tools overlap         | Architectural (self-hosted + GOB rules + Bangla)         |
+| DIFF-02  | Unique value buried                 | 003_implementation-index.md executive summary            |
+| MVP-01   | MVP is actually a full v1.0         | Accepted; scope is correct for a serious pitch           |
+| MVP-02   | Artifacts shouldn't be in MVP       | Accepted; deferred to Sprint 10                          |
+| MVP-03   | Repair loop shouldn't be in MVP     | Sprint 7 (after extraction is proven in Sprints 3-6)     |
+| SEC-01   | No RBAC/audit/encryption            | Sprint 11                                                |
+| SEC-02   | Prompt injection via doc content    | Sprint 11 (PromptInjectionFilter)                        |
+| SEC-03   | Self-hosted not leading pitch       | 003_implementation-index.md executive summary            |
+| TEST-01  | No ground truth dataset             | Wishlist (`wishlist/001_wishlist.md`; non-blocking)      |
+| TEST-02  | No evaluation metrics               | Sprint 3 (fixture assertions + schema + deadline > 90%)  |
+| TEST-03  | Rule pack has no test suite         | Sprint 8 (64 parameterized tests) + Sprint 9 (88 more)   |
+| TEST-04  | Repair loop hard to test            | Sprint 7 (deliberately degraded test docs)               |
 
 **Bangla issues B-02, B-03, B-04 are intentionally deferred to Sprint 13+.** The system gracefully rejects
 legacy-encoded Bangla documents with a structured error (Sprint 11 `BanglaEncodingDetector`). Unicode Bangla is accepted
@@ -209,7 +209,7 @@ header("Retry-After","30")
 
 body(
     ProblemDetail.forStatusAndDetail(
-        status,
+    status,
     detail
     )
     );
@@ -240,7 +240,7 @@ body(
 │                      adapter/                           │
 │  All framework/infra code lives here. Spring beans.     │
 │  api/          → REST controllers + DTOs                │
-│  persistence/  → JPA repositories, Redis adapters       │
+│  persistence/  → JPA repositories, JPA repositories and persistence adapters       │
 │  llm/          → LlmAdapter (Spring AI wrapper)         │
 │  extraction/   → PdfDocumentLoader, PageClassifier, …   │
 │  ocr/          → OcrSidecarClient                       │
@@ -271,11 +271,11 @@ body(
 | **Factory / Factory Method** | Create objects without exposing instantiation logic           | `LlmProviderFactory` creates the correct `ChatClient` based on `app.llm.provider`                                              |
 | **Builder**                  | Construct complex objects step by step                        | `RfpDocument.Builder`, `ExtractionState.Builder`                                                                               |
 | **Adapter**                  | Wrap external library/API behind an internal interface        | `LlmAdapter` wraps Spring AI. `OcrSidecarClient` wraps the Python REST API.                                                    |
-| **Decorator**                | Add cross-cutting behaviour without modifying the original    | `AuditingJobStateRepository` decorates `RedisJobStateRepository` to log all state changes                                      |
+| **Decorator**                | Add cross-cutting behaviour without modifying the original    | `AuditingJobStateRepository` decorates `JpaJobStateRepository` to log all state changes                                        |
 | **Template Method**          | Define the skeleton of an algorithm; subclasses fill in steps | `BaseEntityExtractor` defines extract → chunk → call LLM → parse → validate flow; sub-extractors override field-specific steps |
 | **Observer / Event**         | Decouple components that react to state changes               | Spring `ApplicationEvent` for `JobCompletedEvent` → triggers artifact generation, notification                                 |
 | **Null Object**              | Avoid null checks on optional collaborators                   | `NoOpRepairStrategy` returned when no repair is applicable; caller never checks for null                                       |
-| **Repository**               | Isolate data access behind a domain-facing interface          | `JobStateRepository` (port) implemented by `RedisJobStateRepository` (adapter)                                                 |
+| **Repository**               | Isolate data access behind a domain-facing interface          | `JobStateRepository` (port) implemented by `JpaJobStateRepository` (adapter)                                                   |
 | **Command**                  | Encapsulate a request as an object                            | `RepairCommand` wraps the repair action (component ID + strategy + attempt) stored in the repair log                           |
 | **Specification**            | Encapsulate business rules as combinable predicates           | `RuleConditionSpecification` evaluates JMESPath or LLM judgment for a rule — composable                                        |
 
@@ -291,7 +291,8 @@ concrete need visible today, not a hypothetical future requirement.
 - `@Component` classes: adapter implementations (extractors, clients, generators). One responsibility per component.
 - `@RestController`: thin layer only. No business logic. Validate input, call service, return DTO. Max 30 lines per
   handler method.
-- `@Configuration`: one config class per concern (`LlmProviderConfig`, `AsyncConfig`, `SecurityConfig`, `RedisConfig`).
+- `@Configuration`: one config class per concern (`LlmProviderConfig`, `AsyncConfig`, `SecurityConfig`,
+  `DatabasePersistenceConfig`).
   Not one giant `AppConfig`.
 - `@Transactional`: applied at the service layer, never at the controller or repository implementation.
 - `@Async`: only on the job executor entry point. Not scattered across the codebase.
@@ -304,15 +305,15 @@ concrete need visible today, not a hypothetical future requirement.
 
 Unit testing only. No integration, E2E, or contract tests.
 
-| Concern               | Rule                                                                                                     |
-|-----------------------|----------------------------------------------------------------------------------------------------------|
-| **Framework**         | JUnit 5 + Mockito                                                                                        |
-| **Coverage target**   | Every public method in `application/service/` and `adapter/` has at least one unit test                  |
-| **Isolation**         | All dependencies mocked via `@Mock` / `@InjectMocks`. No Spring context loaded in tests.                 |
-| **Naming**            | Test class: `{ClassName}Test.java`. Test method: `should{Behaviour}When{Condition}()`                    |
-| **Assertions**        | Use AssertJ (`assertThat(...)`) — never bare JUnit `assertEquals`                                        |
-| **No sleep**          | No `Thread.sleep()` in tests. Use `Awaitility` if testing async behaviour.                               |
-| **No external calls** | Tests never hit real LLM APIs, OCR sidecar, Redis, or Postgres. Mock or stub everything at the boundary. |
+| Concern               | Rule                                                                                              |
+|-----------------------|---------------------------------------------------------------------------------------------------|
+| **Framework**         | JUnit 5 + Mockito                                                                                 |
+| **Coverage target**   | Every public method in `application/service/` and `adapter/` has at least one unit test           |
+| **Isolation**         | All dependencies mocked via `@Mock` / `@InjectMocks`. No Spring context loaded in tests.          |
+| **Naming**            | Test class: `{ClassName}Test.java`. Test method: `should{Behaviour}When{Condition}()`             |
+| **Assertions**        | Use AssertJ (`assertThat(...)`) — never bare JUnit `assertEquals`                                 |
+| **No sleep**          | No `Thread.sleep()` in tests. Use `Awaitility` if testing async behaviour.                        |
+| **No external calls** | Tests never hit real LLM APIs, OCR sidecar, or Postgres. Mock or stub everything at the boundary. |
 
 ---
 
@@ -447,9 +448,9 @@ rfp-extractor/
 ├── rfp-service/                     ← Spring Boot application
 │   └── src/main/java/com/dsi/rfp/
 │       ├── RfpApplication.java
-│       ├── config/                  ← LlmProviderConfig, AsyncConfig, RedisConfig, SecurityConfig
+│       ├── config/                  ← LlmProviderConfig, AsyncConfig, DatabasePersistenceConfig, SecurityConfig
 │       ├── adapter/api/             ← REST controllers + DTOs
-│       ├── adapter/persistence/     ← Redis job store, file storage adapter
+│       ├── adapter/persistence/     ← PostgreSQL job store, file storage adapter
 │       ├── adapter/llm/             ← LLM adapter (wraps Spring AI + provider config)
 │       ├── adapter/extraction/      ← PdfDocumentLoader, PageClassifier, SectionSegmenter,
 │       │                               ClauseIdAssigner, ColumnDetector
@@ -889,29 +890,29 @@ The schema captures ALL 45 fields from the user's checklist, organized into type
 Each rule is a YAML entry validated against `rule-schema-v1.json`:
 
 ```yaml
--   id: BD-ICT-001
-    name: RFP Title Present
-    pack: bd-govt-ict-v1
-    version: "1.0.0"
-    severity: FATAL           # FATAL | HIGH | MEDIUM | LOW | INFO
-    check_type: structural    # structural (JMESPath) | semantic (LLM)
-    condition: "doc_meta.title != null && doc_meta.title != ''"
+-   id           : BD-ICT-001
+    name         : RFP Title Present
+    pack         : bd-govt-ict-v1
+    version      : "1.0.0"
+    severity     : FATAL           # FATAL | HIGH | MEDIUM | LOW | INFO
+    check_type   : structural    # structural (JMESPath) | semantic (LLM)
+    condition    : "doc_meta.title != null && doc_meta.title != ''"
     evidence_path: "doc_meta.title"
-    message: "RFP Title is missing from the document"
+    message      : "RFP Title is missing from the document"
 
--   id: BD-ICT-056
-    name: Scope Sufficiently Specific
-    pack: bd-govt-ict-v1
-    version: "1.0.0"
-    severity: HIGH
-    check_type: semantic
+-   id           : BD-ICT-056
+    name         : Scope Sufficiently Specific
+    pack         : bd-govt-ict-v1
+    version      : "1.0.0"
+    severity     : HIGH
+    check_type   : semantic
     evidence_path: "entities.evaluation.scope_summary.value"
-    llm_prompt: |
+    llm_prompt   : |
         You are a GOB ICT procurement expert. Evaluate if this scope of work is specific enough
         to price accurately. Reply with JSON: {"finding": true/false, "explanation": "...", "confidence": 0.0-1.0}
         finding=true means there IS a problem (scope is vague).
         Scope text: {{evidence}}
-    message: "Scope of work may be too vague to price accurately"
+    message      : "Scope of work may be too vague to price accurately"
 ```
 
 ---
@@ -949,7 +950,7 @@ Each rule is a YAML entry validated against `rule-schema-v1.json`:
 ```
 
 Each node is a Spring-managed `@Component` implementing `LangGraph4J NodeAction`. State is typed as `ExtractionState` (
-Redis-backed `StateGraph` persistence).
+PostgreSQL-backed `StateGraph` checkpoint persistence).
 
 ---
 
@@ -1137,8 +1138,8 @@ Hello-world end-to-end.
 **Async Job Infrastructure**
 
 - [ ] `AsyncConfig.java` — `ThreadPoolTaskExecutor`: core=2, max=4, queue=20, thread name prefix `rfp-worker-`
-- [ ] `JobStateRepository.java` (port interface) + `RedisJobStateRepository.java` (adapter) — stores `ExtractionJob` in
-  Redis with 24h TTL
+- [ ] `JobStateRepository.java` (port interface) + `JpaJobStateRepository.java` (adapter) — stores `ExtractionJob` in
+  PostgreSQL via JPA (durable, queryable)
 - [ ] `RfpSubmissionService.java` — accepts upload, validates, stores PDF to disk (encrypted), creates job, dispatches
   to executor
 - [ ] `RfpJobService.java` — status queries, result retrieval
@@ -1312,7 +1313,7 @@ propagated.
     - Returns: `{text, word_confidences: [{word, confidence, bbox}], page_confidence, word_count}`
 - [ ] `rfp-python-ocr/main.py`:
     - `POST /ocr/page` — body: `{image_base64, lang}`, returns `OcrResult`
-    - `POST /ocr/detect-layout` — body: `{image_base64}`, returns `{has_table, table_regions, text_regions}`
+    - `POST /ocr/page-with-layout` — body: `{image_base64}`, returns `{has_table, table_regions, text_regions}`
     - `GET /health`
 - [ ] PDF-to-image: `pdf2image` at 300 DPI for scanned pages, 150 DPI for mixed pages
 
@@ -1336,7 +1337,7 @@ propagated.
 
 - [ ] `MixedPageExtractor.java`:
     - Runs both `PdfDocumentLoader.loadPageBoundingBoxes()` AND OCR sidecar
-    - Uses OCR sidecar's `/ocr/detect-layout` to find image-dominant regions
+    - Uses OCR sidecar's `/ocr/page-with-layout` to find image-dominant regions
     - Merges: text-layer content for digital regions, OCR content for image regions
     - Tags with `extraction_method: "text+ocr"`
 
@@ -1547,7 +1548,7 @@ propagated.
 **User Audit Trail** (fixes SEC-01)
 
 - [ ] `UserAuditEvent.java` — `{userId, action, documentId, timestamp, ipAddress, outcome}`
-- [ ] `UserAuditService.java` — saves to a dedicated `audit_events` Redis sorted set (or DB table)
+- [ ] `UserAuditService.java` — saves to a dedicated `audit_events` PostgreSQL table
 - [ ] AOP `@Aspect` intercepts all controller methods tagged `@Auditable` — logs automatically
 
 **Encryption at Rest** (fixes SEC-01)
@@ -1598,7 +1599,7 @@ propagated.
     - `rfp.llm.tokens.used` (Counter — per LLM call, tagged by provider + model)
     - `rfp.rule_pack.findings` (Counter — tagged by severity + rule_id)
 - [ ] `GET /actuator/prometheus` — Prometheus scrape endpoint
-- [ ] `GET /actuator/health` — includes Redis, OCR sidecar, LLM provider connectivity checks
+- [ ] `GET /actuator/health` — includes database, OCR sidecar, LLM provider connectivity checks
 
 **Job Queue Backpressure** (fixes OP-02)
 

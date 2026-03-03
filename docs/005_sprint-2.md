@@ -2,11 +2,11 @@
 
 ## 0) Sprint Intent
 
-- Accept a PDF (or DOCX) upload via REST API, assign a UUID job ID, persist job state in Redis, and return the job ID to
+- Accept a PDF (or DOCX) upload via REST API, assign a UUID job ID, persist job state in PostgreSQL, and return the job ID to
   the caller — enabling async polling within 5 minutes of Sprint 1 being complete.
 - Run per-page classification (DIGITAL / SCANNED / MIXED) on every uploaded document using PDFBox heuristics so that
   Sprint 3's section segmenter and Sprint 6's OCR router both have reliable per-page metadata available.
-- Establish the foundational async job infrastructure (ThreadPoolTaskExecutor + Redis job state + file storage) that
+- Establish the foundational async job infrastructure (ThreadPoolTaskExecutor + PostgreSQL job state + file storage) that
   every subsequent sprint's pipeline step will reuse.
 - Wire the React frontend upload form to the real API and add a polling job status page so that a live end-to-end demo
   is possible (upload → see QUEUED → see RUNNING → eventually COMPLETED).
@@ -27,7 +27,7 @@
 
 - Sprint 1 is fully complete: `mvn clean verify` passes, Docker Compose stack starts, `GET /api/v1/health` returns 200.
 - `LlmAdapter`, `LlmResilienceConfig`, `LlmProviderConfig` are functional.
-- Redis is running (Docker Compose service or local).
+- PostgreSQL is running and reachable for job state and execution metadata.
 - PostgreSQL is running and reachable (DataSource bean initializes — schema not yet created via Flyway/Liquibase, using
   `spring.jpa.hibernate.ddl-auto=update`).
 - Java 21 virtual thread support confirmed in build.
@@ -38,7 +38,7 @@
 
 ## 2) Deliverables
 
-- `POST /api/v1/rfp/submit` — accepts multipart PDF, validates it, stores to disk, saves job in Redis, returns
+- `POST /api/v1/rfp/submit` — accepts multipart PDF, validates it, stores to disk, saves job in PostgreSQL, returns
   `{jobId, status: "QUEUED"}` within 500ms.
 - `GET /api/v1/rfp/status/{jobId}` — returns job state + progress percentage.
 - `GET /api/v1/rfp/jobs` — returns list of all jobs (all users, no auth yet).
@@ -46,7 +46,7 @@
 - `PdfDocumentLoader` — PDFBox wrapper providing text and image metadata per page.
 - `PageClassifier` — 3-class classification (DIGITAL / SCANNED / MIXED) with heuristic thresholds.
 - `PageClassificationService` — orchestrates per-page classification, stores results in job state.
-- `RedisJobStateRepository` — saves/loads `ExtractionJob` from Redis with 24h TTL; uses `SCAN` (not `keys()`) for
+- `JpaJobStateRepository` — saves/loads `ExtractionJob` from PostgreSQL via JPA (durable, queryable); uses `SCAN` (not `keys()`) for
   `findAll()`.
 - `LocalFileStorageAdapter` — stores uploaded files to disk under `{basePath}/{jobId}/`.
 - **`MimeTypePort`** (`rfp-core/domain/port/`) — port interface for MIME type detection; implemented by
@@ -61,7 +61,7 @@
   `DocumentXfaException` → 422, `DocumentUnsupportedTypeException` → 415, `DocumentValidationException` → 422,
   `FileSizeLimitExceededException` → 413, `LlmUnavailableException` → 503,
   `LlmResponseParseException` → 502, `NoSuchFileException` → 404.
-- **`JobStateAsyncExceptionHandler`** — implements `AsyncUncaughtExceptionHandler`; marks the job FAILED in Redis when
+- **`JobStateAsyncExceptionHandler`** — implements `AsyncUncaughtExceptionHandler`; marks the job FAILED in PostgreSQL when
   an `@Async` void method throws. Replaces the placeholder log-only handler added in Sprint 1 `AsyncConfig`.
 - Updated React frontend: `UploadPage` wires to real API and redirects to `/jobs` on success; `JobStatusPage` polls
   every 3s showing progress bar and status badge; `JobsListPage` lists all submitted jobs with status badge, filename,
@@ -1132,11 +1132,11 @@ public class ExtractionJob {
 
 ---
 
-#### Story 4.2 — JobStatePort and RedisJobStateRepository
+#### Story 4.2 — JobStatePort and JpaJobStateRepository
 
 **Description:**
-Create the `JobStatePort` interface in `rfp-core` and implement `RedisJobStateRepository` in
-`rfp-service/adapter/persistence/`. Redis keys follow the pattern `rfp:job:{jobId}`. All job JSON is stored as a String
+Create the `JobStatePort` interface in `rfp-core` and implement `JpaJobStateRepository` in
+`rfp-service/adapter/persistence/`. Analysis jobs are stored as JPA entities with primary key `jobId` and status indexes. All job JSON is stored as a String
 with 24h TTL. Serialization uses Jackson `ObjectMapper`.
 
 **Acceptance Criteria:**
@@ -1144,7 +1144,7 @@ with 24h TTL. Serialization uses Jackson `ObjectMapper`.
 ```gherkin
 Given an ExtractionJob with status=QUEUED
 When save() is called
-Then the job is stored in Redis with key rfp:job:{jobId} and TTL 24 hours
+Then the job is stored  in PostgreSQL with key rfp:job:{jobId} and TTL 24 hours
 
 Given a saved job
 When findById(jobId) is called
@@ -1181,7 +1181,7 @@ public interface JobStatePort {
 }
 ```
 
-File: `rfp-service/src/main/java/com/dsi/rfp/adapter/persistence/RedisJobStateRepository.java`:
+File: `rfp-service/src/main/java/com/dsi/rfp/adapter/persistence/JpaJobStateRepository.java`:
 
 ```java
 package com.dsi.rfp.adapter.persistence;
@@ -1191,32 +1191,27 @@ import com.dsi.rfp.domain.model.JobStatus;
 import com.dsi.rfp.domain.port.JobStatePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
-import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class RedisJobStateRepository implements JobStatePort {
+public class JpaJobStateRepository implements JobStatePort {
 
-    private static final String KEY_PREFIX = "rfp:job:";
-    private static final Duration TTL = Duration.ofHours(24);
-
-    private final RedisTemplate<String, ExtractionJob> redisTemplate;
+    private final AnalysisJobRepository analysisJobRepository;
+    private final AnalysisJobMapper analysisJobMapper;
 
     @Override
     public void save(ExtractionJob job) {
-        String key = buildKey(job.getJobId());
-        redisTemplate.opsForValue().set(key, job, TTL);
-        log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG Saved job {} to Redis with TTL 24h", job.getJobId());
+        analysisJobRepository.save(analysisJobMapper.toEntity(job));
+        log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG Saved job {} to PostgreSQL via JPA", job.getJobId());
     }
 
     @Override
     public Optional<ExtractionJob> findById(UUID jobId) {
-        String key = buildKey(jobId);
-        return Optional.ofNullable(redisTemplate.opsForValue().get(key));
+        return analysisJobRepository.findById(jobId).map(analysisJobMapper::toDomain);
     }
 
     @Override
@@ -1224,7 +1219,7 @@ public class RedisJobStateRepository implements JobStatePort {
         findById(jobId).ifPresent(job -> {
             job.setStatus(status);
             if (status == JobStatus.COMPLETED || status == JobStatus.FAILED) {
-                job.setCompletedAt(java.time.Instant.now());
+                job.setCompletedAt(Instant.now());
             }
             save(job);
         });
@@ -1240,25 +1235,14 @@ public class RedisJobStateRepository implements JobStatePort {
 
     @Override
     public List<ExtractionJob> findAll() {
-        List<String> keys = new ArrayList<>();
-        ScanOptions opts = ScanOptions.scanOptions().match(KEY_PREFIX + "*").count(100).build();
-        try (Cursor<byte[]> cursor = redisTemplate.scan(opts)) {
-            cursor.forEachRemaining(rawKey ->
-                keys.add((String) redisTemplate.getKeySerializer().deserialize(rawKey)));
-        }
-        if (keys.isEmpty()) return List.of();
-        List<ExtractionJob> values = redisTemplate.opsForValue().multiGet(keys);
-        if (Objects.isNull(values)) return List.of();
-        return values.stream().filter(Objects::nonNull).toList();
-    }
-
-    private String buildKey(UUID jobId) {
-        return KEY_PREFIX + jobId.toString();
+        return analysisJobRepository.findAll().stream()
+            .map(analysisJobMapper::toDomain)
+            .toList();
     }
 }
 ```
 
-Add `RedisConfig.java` to `rfp-service/src/main/java/com/dsi/rfp/config/`:
+Add `JpaPersistenceConfig.java` to `rfp-service/src/main/java/com/dsi/rfp/config/`:
 
 ```java
 package com.dsi.rfp.config;
@@ -1271,7 +1255,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 @Configuration
-public class RedisConfig {
+public class JpaPersistenceConfig {
 
     @Bean
     @Primary
@@ -1280,49 +1264,25 @@ public class RedisConfig {
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
-
-    /**
-     * Typed RedisTemplate for ExtractionJob persistence.
-     * Keys are serialized as UTF-8 strings (StringRedisSerializer).
-     * Values are serialized as JSON via Jackson (Jackson2JsonRedisSerializer).
-     * This lets RedisJobStateRepository use strongly-typed ValueOperations<String, ExtractionJob>
-     * rather than StringRedisTemplate + manual ObjectMapper serialization.
-     */
-    @Bean
-    public RedisTemplate<String, ExtractionJob> extractionJobRedisTemplate(
-            RedisConnectionFactory factory, ObjectMapper objectMapper) {
-        RedisTemplate<String, ExtractionJob> template = new RedisTemplate<>();
-        template.setConnectionFactory(factory);
-        template.setKeySerializer(new org.springframework.data.redis.serializer.StringRedisSerializer());
-        template.setHashKeySerializer(new org.springframework.data.redis.serializer.StringRedisSerializer());
-        var valueSerializer = new org.springframework.data.redis.serializer
-                .Jackson2JsonRedisSerializer<>(objectMapper, ExtractionJob.class);
-        template.setValueSerializer(valueSerializer);
-        template.setHashValueSerializer(valueSerializer);
-        template.afterPropertiesSet();
-        return template;
-    }
 }
 ```
 
 **Test Plan:**
-Class: `RedisJobStateRepositoryTest`
-Mocks: `RedisTemplate<String, ExtractionJob>` (mock), `ValueOperations<String, ExtractionJob>` (mock).
-Note: `ObjectMapper` is NOT injected into the repository — the typed `RedisTemplate` handles
-serialization via `Jackson2JsonRedisSerializer`. Do NOT mock `StringRedisTemplate` (wrong type).
+Class: `JpaJobStateRepositoryTest`
+Mocks: `AnalysisJobRepository` (mock), `AnalysisJobMapper` (mock).
+Note: job state persistence is fully JPA-based; no Redis template should be involved.
 
 ```java
 @ExtendWith(MockitoExtension.class)
-class RedisJobStateRepositoryTest {
-    @Mock RedisTemplate<String, ExtractionJob> redisTemplate;
-    @Mock org.springframework.data.redis.core.ValueOperations<String, ExtractionJob> valueOps;
+class JpaJobStateRepositoryTest {
+    @Mock AnalysisJobRepository analysisJobRepository;
+    @Mock AnalysisJobMapper analysisJobMapper;
 
-    private RedisJobStateRepository repository;
+    private JpaJobStateRepository repository;
 
     @BeforeEach
     void setUp() {
-        when(redisTemplate.opsForValue()).thenReturn(valueOps);
-        repository = new RedisJobStateRepository(redisTemplate);
+        repository = new JpaJobStateRepository(analysisJobRepository, analysisJobMapper);
     }
 
     @Test
@@ -1336,14 +1296,14 @@ class RedisJobStateRepositoryTest {
     }
 
     @Test
-    void shouldReturnEmptyWhenJobNotFoundInRedis() {
+    void shouldReturnEmptyWhenJobNotFoundInDatabase() {
         when(valueOps.get(anyString())).thenReturn(null);
         Optional<ExtractionJob> result = repository.findById(UUID.randomUUID());
         assertThat(result).isEmpty();
     }
 
     @Test
-    void shouldReturnJobWhenFoundInRedis() {
+    void shouldReturnJobWhenFoundInDatabase() {
         ExtractionJob job = buildSampleJob();
         when(valueOps.get("rfp:job:" + job.getJobId())).thenReturn(job);
         Optional<ExtractionJob> result = repository.findById(job.getJobId());
@@ -1518,7 +1478,7 @@ class LocalFileStorageAdapterTest {
 
 **Description:**
 Create the submission service and REST controller. `POST /api/v1/rfp/submit` accepts a multipart file, runs validation,
-stores the file, creates a job in Redis (status=QUEUED), dispatches the extraction pipeline asynchronously, and returns
+stores the file, creates a job  in PostgreSQL (status=QUEUED), dispatches the extraction pipeline asynchronously, and returns
 the job ID. The async pipeline in Sprint 2 only runs page classification (not full extraction). The full pipeline is
 wired in Sprint 4.
 
@@ -1528,7 +1488,7 @@ wired in Sprint 4.
 Given a valid PDF file under 100MB
 When POST /api/v1/rfp/submit is called with the file
 Then 202 Accepted is returned with body {"jobId": "<uuid>", "status": "QUEUED"}
-And the job is persisted in Redis
+And the job is persisted  in PostgreSQL
 
 Given an encrypted PDF
 When POST /api/v1/rfp/submit is called
@@ -1871,7 +1831,7 @@ public class ExtractionPipelineService {
      *
      * Exception policy: do NOT use catch (Exception e) here. If this method throws,
      * the exception is routed to JobStateAsyncExceptionHandler (see Epic 5 below), which
-     * marks the job FAILED in Redis. This is the Spring @Async contract for void methods:
+     * marks the job FAILED in PostgreSQL. This is the Spring @Async contract for void methods:
      * unhandled exceptions propagate to AsyncUncaughtExceptionHandler, NOT to @RestControllerAdvice.
      *
      * DOCX handling: Sprint 2 does not classify DOCX pages. A PDF-only guard is applied
@@ -2015,7 +1975,7 @@ import java.util.UUID;
  * Those exceptions are routed to this handler via AsyncConfigurer.getAsyncUncaughtExceptionHandler().
  *
  * This handler inspects the method parameters for a UUID jobId argument and marks the
- * corresponding job FAILED in Redis so the polling client sees a terminal state rather
+ * corresponding job FAILED  in PostgreSQL so the polling client sees a terminal state rather
  * than the job staying RUNNING indefinitely.
  *
  * Replaces the log-only placeholder registered in Sprint 1 AsyncConfig.
@@ -2044,7 +2004,7 @@ public class JobStateAsyncExceptionHandler implements AsyncUncaughtExceptionHand
                     "method={} jobId={} traceId=NA spanId=NA durationMs=NA errorCode=NA",
                     method.getName(), jobId);
             } catch (Exception updateEx) {
-                // If the Redis update itself fails we log and give up — we must not throw
+                // If the database status update fails we log and give up — we must not throw
                 // from an AsyncUncaughtExceptionHandler as Spring will ignore it.
                 log.error(
                     "event=async.handler.fail component=JobStateAsyncExceptionHandler " +
@@ -2073,7 +2033,7 @@ public class AsyncConfig implements AsyncConfigurer {
 
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
-        // JobStateAsyncExceptionHandler marks the job FAILED in Redis and logs the error.
+        // JobStateAsyncExceptionHandler marks the job FAILED in PostgreSQL and logs the error.
         // This replaces the log-only placeholder registered in Sprint 1.
         return jobStateAsyncExceptionHandler;
     }
@@ -2435,7 +2395,7 @@ export async function listJobs(): Promise<JobStatusResponse[]> {
 - `PdfDocumentLoader` (full implementation).
 - `PageClassifier`.
 - `PageClassificationService`.
-- `RedisJobStateRepository` + `RedisConfig`.
+- `JpaJobStateRepository` + `JpaPersistenceConfig`.
 - `AsyncConfig` (move from Sprint 1 if not already merged).
 - `RfpSubmissionService`, `RfpJobService`, `ExtractionPipelineService`.
 - `RfpController`, `GlobalExceptionHandler`, `JobStateAsyncExceptionHandler`, DTOs.
@@ -2448,9 +2408,9 @@ export async function listJobs(): Promise<JobStatusResponse[]> {
 
 - [ ] `PdfDocumentLoader` uses try-with-resources on every `PDDocument` open.
 - [ ] `PageClassifier` threshold constants are package-private (not magic numbers inline).
-- [ ] `RedisJobStateRepository.findAll()` uses `redisTemplate.scan()` (cursor, NOT `keys()`); keys decoded via key
+- [ ] `JpaJobStateRepository.findAll()` uses `JPA paged query` (cursor, NOT `keys()`); keys decoded via key
   serializer.
-- [ ] `RfpSubmissionService` dispatches async AFTER saving job to Redis (not before).
+- [ ] `RfpSubmissionService` dispatches async AFTER saving job to PostgreSQL (not before).
 - [ ] `ExtractionPipelineService.runAsync()` has NO `catch (Exception e)` — `JobStateAsyncExceptionHandler` handles
   failures via `AsyncUncaughtExceptionHandler`.
 - [ ] HTTP status codes: 202 Accepted for submit, 404 for unknown jobId, 413 for file too large, 422 for ENCRYPTED/XFA.
@@ -2619,7 +2579,7 @@ INFO  Classification summary: jobId=3fa85f64... total=23 DIGITAL=18 SCANNED=3 MI
 
 - `POST /api/v1/rfp/submit` response time < 500ms (async dispatch is non-blocking).
 - 50-page PDF classification completes in < 30s.
-- Redis `GET rfp:job:{uuid}` returns within 5ms (verify with `redis-cli get "rfp:job:{uuid}"`).
+- PostgreSQL lookup by jobId returns within target latency (verify with `psql query on analysis_jobs by id`).
 - Memory usage of rfp-service < 512MB after processing a 50-page PDF.
 
 ---
@@ -2639,7 +2599,7 @@ INFO  Classification summary: jobId=3fa85f64... total=23 DIGITAL=18 SCANNED=3 MI
   `shouldReturnScannedWhenPageIsCompletelyBlank`.
 - [ ] `LocalFileStorageAdapter` rejects path traversal filenames (e.g., `../../../etc/passwd`) — verified by unit test
   `shouldSanitizeFilenameWithPathTraversal`.
-- [ ] `RedisJobStateRepository` sets TTL to exactly 24 hours — verified by unit test with Mockito argument captor.
+- [ ] `JpaJobStateRepository` sets TTL to exactly 24 hours — verified by unit test with Mockito argument captor.
 - [ ] `ExtractionPipelineService` sets job status to FAILED (not RUNNING) on any unhandled exception — verified by unit
   test.
 - [ ] End-to-end browser journey verified: upload a PDF → redirected to `/jobs` list → job row visible → click "View"
@@ -2663,18 +2623,18 @@ classification purposes. Precise CTM (current transformation matrix) parsing is 
 The classification algorithm still works correctly because raster coverage is computed from image dimensions relative to
 page dimensions, which is sufficient for the SCANNED threshold (0.80).
 
-**Assumption:** Redis is configured without authentication in the development/Docker environment (
-`spring.data.redis.url=redis://redis:6379`). If the production environment requires Redis AUTH, add
-`spring.data.redis.password=${REDIS_PASSWORD}` to `application-docker.properties` and update Docker Compose.
+**Assumption:** PostgreSQL credentials are configured in the development/Docker environment (
+`spring.datasource.url=jdbc:postgresql://postgres:5432/rfpdb`). If the production environment requires database authentication, add
+`spring.datasource.password=${POSTGRES_PASSWORD}` in `application-docker.properties` and update Docker Compose.
 
 **Assumption:** The `@Async("rfpTaskExecutor")` executor uses `ThreadPoolTaskExecutor` from `AsyncConfig` defined in
 Sprint 1. If Sprint 1's `AsyncConfig` was not yet merged, it must be added in PR 2 of this sprint.
 
-**Decision (FIX-P):** `RedisJobStateRepository.findAll()` MUST use `redisTemplate.scan()` with cursor from day one.
-`redisTemplate.keys()` is O(N) and blocks the Redis event loop for all concurrent requests regardless of environment.
+**Decision (FIX-P):** `JpaJobStateRepository.findAll()` MUST use `JPA paged query` with cursor from day one.
+Unindexed full-table scans are unacceptable at scale; repository queries must use indexed lookups and pagination.
 The `SCAN`-based implementation is already written above — do not revert to `keys()` in any sprint.
 
-**Open Question:** Should the classification results be persisted somewhere (Redis, DB) for use in Sprint 3's section
+**Open Question:** Should the classification results be persisted somewhere (DB) for use in Sprint 3's section
 segmenter? Decision: store `List<PageClassificationResult>` as part of the `ExtractionJob` state. In Sprint 2, add
 `pageClassifications` field to `ExtractionJob` as a `Map<Integer, String>` (pageIndex → classificationName). The full
 `PageClassificationResult` details are in-memory only; only the classification label is persisted.
