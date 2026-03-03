@@ -917,8 +917,9 @@ size());
 
 #### Story F-1: Persist `ExtractionState` to PostgreSQL checkpoints at node boundaries
 
-**Description:** Persist `ExtractionState` as JSONB checkpoint rows after each LangGraph4J node completes. Key:
-keyed by `job_id` and `checkpoint_sequence`; retention controlled by DB retention policy. Load state on `RepairLoopNode` entry if job resumes.
+**Description:** Persist `ExtractionState` as JSONB checkpoint rows after each LangGraph4J node completes, keyed by
+`job_id` and `checkpoint_sequence`; retention is controlled by DB retention policy. Load state on `RepairLoopNode`
+entry if the job resumes.
 
 **Acceptance Criteria (Gherkin):**
 
@@ -978,7 +979,7 @@ public class ExtractionStateCheckpointRepository {
 3. `deleteByJobId(jobId)`: called on job finalization (`FinalizeNode`).
 
 4. **Wire into agent nodes:** Add `ExtractionStateCheckpointRepository` as a collaborator to `ScoreConfidenceNode` and
-   `RepairLoopNode`. At the end of each `execute(state)` call, call `serializer.save(state.jobId, state)`.
+   `RepairLoopNode`. At the end of each `execute(state)` call, call `checkpointRepository.save(state.jobId, state)`.
 
 5. `ExtractionState` must be Jackson-serializable. Ensure all fields have either public getters (via Lombok `@Data` or
    `@Getter`) or `@JsonProperty`. `UUID` and `Instant` require `JavaTimeModule` + `JavaUUIDModule` on the shared

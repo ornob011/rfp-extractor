@@ -480,14 +480,6 @@ services:
                     memory: 4g
         restart: unless-stopped
 
-    redis         :
-        deploy :
-            resources:
-                limits:
-                    cpus  : '0.5'
-                    memory: 512m
-        restart: unless-stopped
-
     postgres      :
         deploy :
             resources:

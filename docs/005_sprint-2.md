@@ -46,8 +46,8 @@
 - `PdfDocumentLoader` — PDFBox wrapper providing text and image metadata per page.
 - `PageClassifier` — 3-class classification (DIGITAL / SCANNED / MIXED) with heuristic thresholds.
 - `PageClassificationService` — orchestrates per-page classification, stores results in job state.
-- `JpaJobStateRepository` — saves/loads `ExtractionJob` from PostgreSQL via JPA (durable, queryable); uses `SCAN` (not `keys()`) for
-  `findAll()`.
+- `JpaJobStateRepository` — saves/loads `ExtractionJob` from PostgreSQL via JPA (durable, queryable); uses indexed and
+  paged queries for list operations.
 - `LocalFileStorageAdapter` — stores uploaded files to disk under `{basePath}/{jobId}/`.
 - **`MimeTypePort`** (`rfp-core/domain/port/`) — port interface for MIME type detection; implemented by
   `MimeTypeDetector` adapter. Application services depend on this interface, never on the concrete adapter (hexagonal
@@ -1136,19 +1136,19 @@ public class ExtractionJob {
 
 **Description:**
 Create the `JobStatePort` interface in `rfp-core` and implement `JpaJobStateRepository` in
-`rfp-service/adapter/persistence/`. Analysis jobs are stored as JPA entities with primary key `jobId` and status indexes. All job JSON is stored as a String
-with 24h TTL. Serialization uses Jackson `ObjectMapper`.
+`rfp-service/adapter/persistence/`. Analysis jobs are stored as JPA entities with primary key `jobId` and indexed
+status fields. Persistence is durable (no TTL); entities are mapped to/from domain models via mapper classes.
 
 **Acceptance Criteria:**
 
 ```gherkin
 Given an ExtractionJob with status=QUEUED
 When save() is called
-Then the job is stored  in PostgreSQL with key rfp:job:{jobId} and TTL 24 hours
+Then a row is stored in `analysis_jobs` in PostgreSQL
 
 Given a saved job
 When findById(jobId) is called
-Then the original ExtractionJob is returned with all fields intact
+Then the original ExtractionJob is returned with all fields intact via mapper conversion
 
 Given a saved job with status=QUEUED
 When updateStatus(jobId, RUNNING) is called
@@ -1286,18 +1286,18 @@ class JpaJobStateRepositoryTest {
     }
 
     @Test
-    void shouldSaveJobWithCorrectKey() {
+    void shouldSaveJobWhenRepositoryCalled() {
         ExtractionJob job = buildSampleJob();
+        AnalysisJobEntity entity = buildSampleEntity();
+        when(analysisJobMapper.toEntity(job)).thenReturn(entity);
         repository.save(job);
-        verify(valueOps).set(
-            eq("rfp:job:" + job.getJobId()),
-            eq(job),
-            eq(Duration.ofHours(24)));
+        verify(analysisJobMapper).toEntity(job);
+        verify(analysisJobRepository).save(entity);
     }
 
     @Test
     void shouldReturnEmptyWhenJobNotFoundInDatabase() {
-        when(valueOps.get(anyString())).thenReturn(null);
+        when(analysisJobRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
         Optional<ExtractionJob> result = repository.findById(UUID.randomUUID());
         assertThat(result).isEmpty();
     }
@@ -1305,7 +1305,9 @@ class JpaJobStateRepositoryTest {
     @Test
     void shouldReturnJobWhenFoundInDatabase() {
         ExtractionJob job = buildSampleJob();
-        when(valueOps.get("rfp:job:" + job.getJobId())).thenReturn(job);
+        AnalysisJobEntity entity = buildSampleEntity();
+        when(analysisJobRepository.findById(job.getJobId())).thenReturn(Optional.of(entity));
+        when(analysisJobMapper.toDomain(entity)).thenReturn(job);
         Optional<ExtractionJob> result = repository.findById(job.getJobId());
         assertThat(result).isPresent();
         assertThat(result.get().getStatus()).isEqualTo(JobStatus.QUEUED);
@@ -1314,12 +1316,15 @@ class JpaJobStateRepositoryTest {
     @Test
     void shouldUpdateStatusToRunning() {
         ExtractionJob job = buildSampleJob();
-        when(valueOps.get("rfp:job:" + job.getJobId())).thenReturn(job);
+        AnalysisJobEntity entity = buildSampleEntity();
+        when(analysisJobRepository.findById(job.getJobId())).thenReturn(Optional.of(entity));
+        when(analysisJobMapper.toDomain(entity)).thenReturn(job);
+        when(analysisJobMapper.toEntity(any(ExtractionJob.class))).thenReturn(entity);
         repository.updateStatus(job.getJobId(), JobStatus.RUNNING);
-        // Capture the saved ExtractionJob and verify status was changed
         ArgumentCaptor<ExtractionJob> jobCaptor = ArgumentCaptor.forClass(ExtractionJob.class);
-        verify(valueOps, atLeastOnce()).set(anyString(), jobCaptor.capture(), any());
+        verify(analysisJobMapper, atLeastOnce()).toEntity(jobCaptor.capture());
         assertThat(jobCaptor.getValue().getStatus()).isEqualTo(JobStatus.RUNNING);
+        verify(analysisJobRepository, atLeastOnce()).save(any(AnalysisJobEntity.class));
     }
 }
 ```
@@ -2408,8 +2413,8 @@ export async function listJobs(): Promise<JobStatusResponse[]> {
 
 - [ ] `PdfDocumentLoader` uses try-with-resources on every `PDDocument` open.
 - [ ] `PageClassifier` threshold constants are package-private (not magic numbers inline).
-- [ ] `JpaJobStateRepository.findAll()` uses `JPA paged query` (cursor, NOT `keys()`); keys decoded via key
-  serializer.
+- [ ] `JpaJobStateRepository.findAll()` uses indexed and paged JPA queries; no unbounded full-table scan in runtime
+  paths.
 - [ ] `RfpSubmissionService` dispatches async AFTER saving job to PostgreSQL (not before).
 - [ ] `ExtractionPipelineService.runAsync()` has NO `catch (Exception e)` — `JobStateAsyncExceptionHandler` handles
   failures via `AsyncUncaughtExceptionHandler`.
@@ -2599,7 +2604,7 @@ INFO  Classification summary: jobId=3fa85f64... total=23 DIGITAL=18 SCANNED=3 MI
   `shouldReturnScannedWhenPageIsCompletelyBlank`.
 - [ ] `LocalFileStorageAdapter` rejects path traversal filenames (e.g., `../../../etc/passwd`) — verified by unit test
   `shouldSanitizeFilenameWithPathTraversal`.
-- [ ] `JpaJobStateRepository` sets TTL to exactly 24 hours — verified by unit test with Mockito argument captor.
+- [ ] `JpaJobStateRepository` persists and retrieves jobs via `AnalysisJobRepository` with mapper conversion — verified by unit tests.
 - [ ] `ExtractionPipelineService` sets job status to FAILED (not RUNNING) on any unhandled exception — verified by unit
   test.
 - [ ] End-to-end browser journey verified: upload a PDF → redirected to `/jobs` list → job row visible → click "View"
@@ -2632,7 +2637,7 @@ Sprint 1. If Sprint 1's `AsyncConfig` was not yet merged, it must be added in PR
 
 **Decision (FIX-P):** `JpaJobStateRepository.findAll()` MUST use `JPA paged query` with cursor from day one.
 Unindexed full-table scans are unacceptable at scale; repository queries must use indexed lookups and pagination.
-The `SCAN`-based implementation is already written above — do not revert to `keys()` in any sprint.
+Do not use unbounded `findAll()` in runtime paths that can grow with tenant volume.
 
 **Open Question:** Should the classification results be persisted somewhere (DB) for use in Sprint 3's section
 segmenter? Decision: store `List<PageClassificationResult>` as part of the `ExtractionJob` state. In Sprint 2, add

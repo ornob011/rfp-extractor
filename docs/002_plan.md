@@ -1050,7 +1050,7 @@ Hello-world end-to-end.
   `ExtractionState`, all entity sub-models matching schema above
 - [ ] `rfp-service`: Spring Boot 3.5.11 starter, import `rfp-core`
 - [ ] Add dependencies to `rfp-service/pom.xml`:
-    - `spring-boot-starter-web`, `spring-boot-starter-security`, `spring-boot-starter-data-redis`
+    - `spring-boot-starter-web`, `spring-boot-starter-security`
     - `spring-ai-openai-spring-boot-starter` (covers OpenRouter + OpenAI via OpenAI-compatible API)
     - `spring-ai-ollama-spring-boot-starter`
     - `langchain4j-spring-boot-starter`, `langchain4j-open-ai`, `langchain4j-ollama`
@@ -1088,8 +1088,8 @@ Hello-world end-to-end.
 
 **Infrastructure**
 
-- [ ] `docker-compose.yml` — services: `rfp-service` (Spring Boot), `rfp-python-ocr` (FastAPI), `redis`,`rfp-frontend` (
-  Nginx)
+- [ ] `docker-compose.yml` — services: `postgres`, `rfp-service` (Spring Boot), `rfp-python-ocr` (FastAPI),
+  `rfp-frontend` (Nginx)
 - [ ] Health check endpoints: `GET /api/v1/health` → 200 + provider info
 
 ---
