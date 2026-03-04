@@ -38,6 +38,7 @@
         <jmespath.version>0.6.0</jmespath.version>
         <freemarker.version>2.3.34</freemarker.version>
         <commons-text.version>1.15.0</commons-text.version>
+        <tika.version>3.2.3</tika.version>
     </properties>
 
     <dependencyManagement>
@@ -110,6 +111,12 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
                 <version>${commons-text.version}</version>
+            </dependency>
+            <!-- Apache Tika -->
+            <dependency>
+                <groupId>org.apache.tika</groupId>
+                <artifactId>tika-core</artifactId>
+                <version>${tika.version}</version>
             </dependency>
             <!-- LangGraph4J -->
             <dependency>

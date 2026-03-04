@@ -93,7 +93,8 @@ rfp-service: .adapter.rest.*        controllers, DTOs, mappers
 - No `if/else` blocks or ternary operators. Guard clauses (single `if` with early
   return/throw) are permitted. Prefer `switch` expressions (Java 21), functional
   composition, or polymorphism.
-- Use String.format for string concatenation in Java; template literals in TypeScript; f-strings in Python.
+- Use String.format() for string concatenation in Java (except for log statements); template literals in TypeScript; f-strings in Python.
+- Use proper spacing and line breaks for readability.
 
 ## Prompt Governance (Hard Rule, Merge-Blocking)
 
