@@ -19,15 +19,18 @@ public class AsyncConfig implements AsyncConfigurer {
     private final int corePoolSize;
     private final int maxPoolSize;
     private final int queueCapacity;
+    private final JobStateAsyncExceptionHandler exceptionHandler;
 
     public AsyncConfig(
         @Value("${app.async.core-pool-size:2}") int corePoolSize,
         @Value("${app.async.max-pool-size:4}") int maxPoolSize,
-        @Value("${app.async.queue-capacity:20}") int queueCapacity
+        @Value("${app.async.queue-capacity:20}") int queueCapacity,
+        JobStateAsyncExceptionHandler exceptionHandler
     ) {
         this.corePoolSize = corePoolSize;
         this.maxPoolSize = maxPoolSize;
         this.queueCapacity = queueCapacity;
+        this.exceptionHandler = exceptionHandler;
     }
 
     @Bean(name = "rfpTaskExecutor")
@@ -43,12 +46,6 @@ public class AsyncConfig implements AsyncConfigurer {
 
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
-        return (ex, method, params) ->
-            log.error(
-                "event=async.uncaught component=AsyncConfig status=FAIL method={} errorCode=ASYNC_FAILURE traceId=NA spanId=NA jobId=NA durationMs=NA error={}",
-                method.getName(),
-                ex.getMessage(),
-                ex
-            );
+        return exceptionHandler;
     }
 }

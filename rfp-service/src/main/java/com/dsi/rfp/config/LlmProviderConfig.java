@@ -1,6 +1,5 @@
 package com.dsi.rfp.config;
 
-import com.dsi.rfp.domain.model.LlmProvider;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -84,7 +83,7 @@ public class LlmProviderConfig {
         if (!StringUtils.hasText(props.getOpenrouter().getApiKey())) {
             throw new IllegalStateException(
                 "OpenRouter API key must not be blank when provider=openrouter. "
-                    + "Set app.llm.openrouter.api-key or OPENROUTER_API_KEY env var.");
+                + "Set app.llm.openrouter.api-key or OPENROUTER_API_KEY env var.");
         }
     }
 }

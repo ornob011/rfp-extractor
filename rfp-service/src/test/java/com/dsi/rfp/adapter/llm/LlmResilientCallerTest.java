@@ -39,21 +39,21 @@ class LlmResilientCallerTest {
     }
 
     @Test
-    void fallbackThreeArgShouldThrowLlmUnavailableException() {
+    void fallbackThreeArgShouldReturnFailedFutureWithLlmUnavailableException() {
         RuntimeException cause = new RuntimeException("circuit open");
-        assertThatThrownBy(() -> caller.fallback("sys", "user", cause))
-            .isInstanceOf(LlmUnavailableException.class)
-            .hasMessageContaining("LLM unavailable")
-            .hasMessageContaining("circuit open");
+        CompletableFuture<String> result = caller.fallback("sys", "user", cause);
+        assertThat(result.isCompletedExceptionally()).isTrue();
+        assertThatThrownBy(result::get)
+            .hasCauseInstanceOf(LlmUnavailableException.class);
     }
 
     @Test
-    void fallbackTwoArgShouldThrowLlmUnavailableException() {
+    void fallbackTwoArgShouldReturnFailedFutureWithLlmUnavailableException() {
         RuntimeException cause = new RuntimeException("timeout");
-        assertThatThrownBy(() -> caller.fallback("prompt", cause))
-            .isInstanceOf(LlmUnavailableException.class)
-            .hasMessageContaining("LLM unavailable")
-            .hasMessageContaining("timeout");
+        CompletableFuture<String> result = caller.fallback("prompt", cause);
+        assertThat(result.isCompletedExceptionally()).isTrue();
+        assertThatThrownBy(result::get)
+            .hasCauseInstanceOf(LlmUnavailableException.class);
     }
 
     private void stubChatClientToReturn(String response) {
