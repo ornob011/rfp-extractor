@@ -1,9 +1,9 @@
 package com.dsi.rfp.adapter.llm;
 
-import com.dsi.rfp.config.LlmProviderProperties;
-import com.dsi.rfp.domain.exception.LlmResponseParseException;
 import com.dsi.rfp.domain.exception.LlmUnavailableException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
+import lombok.Setter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,25 +29,22 @@ class LlmAdapterTest {
 
     @BeforeEach
     void setUp() {
-        LlmProviderProperties props = new LlmProviderProperties();
-        props.getOpenrouter().setApiKey("test-key");
-        llmAdapter = new LlmAdapter(caller, new ObjectMapper(), props);
+        llmAdapter = new LlmAdapter(caller, new ObjectMapper());
     }
 
     @Test
     void shouldReturnParsedDtoWhenLlmReturnsValidJson() {
         stubCallerToReturn("{\"name\":\"test\"}");
-        Optional<TestDto> result =
-            llmAdapter.extractStructured("system prompt", "user content", TestDto.class);
+        Optional<TestDto> result = llmAdapter.extractStructured("system prompt", "user content", TestDto.class);
         assertThat(result).isPresent();
         assertThat(result.get().getName()).isEqualTo("test");
     }
 
     @Test
-    void shouldThrowLlmResponseParseExceptionWhenLlmReturnsInvalidJson() {
+    void shouldThrowRuntimeExceptionWhenLlmReturnsInvalidJson() {
         stubCallerToReturn("this is not json");
         assertThatThrownBy(() -> llmAdapter.extractStructured("system", "user", TestDto.class))
-            .isInstanceOf(LlmResponseParseException.class);
+            .isInstanceOf(RuntimeException.class);
     }
 
     @Test
@@ -73,23 +71,23 @@ class LlmAdapterTest {
     }
 
     @Test
-    void shouldThrowLlmUnavailableExceptionWhenCallerFails() {
-        when(caller.call(anyString(), anyString()))
-            .thenReturn(CompletableFuture.failedFuture(
-                new LlmUnavailableException("LLM unavailable: Connection refused",
-                    new RuntimeException("Connection refused"))));
+    void shouldThrowCompletionExceptionWhenCallerFails() {
+        when(caller.call(anyString(), anyString())).thenReturn(CompletableFuture.failedFuture(
+            new LlmUnavailableException("LLM unavailable: Connection refused",
+                new RuntimeException("Connection refused"))));
         assertThatThrownBy(() -> llmAdapter.extractStructured("system", "user", TestDto.class))
-            .isInstanceOf(LlmUnavailableException.class);
+            .isInstanceOf(CompletionException.class)
+            .hasCauseInstanceOf(LlmUnavailableException.class);
     }
 
     @Test
-    void shouldThrowLlmUnavailableExceptionFromJudgeSnippetOnFailure() {
-        when(caller.callJudge(anyString()))
-            .thenReturn(CompletableFuture.failedFuture(
-                new LlmUnavailableException("LLM unavailable: timeout",
-                    new RuntimeException("timeout"))));
+    void shouldThrowCompletionExceptionFromJudgeSnippetOnFailure() {
+        when(caller.callJudge(anyString())).thenReturn(CompletableFuture.failedFuture(
+            new LlmUnavailableException("LLM unavailable: timeout",
+                new RuntimeException("timeout"))));
         assertThatThrownBy(() -> llmAdapter.judgeSnippet("judge prompt", "snippet"))
-            .isInstanceOf(LlmUnavailableException.class);
+            .isInstanceOf(CompletionException.class)
+            .hasCauseInstanceOf(LlmUnavailableException.class);
     }
 
     @Test
@@ -105,15 +103,9 @@ class LlmAdapterTest {
             .thenReturn(CompletableFuture.completedFuture(response));
     }
 
+    @Setter
+    @Getter
     static class TestDto {
         private String name;
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
     }
 }

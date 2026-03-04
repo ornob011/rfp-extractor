@@ -89,6 +89,11 @@ rfp-service: .adapter.rest.*        controllers, DTOs, mappers
 - No silent fallbacks for core dependencies (LLM/OCR/storage).
 - Use design patterns when they provide clear value; avoid over-engineering for simple cases.
 - Put arguments in separate lines in method signature.
+- Never catch exception, use exception handler
+- No `if/else` blocks or ternary operators. Guard clauses (single `if` with early
+  return/throw) are permitted. Prefer `switch` expressions (Java 21), functional
+  composition, or polymorphism.
+- Use String.format for string concatenation in Java; template literals in TypeScript; f-strings in Python.
 
 ## Prompt Governance (Hard Rule, Merge-Blocking)
 

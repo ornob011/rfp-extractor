@@ -35,15 +35,13 @@ class LlmResilientCaller {
             chatClient.prompt().user(fullPrompt).call().content());
     }
 
-    public CompletableFuture<String> fallback(
-        String systemPrompt,
-        String userContent,
-        Throwable t
-    ) {
-        throw new LlmUnavailableException("LLM unavailable: " + t.getMessage(), t);
+    public CompletableFuture<String> fallback(String a, String b, Throwable t) {
+        throw new LlmUnavailableException(
+            String.format("LLM unavailable: %s", t.getMessage()), t);
     }
 
-    public CompletableFuture<String> fallback(String fullPrompt, Throwable t) {
-        throw new LlmUnavailableException("LLM unavailable: " + t.getMessage(), t);
+    public CompletableFuture<String> fallback(String a, Throwable t) {
+        throw new LlmUnavailableException(
+            String.format("LLM unavailable: %s", t.getMessage()), t);
     }
 }
