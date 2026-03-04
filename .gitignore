@@ -40,5 +40,17 @@ build/
 ### Log Files ###
 logs/**
 
-### Test Files ###
-src/test/**
+### Node ###
+node_modules/
+rfp-frontend/dist/
+
+### Python ###
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+### OS ###
+.DS_Store
+Thumbs.db
