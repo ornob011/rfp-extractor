@@ -663,29 +663,29 @@ Then BD-ICT-001 finding has status=FAIL and severity=FATAL
 **Sample rules for bd-govt-ict-v1.yaml (write all 64 in actual file):**
 
 ```yaml
-pack_id     : bd-govt-ict-v1
+pack_id: bd-govt-ict-v1
 pack_version: "1.0.0"
-rfp_type    : ICT
-rules       :
-    -   id           : BD-ICT-001
-        name         : RFP Title Present
-        pack         : bd-govt-ict-v1
-        version      : "1.0.0"
-        severity     : FATAL
-        check_type   : structural
-        condition    : "doc_meta.title != null && doc_meta.title != ''"
+rfp_type: ICT
+rules:
+    -   id: BD-ICT-001
+        name: RFP Title Present
+        pack: bd-govt-ict-v1
+        version: "1.0.0"
+        severity: FATAL
+        check_type: structural
+        condition: "doc_meta.title != null && doc_meta.title != ''"
         evidence_path: "doc_meta.title"
-        message      : "RFP Title is missing from the document"
+        message: "RFP Title is missing from the document"
 
-    -   id           : BD-ICT-002
-        name         : RFP Identification Number Present
-        pack         : bd-govt-ict-v1
-        version      : "1.0.0"
-        severity     : FATAL
-        check_type   : structural
-        condition    : "doc_meta.procurement_ref != null && doc_meta.procurement_ref != ''"
+    -   id: BD-ICT-002
+        name: RFP Identification Number Present
+        pack: bd-govt-ict-v1
+        version: "1.0.0"
+        severity: FATAL
+        check_type: structural
+        condition: "doc_meta.procurement_ref != null && doc_meta.procurement_ref != ''"
         evidence_path: "doc_meta.procurement_ref"
-        message      : "RFP Identification Number (procurement reference) is missing"
+        message: "RFP Identification Number (procurement reference) is missing"
 
     # ... (all 64 rules follow this pattern)
 ```
@@ -866,16 +866,21 @@ interface RulePackResultsProps {
 **Implementation Plan:**
 
 1. Create `src/types/rulepack.ts` with interfaces above.
-2. `RulePackResults.tsx`:
+2. `RulePackResults.tsx` — uses shadcn `Table` and `Badge`:
     - Group findings by severity using `Object.groupBy` or `reduce`.
     - Render severity groups in FATAL → INFO order.
-    - Severity header colours: `FATAL: text-red-700 bg-red-50`, `HIGH: text-orange-700 bg-orange-50`,
-      `MEDIUM: text-yellow-700 bg-yellow-50`, `LOW: text-blue-700 bg-blue-50`, `INFO: text-gray-600 bg-gray-50`.
+    - Severity group headers: styled divs with semantic className mapping:
+      `FATAL: border-red-200 bg-red-50 text-red-800`, `HIGH: border-orange-200 bg-orange-50 text-orange-800`,
+      `MEDIUM: border-yellow-200 bg-yellow-50 text-yellow-800`, `LOW: border-blue-200 bg-blue-50 text-blue-800`,
+      `INFO: border-gray-200 bg-gray-50 text-gray-700`.
     - Summary bar at top: count of FATAL FAIL, HIGH FAIL, etc.
-    - Each finding row: rule ID (monospace), name, status badge, evidence (truncated 80 chars with expand button).
-    - Status badge: FAIL=`bg-red-100 text-red-800`, PASS=`bg-green-100 text-green-800`, SKIPPED=
-      `bg-gray-100 text-gray-600`.
-3. Add "Rule Pack" tab to `ResultPage.tsx` after the Entities tab.
+    - Each finding row: rendered using shadcn `<Table>`. Rule ID (monospace), name, status badge, evidence (truncated
+      80 chars with expand button).
+    - Status badges using shadcn `<Badge>`:
+        - `FAIL` → `<Badge variant="destructive">FAIL</Badge>`
+        - `PASS` → `<Badge variant="outline" className="text-green-700 border-green-300">PASS</Badge>`
+        - `SKIPPED` → `<Badge variant="secondary">SKIPPED</Badge>`
+3. Add "Rule Pack" `<TabsTrigger>` and `<TabsContent>` to the existing shadcn `<Tabs>` in `ResultPage.tsx`.
 
 **Story Points:** 5
 

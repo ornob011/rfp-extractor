@@ -982,16 +982,32 @@ Then client-side validation shows "Password must be at least 8 characters"
     - `getRoles()`: `JSON.parse(localStorage.getItem("roles") || "[]")`.
 2. Update `rfpClient.ts`: add Axios request interceptor that reads `authClient.getToken()` and sets
    `Authorization: Bearer {token}`.
-3. `LoginPage.tsx`: username + password fields, login button. On success → `navigate("/")`. On 401 error → show inline
-   error message. Add "Create account" link to `/signup` below the form. Display
-   `location.state?.message` (from signup redirect) as a success banner.
-4. `SignupPage.tsx`: username + password fields with client-side validation (`password.length >= 8`).
-   On success → `navigate("/login", { state: { message: "Account created. Please log in." } })`.
-   On 409 → inline error "Username already taken".
+3. `LoginPage.tsx` — uses `AuthLayout` (see §6.3) + shadcn `Card`, `Input`, `Label`, `Button`, `Alert`:
+    - Wrapped in `AuthLayout` (centered card layout: `min-h-screen bg-muted flex items-center justify-center`).
+    - Form inside shadcn `<Card className="w-full max-w-sm">` with `<CardHeader>` (title: "Sign In"),
+      `<CardContent>` (form fields), `<CardFooter>` ("Create account" link).
+    - Username: `<Label htmlFor="username">Username</Label>` + `<Input id="username" type="text" />`.
+    - Password: `<Label htmlFor="password">Password</Label>` + `<Input id="password" type="password" />`.
+    - Submit: `<Button className="w-full" type="submit">Sign In</Button>`.
+    - Error: `<Alert variant="destructive"><AlertDescription>Invalid username or password</AlertDescription></Alert>`.
+    - On success → `navigate("/")`. Display `location.state?.message` as success `<Alert>` banner.
+4. `SignupPage.tsx` — same `AuthLayout` + shadcn component pattern as LoginPage:
+    - Username + password fields with client-side validation (`password.length >= 8`).
+    - Validation error: `<Alert variant="destructive">` with "Password must be at least 8 characters".
+    - On success → `navigate("/login", { state: { message: "Account created. Please log in." } })`.
+    - On 409 → inline `<Alert variant="destructive">` "Username already taken".
 5. `ProtectedRoute.tsx`: check `authClient.getToken()`. If null → `<Navigate to="/login" />`. Else → render
    `<Outlet />`.
-6. Update React Router in `App.tsx`: add `<Route path="/signup" element={<SignupPage />} />` — **outside**
+6. `AccessDeniedPage.tsx`: 403 error page using `AuthLayout` (see §6.7). "No permission" message + link to `/jobs`.
+7. Update React Router in `App.tsx`: add `<Route path="/signup" element={<SignupPage />} />` — **outside**
    `<ProtectedRoute>`. Wrap all other non-login routes with `<ProtectedRoute>`.
+
+**New deliverables (this sprint):**
+
+| File                                          | Purpose                                                       |
+|-----------------------------------------------|---------------------------------------------------------------|
+| `rfp-frontend/src/layouts/AuthLayout.tsx`     | Centered card layout for login/signup/error pages (see §6.3). |
+| `rfp-frontend/src/pages/AccessDeniedPage.tsx` | 403 error page.                                               |
 
 **Test Plan:** Unit tests only (controller/service/security filter tests with mocked dependencies).
 **Story Points:** 8

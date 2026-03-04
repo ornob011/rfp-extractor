@@ -46,7 +46,7 @@ The system's competitive advantages over off-the-shelf tools (AWS Textract, Azur
 | Job state        | PostgreSQL via JPA (`AnalysisJobEntity`, `AgentExecutionEntity`, `AgentStepEntity`) — permanent, queryable, no TTL. Redis removed. |
 | Reliability      | Resilience4j: retry (exp backoff + jitter), circuit breaker, rate limiter, timeouts on all LLM and OCR calls                       |
 | Artifacts        | Apache POI (XLSX + DOCX) + Freemarker templates                                                                                    |
-| Frontend         | React 18, Tailwind v4, Vite, React Query, TypeScript strict                                                                        |
+| Frontend         | React 19, TypeScript strict, Tailwind v4, Vite 7, React Router 7, React Query 5, shadcn/ui (Radix UI), lucide-react, sonner        |
 | Architecture     | Hexagonal (Ports & Adapters): `domain/` ← `application/service/` ← `adapter/`                                                      |
 | Code quality     | Max 250 lines/service, max 20 lines/method, constructor injection, Lombok everywhere, library-first                                |
 | Prompts          | `/prompts/{name}-v{version}.md` — versioned, model-annotated, snapshot-tested                                                      |

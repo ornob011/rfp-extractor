@@ -379,7 +379,8 @@ public class StreamTableExtractor {
    falls in. Build `TableCell(row=rowIdx, col=colIdx, value=block.text, rowspan=1, colspan=1)`.
 6. **Headers:** first row `isHeader=true`.
 7. **Confidence:** always `ExtractionConfidence.builder().score(0.6).method("stream").build()`.
-8. Return `TableExtractionResult` with `pageStart=pageNum, pageEnd=pageNum, tableId=UUID.randomUUID(), provenance=TableProvenance.DIGITAL`.
+8. Return `TableExtractionResult` with
+   `pageStart=pageNum, pageEnd=pageNum, tableId=UUID.randomUUID(), provenance=TableProvenance.DIGITAL`.
 
 **Dependencies:** `PdfDocumentLoader` (Sprint 2).
 
@@ -965,21 +966,25 @@ export function TableViewer({table}: TableViewerProps): JSX.Element { ...
 2. Render a `<div>` with `display: grid`, `gridTemplateColumns: repeat(${maxCol+1}, minmax(100px, 1fr))`.
 3. Sort `grid` by `row` ascending, then `col` ascending.
 4. For each cell: render a `<div>` with:
-    - `gridColumn: ${cell.col + 1} / span ${cell.colspan}`
-    - `gridRow: ${cell.row + 1} / span ${cell.rowspan}`
-    - Background: `cell.isHeader ? 'bg-slate-700 text-white font-semibold' : 'bg-white'`
+    - `gridColumn: ${cell.col + 1} / span ${cell.colspan}` (inline style — documented CSS grid exception per §6.8)
+    - `gridRow: ${cell.row + 1} / span ${cell.rowspan}` (inline style — documented CSS grid exception per §6.8)
+    - Background: `cell.isHeader ? 'bg-slate-800 text-slate-50 font-semibold' : 'bg-white'`
     - Border: `border border-slate-300`
     - Padding: `p-2 text-sm`
-5. Above grid: render caption, type chip (Tailwind badge), confidence badge.
-6. Confidence badge: method label + `w-full bg-gray-200 rounded-full h-1.5` progress bar filled to `score * 100%`.
-7. Method color: `lattice=green-500`, `stream=yellow-500`, `ocr_llm_reconstruct=orange-500`.
+5. Above grid: render caption, type chip using shadcn `<Badge>`, confidence bar using shadcn `<Progress>`.
+6. Confidence bar: `<Progress value={score * 100} className="h-1.5" />` (replaces manual progress bar div).
+7. Method color chips using shadcn `<Badge variant="outline">` with className overrides:
+    - `lattice` → `className="text-green-700 border-green-300"`
+    - `stream` → `className="text-yellow-700 border-yellow-300"`
+    - `ocr_llm_reconstruct` → `className="text-orange-700 border-orange-300"`
 
 **Implementation Plan (ResultPage.tsx update):**
 
-1. Add "Tables" tab to existing tab list. Label: `Tables (${tables.length})`.
+1. Add "Tables" `<TabsTrigger>` and `<TabsContent>` to the existing shadcn `<Tabs>` introduced in Sprint 3.
+   Tab label: `` `Tables (${tables.length})` `` — count shown in the trigger.
 2. Import `TableViewer` and `TableExtractionResult`.
 3. Map `rfpResult.tables` → `<TableViewer key={t.tableId} table={t} />` inside a `<div className="space-y-6">`.
-4. Show empty state `<p>No tables extracted</p>` if `tables.length === 0`.
+4. Show empty state using shadcn `<Card>` with message "No tables extracted" if `tables.length === 0`.
 
 **Dependencies:** `rfpResult` type from existing API response type.
 

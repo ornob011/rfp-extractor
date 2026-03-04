@@ -1336,15 +1336,15 @@ And each field row shows: label, value, source clause ID (linked), confidence ba
 
 Given a field with confidence 1.0
 When the confidence badge is rendered
-Then the badge has CSS class "bg-green-500" and text "HIGH"
+Then the badge shows text "HIGH" with green outline style (shadcn Badge variant="outline")
 
 Given a field with confidence 0.5
 When the confidence badge is rendered
-Then the badge has CSS class "bg-yellow-400" and text "MED"
+Then the badge shows text "MED" with yellow outline style (shadcn Badge variant="outline")
 
 Given a field with confidence 0.0 or field is null
 When the confidence badge is rendered
-Then the badge has CSS class "bg-red-500" and text "LOW"
+Then the badge shows text "LOW" with destructive style (shadcn Badge variant="destructive")
 
 Given ResultPage layout
 When EntityTable is rendered
@@ -1355,11 +1355,10 @@ Then it appears in the right panel, tabbed alongside SectionTree on the left
 
 ```typescript
 // rfp-frontend/src/components/EntityTable.tsx
-import React, {useState} from 'react';
-
-type ConfidenceBadgeProps = {
-    score: number;
-};
+import {Tabs, TabsList, TabsTrigger, TabsContent} from '@/components/ui/tabs';
+import {Table, TableHeader, TableRow, TableHead, TableBody, TableCell} from '@/components/ui/table';
+import {Button} from '@/components/ui/button';
+import {ConfidenceBadge} from './ConfidenceBadge'; // shared component from Sprint 3
 
 type EntityField = {
     key: string;
@@ -1380,43 +1379,32 @@ type EntityTableProps = {
     confidenceMap: Record<string, number>;
     onClauseClick: (clauseId: string) => void;
 };
-
-export const EntityTable: React.FC<EntityTableProps> = ({
-                                                            entities, confidenceMap, onClauseClick
-                                                        }) => {
-    const [activeTab, setActiveTab] = useState<string>('general');
-    // ...
-};
-
-const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({score}) => {
-    if (score >= 0.8) return <span className = "bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold" > HIGH < /span>;
-    if (score >= 0.5) return <span className = "bg-yellow-400 text-gray-900 px-2 py-0.5 rounded text-xs font-bold" > MED < /span>;
-    return <span className = "bg-red-500 text-white px-2 py-0.5 rounded text-xs font-bold" > LOW < /span>;
-};
 ```
 
 **Implementation Plan:**
 
-1. Create `EntityTable.tsx` in `rfp-frontend/src/components/`. Use React `useState` for active tab. Tailwind v4 for
-   styling.
+1. Create `EntityTable.tsx` in `rfp-frontend/src/components/`. Uses shadcn/ui components throughout.
 2. Define a `CATEGORIES` constant mapping tab IDs to lists of `EntityField` keys with human-readable labels. This is a
    static lookup table co-located in the component file.
-3. Tab bar: render 7 tab buttons using `CATEGORIES.map()`. Active tab highlighted with `border-b-2 border-blue-500`.
-4. Field rows: render `<table>` inside the active tab pane with columns: Label | Value | Source | Confidence.
-5. `ConfidenceBadge`: standalone inner component. Score `>= 0.8` → green HIGH, `>= 0.5` → yellow MED, `< 0.5` → red LOW.
+3. Tab bar: use shadcn `<Tabs>` with `<TabsList>` containing 7 `<TabsTrigger>` elements for General, Submission,
+   Financial, ICT, Staffing, Support, Evaluation. No manual `border-b-2` — Tabs manages active state internally.
+4. Field rows: render shadcn `<Table>` inside each `<TabsContent>` with columns: Label | Value | Source | Confidence.
+5. `ConfidenceBadge`: import from `src/components/ConfidenceBadge.tsx` (shared component defined in Sprint 3, see
+   `docs/002_plan.md` §6.6). Do not redefine inline.
 6. Source clause link: if `sourceClauseId` present, render
-   `<button className="text-blue-500 underline text-xs" onClick={() => onClauseClick(sourceClauseId)}>`. The
-   `onClauseClick` prop scrolls to the clause in `SectionTree`.
+   `<Button variant="ghost" size="sm" onClick={() => onClauseClick(sourceClauseId)}>` with `text-xs underline`.
+   The `onClauseClick` prop scrolls to the clause in `SectionTree`.
 7. Update `ResultPage.tsx` to split into left (SectionTree) and right (EntityTable) panels using
-   `<div className="grid grid-cols-2 gap-4">`. Add `confidenceMap` and `entities` to the data fetched from
-   `GET /api/v1/rfp/result/{jobId}`.
+   `<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">` (responsive: stacked on mobile, side-by-side on desktop).
+   Add `confidenceMap` and `entities` to the data fetched from `GET /api/v1/rfp/result/{jobId}`.
 8. Add REST endpoint `GET /api/v1/rfp/result/{jobId}` in `rfp-service` that returns
    `{entities: RfpEntities, confidenceMap: Map<String,Double>, sections: List<Section>}`.
 
 **Test Plan:**
 
 - No UI unit tests required in this baseline.
-- Backend coverage only: add/update unit tests for `GET /api/v1/rfp/result/{jobId}` controller/service mapping and DTO shape.
+- Backend coverage only: add/update unit tests for `GET /api/v1/rfp/result/{jobId}` controller/service mapping and DTO
+  shape.
 
 **Observability:** Client-side only. No server-side observability needed for the component itself.
 
@@ -1426,17 +1414,17 @@ const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({score}) => {
 
 ## 4) PR Plan
 
-| PR# | Title                                                                                   | Files Changed                                                                                                                                                                                                                                                                                      | Merge Order | Dependencies |
-|-----|-----------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|--------------|
-| 1   | feat: ExtractionState + RepairLogEntry + RulePackResults + Table domain models          | `rfp-core/.../model/ExtractionState.java`, `RepairLogEntry.java`, `RulePackResults.java`, `Table.java`                                                                                                                                                                                             | 1           | None         |
-| 2   | feat: DocumentChunk model + DocumentChunkingService                                     | `rfp-core/.../model/DocumentChunk.java`, `rfp-service/.../adapter/extraction/DocumentChunkingService.java`                                                                                                                                                                                         | 2           | PR #1        |
-| 3   | feat: BaseEntityExtractor template method framework                                     | `rfp-service/.../adapter/entity/BaseEntityExtractor.java`                                                                                                                                                                                                                                          | 3           | PR #2        |
-| 4   | feat: GeneralEntityExtractor + entity-general-v1.md prompt                              | `GeneralEntityExtractor.java`, `prompts/entity-general-v1.md`                                                                                                                                                                                                                                      | 4           | PR #3        |
-| 5   | feat: Remaining 6 entity extractors + prompts                                           | `SubmissionEntityExtractor.java`, `FinancialEntityExtractor.java`, `IctEntityExtractor.java`, `StaffingEntityExtractor.java`, `SupportEntityExtractor.java`, `EvaluationEntityExtractor.java`, 6 prompt files                                                                                      | 5           | PR #4        |
-| 6   | feat: EntityExtractor orchestrator + RfpEntitiesMapper + ExtractEntitiesNode            | `EntityExtractor.java`, `RfpEntitiesMapper.java`, `agent/node/ExtractEntitiesNode.java`                                                                                                                                                                                                            | 6           | PR #5        |
-| 7   | feat: LangGraph4J ExtractionGraph skeleton + all node stubs                             | `ExtractionGraph.java`, `ConfidenceRouter.java`, `ValidateNode.java`, `ClassifyPagesNode.java`, `ExtractTextNode.java`, `SegmentSectionsNode.java`, `ExtractTablesNode.java` (stub), `RepairLoopNode.java` (stub), `RunRulePackNode.java` (stub), `FinalizeNode.java`, `RfpDocumentAssembler.java` | 7           | PR #6        |
-| 8   | feat: ScoreConfidenceNode + ConfidenceRouter                                            | `ScoreConfidenceNode.java`, `ConfidenceRouter.java` (updated)                                                                                                                                                                                                                                      | 8           | PR #7        |
-| 9   | feat: ExtractionOrchestrationService + AsyncConfig + wire to RfpSubmissionService       | `ExtractionOrchestrationService.java`, `AsyncConfig.java`, updated `RfpSubmissionService.java`                                                                                                                                                                                                     | 9           | PR #8        |
+| PR# | Title                                                                                         | Files Changed                                                                                                                                                                                                                                                                                      | Merge Order | Dependencies |
+|-----|-----------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|--------------|
+| 1   | feat: ExtractionState + RepairLogEntry + RulePackResults + Table domain models                | `rfp-core/.../model/ExtractionState.java`, `RepairLogEntry.java`, `RulePackResults.java`, `Table.java`                                                                                                                                                                                             | 1           | None         |
+| 2   | feat: DocumentChunk model + DocumentChunkingService                                           | `rfp-core/.../model/DocumentChunk.java`, `rfp-service/.../adapter/extraction/DocumentChunkingService.java`                                                                                                                                                                                         | 2           | PR #1        |
+| 3   | feat: BaseEntityExtractor template method framework                                           | `rfp-service/.../adapter/entity/BaseEntityExtractor.java`                                                                                                                                                                                                                                          | 3           | PR #2        |
+| 4   | feat: GeneralEntityExtractor + entity-general-v1.md prompt                                    | `GeneralEntityExtractor.java`, `prompts/entity-general-v1.md`                                                                                                                                                                                                                                      | 4           | PR #3        |
+| 5   | feat: Remaining 6 entity extractors + prompts                                                 | `SubmissionEntityExtractor.java`, `FinancialEntityExtractor.java`, `IctEntityExtractor.java`, `StaffingEntityExtractor.java`, `SupportEntityExtractor.java`, `EvaluationEntityExtractor.java`, 6 prompt files                                                                                      | 5           | PR #4        |
+| 6   | feat: EntityExtractor orchestrator + RfpEntitiesMapper + ExtractEntitiesNode                  | `EntityExtractor.java`, `RfpEntitiesMapper.java`, `agent/node/ExtractEntitiesNode.java`                                                                                                                                                                                                            | 6           | PR #5        |
+| 7   | feat: LangGraph4J ExtractionGraph skeleton + all node stubs                                   | `ExtractionGraph.java`, `ConfidenceRouter.java`, `ValidateNode.java`, `ClassifyPagesNode.java`, `ExtractTextNode.java`, `SegmentSectionsNode.java`, `ExtractTablesNode.java` (stub), `RepairLoopNode.java` (stub), `RunRulePackNode.java` (stub), `FinalizeNode.java`, `RfpDocumentAssembler.java` | 7           | PR #6        |
+| 8   | feat: ScoreConfidenceNode + ConfidenceRouter                                                  | `ScoreConfidenceNode.java`, `ConfidenceRouter.java` (updated)                                                                                                                                                                                                                                      | 8           | PR #7        |
+| 9   | feat: ExtractionOrchestrationService + AsyncConfig + wire to RfpSubmissionService             | `ExtractionOrchestrationService.java`, `AsyncConfig.java`, updated `RfpSubmissionService.java`                                                                                                                                                                                                     | 9           | PR #8        |
 | 10  | feat: EntityTable.tsx + ResultPage two-panel layout + GET /api/v1/rfp/result/{jobId} endpoint | `EntityTable.tsx`, updated `ResultPage.tsx`, new REST controller method                                                                                                                                                                                                                            | 10          | PR #9        |
 
 ---

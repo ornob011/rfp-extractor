@@ -1220,6 +1220,7 @@ Scenario: JobStatusPage shows live repair counter
 
 ```typescript
 // rfp-frontend/src/components/AuditPanel.tsx
+
 interface RepairEvent {
     componentId: string;
     attempt: number;
@@ -1231,17 +1232,16 @@ interface AuditPanelProps {
     repairEvents: RepairEvent[];
     totalRepairIterations: number;
 }
-
-export function AuditPanel({repairEvents, totalRepairIterations}: AuditPanelProps): JSX.Element {
-    const [open, setOpen] = useState(false);
-    // ...
-}
 ```
 
-2. `AuditPanel` rendering:
-    - Toggle button: `className="text-sm font-medium text-slate-600 underline cursor-pointer"`.
-    - When open: render `<table>` with columns: Component, Attempt, Strategy, Result.
-    - Row color: `result === 'IMPROVED' ? 'bg-green-50' : result === 'MAX_RETRIES' ? 'bg-red-50' : 'bg-orange-50'`.
+2. `AuditPanel` rendering — uses shadcn `Collapsible` (replaces manual `useState(open)` toggle):
+    - Toggle: `<CollapsibleTrigger asChild><Button variant="ghost" size="sm">Show Repair Audit ({N} events)
+      <ChevronDown className="ml-2 h-4 w-4" /></Button></CollapsibleTrigger>`.
+    - Content: shadcn `<Table>` with columns: Component, Attempt, Strategy, Result.
+    - Result column uses shadcn `<Badge>` instead of row background colors:
+        - `IMPROVED` → `<Badge variant="outline" className="text-green-700 border-green-300">IMPROVED</Badge>`
+        - `NOT IMPROVED` → `<Badge variant="outline" className="text-orange-700 border-orange-300">NOT IMPROVED</Badge>`
+        - `MAX_RETRIES` → `<Badge variant="destructive">MAX RETRIES</Badge>`
 
 3. **`JobStatusPage.tsx` update:**
     - Extend React Query poll to also extract `repairEvents`, `totalRepairIterations`, `lowConfidenceQueueSize` from

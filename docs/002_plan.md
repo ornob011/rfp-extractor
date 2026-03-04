@@ -209,7 +209,7 @@ header("Retry-After","30")
 
 body(
     ProblemDetail.forStatusAndDetail(
-    status,
+        status,
     detail
     )
     );
@@ -317,19 +317,186 @@ Backend unit testing only. No integration, E2E, contract, or frontend test requi
 
 ---
 
-### 6. Frontend Standards (React + Tailwind v4)
+### 6. Frontend Standards (React + Tailwind v4 + shadcn/ui)
+
+#### 6.1 Tech Stack
+
+| Concern             | Library                         |
+|---------------------|---------------------------------|
+| Framework           | React 19                        |
+| Build               | Vite 7                          |
+| Routing             | React Router DOM 7              |
+| Server state        | @tanstack/react-query 5         |
+| HTTP client         | axios                           |
+| Typing              | TypeScript (strict)             |
+| Styling             | Tailwind CSS v4                 |
+| Component library   | shadcn/ui (Radix UI primitives) |
+| Icons               | lucide-react                    |
+| Toast notifications | sonner (via shadcn/ui)          |
+
+#### 6.2 Folder Structure
+
+```
+src/
+  api/              HTTP clients (rfpClient.ts, authClient.ts)
+  components/       Reusable components (SectionTree, EntityTable, etc.)
+  components/ui/    shadcn/ui generated components — DO NOT edit manually
+  hooks/            Custom React hooks
+  layouts/          AppLayout (sidebar + topnav), AuthLayout (centered card)
+  lib/              Utilities (cn() helper, formatters)
+  pages/            Route-level components only
+  types/            TypeScript interfaces matching backend JSON
+```
+
+- `components/ui/` is the shadcn/ui output directory. Files here are owned by the shadcn CLI. Do not modify them
+  directly — copy and rename if customization is needed.
+- `layouts/` contains layout wrappers. Every route uses either `AppLayout` or `AuthLayout`.
+
+#### 6.3 Layout System
+
+**AppLayout** (all authenticated pages):
+
+- Fixed left sidebar (240 px on desktop) + top navigation bar (56 px tall) + scrollable content area.
+- Sidebar contains: application logo / wordmark, primary navigation links (Jobs, Upload, Admin), user info at bottom
+  (username, role badge), logout button.
+- Top nav contains: page title or breadcrumb, secondary actions (e.g., "Upload New" button).
+- Content area: scrollable, padded `p-6`, `max-w-7xl mx-auto` for wide pages, `max-w-4xl mx-auto` for detail pages.
+- Mobile: sidebar collapses to an off-canvas `Sheet` (shadcn/ui) triggered by a hamburger button in the top nav.
+
+**AuthLayout** (login, signup, error pages):
+
+- Full-screen centered card: `min-h-screen bg-muted flex items-center justify-center`.
+- Card: `w-full max-w-sm` using shadcn `Card`, `CardHeader`, `CardContent`.
+
+#### 6.4 Required shadcn/ui Components
+
+**Navigation & Layout:**
+`Sheet`, `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent`, `Collapsible` / `CollapsibleTrigger` /
+`CollapsibleContent`
+
+**Data Display:**
+`Table` / `TableHeader` / `TableRow` / `TableHead` / `TableBody` / `TableCell`, `Badge`, `Card` / `CardHeader` /
+`CardContent` / `CardFooter`, `Progress`
+
+**Forms & Inputs:**
+`Button` (variants: `default`, `secondary`, `outline`, `destructive`, `ghost`), `Input`, `Label`
+
+**Feedback:**
+`Sonner` (toast), `Alert` / `AlertDescription`, `Skeleton`
+
+**Overlays:**
+`Dialog` / `DialogContent` / `DialogHeader` / `DialogTitle`
+
+#### 6.5 Responsive Behavior
+
+| Breakpoint           | Sidebar                      | Tables                   |
+|----------------------|------------------------------|--------------------------|
+| Mobile (< 640 px)    | Hidden; hamburger → Sheet    | `overflow-x-auto` scroll |
+| Tablet (640–1024 px) | Icon-only strip (64 px wide) | Normal                   |
+| Desktop (> 1024 px)  | Full with labels (240 px)    | Normal                   |
+
+- `AppLayout` owns all responsive behavior. Pages never implement their own responsive wrappers.
+- Use Tailwind responsive prefixes (`sm:`, `md:`, `lg:`) for breakpoint-specific overrides.
+
+#### 6.6 Theming and Color System
+
+shadcn/ui uses CSS custom properties defined in `src/index.css`. Never hard-code color hex values in component logic.
+Map semantic meanings to shadcn primitives:
+
+**Confidence badges** (shared `ConfidenceBadge` component, reused across sprints):
+
+| Level        | Markup                                                                               |
+|--------------|--------------------------------------------------------------------------------------|
+| HIGH (≥ 0.8) | `<Badge variant="outline" className="text-green-700 border-green-300">HIGH</Badge>`  |
+| MED (≥ 0.5)  | `<Badge variant="outline" className="text-yellow-700 border-yellow-300">MED</Badge>` |
+| LOW (< 0.5)  | `<Badge variant="destructive">LOW</Badge>`                                           |
+
+**Job status badges:**
+
+| Status    | Badge                                                                     |
+|-----------|---------------------------------------------------------------------------|
+| COMPLETED | `<Badge variant="outline" className="text-green-700 border-green-300">`   |
+| RUNNING   | `<Badge variant="secondary">`                                             |
+| QUEUED    | `<Badge variant="outline" className="text-yellow-700 border-yellow-300">` |
+| FAILED    | `<Badge variant="destructive">`                                           |
+| PARTIAL   | `<Badge variant="outline" className="text-orange-700 border-orange-300">` |
+
+#### 6.7 Error Pages
+
+| Page                   | Route / Trigger    | Content                                                      |
+|------------------------|--------------------|--------------------------------------------------------------|
+| `NotFoundPage.tsx`     | `<Route path="*">` | "404" heading, message, link to `/jobs`. Uses `AuthLayout`.  |
+| `ServerErrorPage.tsx`  | Error boundary     | "Something went wrong", retry button. Uses `AuthLayout`.     |
+| `AccessDeniedPage.tsx` | Redirect on 403    | "No permission" message, link to `/jobs`. Uses `AuthLayout`. |
+
+**Inline boundary states** (replace scattered ad-hoc patterns):
+
+| State   | Component                                | Replaces                       |
+|---------|------------------------------------------|--------------------------------|
+| Loading | shadcn `Skeleton`                        | `<p>Loading…</p>`              |
+| Empty   | `Card` with icon + heading + description | blank page                     |
+| Error   | `<Alert variant="destructive">`          | `<p className="text-red-500">` |
+
+#### 6.8 Code Rules
 
 - **Component size**: No component file > 150 lines. Extract sub-components aggressively.
 - **State management**: React Query (`@tanstack/react-query`) for all server state (polling, caching, mutations). No
   `useEffect` for data fetching.
-- **API layer**: All HTTP calls go through `src/api/rfpClient.ts`. Components never call `axios` or `fetch` directly.
-- **Typing**: TypeScript strict mode. No `any`. All API response types generated from or matching the backend JSON
-  schema.
-- **Styling**: Tailwind utility classes only. No inline `style={{}}` objects. No external CSS files for layout.
-- **Error handling**: Every async operation has an error boundary or `isError` state displayed to the user. No silent
-  failures.
-- **Folder structure**: `pages/` for route-level components, `components/` for reusables, `hooks/` for custom hooks,
-  `api/` for HTTP clients, `types/` for TypeScript interfaces.
+- **API layer**: All HTTP calls go through `src/api/rfpClient.ts` or `src/api/authClient.ts`. Components never call
+  `axios` or `fetch` directly.
+- **Typing**: TypeScript strict mode. No `any`. All API response types match backend JSON schema.
+- **Styling**: No inline `style={{}}` objects except where CSS grid `gridColumn` / `gridRow` is required for
+  `TableViewer.tsx` merged cells — this is the only permitted exception.
+- **No raw Tailwind color classes** (`bg-green-500`, `text-red-600`, etc.) outside of `components/ui/` or the semantic
+  overrides documented in §6.6. Use shadcn component variants and the className overrides listed above.
+- **Tab bars**: All tab navigation uses shadcn `Tabs`. Manual `border-b-2` tab implementations are forbidden from
+  Sprint 3 onward.
+- **Toast notifications**: All toasts use `sonner`. Manual `useState(toast)` pattern is forbidden.
+- **Collapsible panels**: All collapsible panels use shadcn `Collapsible`. Manual `useState(open)` toggle is permitted
+  only for tree-node expand/collapse (SectionTree leaf-level UI).
+- **Error handling**: Every async operation has an `isError` state displayed via `<Alert variant="destructive">`.
+  No silent failures.
+
+#### 6.9 Accessibility
+
+All interactive UI must meet WCAG 2.1 AA baseline:
+
+- **Labels**: Every form input (`Input`, `Select`, `Textarea`) must have an associated `<Label>` with matching
+  `htmlFor` / `id`. Placeholder text is not a substitute for a label.
+- **Focus states**: All interactive elements (buttons, links, inputs, tabs, tree nodes) must have a visible focus ring.
+  shadcn/ui components include `focus-visible:ring-2 focus-visible:ring-ring` by default — do not remove it. Custom
+  interactive elements must add equivalent Tailwind focus-visible utilities.
+- **Keyboard navigation**:
+    - `Dialog`: must trap focus while open. Close on `Escape`. shadcn `Dialog` handles this via Radix UI — do not
+      reimplement.
+    - `Tabs`: arrow keys move between triggers. shadcn `Tabs` handles this via Radix — do not override.
+    - `Collapsible`: `Enter` / `Space` toggles open/closed on the trigger element.
+    - `Sheet` (mobile sidebar): must trap focus while open. Close on `Escape`.
+    - `SectionTree`: tree nodes must be focusable (`tabIndex={0}`). `Enter` / `Space` toggles expand/collapse.
+- **ARIA attributes**: Use semantic HTML (`<nav>`, `<main>`, `<aside>`, `<header>`) for landmarks in `AppLayout`.
+  Sidebar uses `<aside aria-label="Main navigation">`. Content area uses `<main>`. Top nav uses `<header>`.
+  shadcn components provide correct ARIA roles automatically — do not override them.
+- **Color contrast**: Text on colored badges must meet 4.5:1 contrast ratio. The badge color mappings in §6.6 are
+  pre-validated for AA compliance. Do not introduce new color combinations without checking contrast.
+- **Screen reader text**: Icon-only buttons (e.g., hamburger menu, close button) must include `aria-label` or
+  visually hidden text via `<span className="sr-only">`.
+
+#### 6.10 Frontend Library-First Mapping
+
+| Capability         | Use                          | Never write custom                           |
+|--------------------|------------------------------|----------------------------------------------|
+| UI primitives      | shadcn/ui (`components/ui/`) | raw Tailwind buttons, inputs, tables, badges |
+| Tab navigation     | shadcn `Tabs`                | manual `border-b-2` tab bars                 |
+| Data tables        | shadcn `Table`               | raw `<table>` with Tailwind padding          |
+| Status badges      | shadcn `Badge`               | raw `<span className="bg-*-100">`            |
+| Collapsible panels | shadcn `Collapsible`         | manual useState toggle + overflow-hidden     |
+| Progress bars      | shadcn `Progress`            | `bg-gray-200 rounded-full h-1.5` divs        |
+| Toast              | `sonner`                     | useState-based toast divs                    |
+| Form inputs        | shadcn `Input` + `Label`     | raw `<input className="...">`                |
+| Icons              | `lucide-react`               | inline SVG or emoji characters               |
+| Loading states     | shadcn `Skeleton`            | `<p>Loading…</p>`                            |
+| Inline errors      | shadcn `Alert`               | `<p className="text-red-500">`               |
+| Modals             | shadcn `Dialog`              | manual z-index overlays                      |
 
 ---
 
@@ -890,29 +1057,29 @@ The schema captures ALL 45 fields from the user's checklist, organized into type
 Each rule is a YAML entry validated against `rule-schema-v1.json`:
 
 ```yaml
--   id           : BD-ICT-001
-    name         : RFP Title Present
-    pack         : bd-govt-ict-v1
-    version      : "1.0.0"
-    severity     : FATAL           # FATAL | HIGH | MEDIUM | LOW | INFO
-    check_type   : structural    # structural (JMESPath) | semantic (LLM)
-    condition    : "doc_meta.title != null && doc_meta.title != ''"
+-   id: BD-ICT-001
+    name: RFP Title Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: FATAL           # FATAL | HIGH | MEDIUM | LOW | INFO
+    check_type: structural    # structural (JMESPath) | semantic (LLM)
+    condition: "doc_meta.title != null && doc_meta.title != ''"
     evidence_path: "doc_meta.title"
-    message      : "RFP Title is missing from the document"
+    message: "RFP Title is missing from the document"
 
--   id           : BD-ICT-056
-    name         : Scope Sufficiently Specific
-    pack         : bd-govt-ict-v1
-    version      : "1.0.0"
-    severity     : HIGH
-    check_type   : semantic
+-   id: BD-ICT-056
+    name: Scope Sufficiently Specific
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
     evidence_path: "entities.evaluation.scope_summary.value"
-    llm_prompt   : |
+    llm_prompt: |
         You are a GOB ICT procurement expert. Evaluate if this scope of work is specific enough
         to price accurately. Reply with JSON: {"finding": true/false, "explanation": "...", "confidence": 0.0-1.0}
         finding=true means there IS a problem (scope is vague).
         Scope text: {{evidence}}
-    message      : "Scope of work may be too vague to price accurately"
+    message: "Scope of work may be too vague to price accurately"
 ```
 
 ---
