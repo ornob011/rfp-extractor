@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { submitRfp } from '../api/rfpClient';
 
 export function UploadPage() {
@@ -18,8 +18,8 @@ export function UploadPage() {
         setUploading(true);
         setError(null);
         try {
-            const { jobId } = await submitRfp(file);
-            void navigate(`/job/${jobId}`);
+            await submitRfp(file);
+            void navigate('/jobs');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Upload failed');
         } finally {
@@ -33,7 +33,12 @@ export function UploadPage() {
                 onSubmit={(e) => { void handleSubmit(e); }}
                 className="bg-white p-8 rounded-xl shadow-md w-full max-w-md"
             >
-                <h1 className="text-2xl font-bold mb-6 text-gray-800">Upload RFP Document</h1>
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold text-gray-800">Upload RFP Document</h1>
+                    <Link to="/jobs" className="text-blue-600 hover:underline text-sm">
+                        View Jobs
+                    </Link>
+                </div>
                 <input
                     type="file"
                     accept=".pdf,.docx"
