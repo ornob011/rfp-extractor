@@ -87,6 +87,8 @@ rfp-service: .adapter.rest.*        controllers, DTOs, mappers
 - No checked exceptions in domain/app layers; use typed runtime exceptions.
 - `@Transactional` only in application service layer, never in controllers.
 - No silent fallbacks for core dependencies (LLM/OCR/storage).
+- Use design patterns when they provide clear value; avoid over-engineering for simple cases.
+- Put arguments in separate lines in method signature.
 
 ## Prompt Governance (Hard Rule, Merge-Blocking)
 
