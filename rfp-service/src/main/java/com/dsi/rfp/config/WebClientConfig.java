@@ -9,6 +9,8 @@ public class WebClientConfig {
 
     @Bean
     public RestClient restClient() {
-        return RestClient.builder().defaultHeader("Accept", "application/json").build();
+        return RestClient.builder()
+                         .defaultHeader("Accept", "application/json")
+                         .build();
     }
 }

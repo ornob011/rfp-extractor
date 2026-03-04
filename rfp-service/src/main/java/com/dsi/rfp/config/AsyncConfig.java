@@ -45,10 +45,10 @@ public class AsyncConfig implements AsyncConfigurer {
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
         return (ex, method, params) ->
             log.error(
-                "event=async.uncaught component=AsyncConfig status=FAIL method={} errorCode=ASYNC_FAILURE"
-                + " traceId=NA spanId=NA jobId=NA durationMs=NA error={}",
+                "event=async.uncaught component=AsyncConfig status=FAIL method={} errorCode=ASYNC_FAILURE traceId=NA spanId=NA jobId=NA durationMs=NA error={}",
                 method.getName(),
                 ex.getMessage(),
-                ex);
+                ex
+            );
     }
 }

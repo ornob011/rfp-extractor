@@ -15,33 +15,84 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 class LlmResilientCaller {
 
+    private static final String RESILIENCE_INSTANCE = "llm";
+
     private final ChatClient chatClient;
 
-    @CircuitBreaker(name = "llm", fallbackMethod = "fallback")
-    @RateLimiter(name = "llm")
-    @TimeLimiter(name = "llm")
-    @Retry(name = "llm")
-    public CompletableFuture<String> call(String systemPrompt, String userContent) {
-        return CompletableFuture.supplyAsync(() ->
-            chatClient.prompt().system(systemPrompt).user(userContent).call().content());
+    @CircuitBreaker(
+        name = RESILIENCE_INSTANCE,
+        fallbackMethod = "fallback"
+    )
+    @RateLimiter(
+        name = RESILIENCE_INSTANCE
+    )
+    @TimeLimiter(
+        name = RESILIENCE_INSTANCE
+    )
+    @Retry(
+        name = RESILIENCE_INSTANCE
+    )
+    public CompletableFuture<String> call(
+        String systemPrompt,
+        String userContent
+    ) {
+        return CompletableFuture.supplyAsync(
+            () -> chatClient.prompt()
+                            .system(systemPrompt)
+                            .user(userContent)
+                            .call()
+                            .content()
+        );
     }
 
-    @CircuitBreaker(name = "llm", fallbackMethod = "fallback")
-    @RateLimiter(name = "llm")
-    @TimeLimiter(name = "llm")
-    @Retry(name = "llm")
-    public CompletableFuture<String> callJudge(String fullPrompt) {
-        return CompletableFuture.supplyAsync(() ->
-            chatClient.prompt().user(fullPrompt).call().content());
+    @CircuitBreaker(
+        name = RESILIENCE_INSTANCE,
+        fallbackMethod = "fallback"
+    )
+    @RateLimiter(
+        name = RESILIENCE_INSTANCE
+    )
+    @TimeLimiter(
+        name = RESILIENCE_INSTANCE
+    )
+    @Retry(
+        name = RESILIENCE_INSTANCE
+    )
+    public CompletableFuture<String> callJudge(
+        String fullPrompt
+    ) {
+        return CompletableFuture.supplyAsync(
+            () -> chatClient.prompt()
+                            .user(fullPrompt)
+                            .call()
+                            .content()
+        );
     }
 
-    public CompletableFuture<String> fallback(String a, String b, Throwable t) {
-        throw new LlmUnavailableException(
-            String.format("LLM unavailable: %s", t.getMessage()), t);
+    @SuppressWarnings("unused")
+    public CompletableFuture<String> fallback(
+        String systemPrompt,
+        String userContent,
+        Throwable cause
+    ) {
+        return CompletableFuture.failedFuture(
+            new LlmUnavailableException(
+                "LLM unavailable for response generation",
+                cause
+            )
+        );
     }
 
-    public CompletableFuture<String> fallback(String a, Throwable t) {
-        throw new LlmUnavailableException(
-            String.format("LLM unavailable: %s", t.getMessage()), t);
+    @SuppressWarnings("unused")
+    public CompletableFuture<String> fallback(
+        String fullPrompt,
+        Throwable cause
+    ) {
+        return CompletableFuture.failedFuture(
+            new LlmUnavailableException(
+                "LLM unavailable for judge",
+                cause
+            )
+        );
     }
 }

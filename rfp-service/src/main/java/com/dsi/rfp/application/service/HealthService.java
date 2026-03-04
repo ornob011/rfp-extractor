@@ -3,13 +3,13 @@ package com.dsi.rfp.application.service;
 import com.dsi.rfp.adapter.api.HealthResponse;
 import com.dsi.rfp.config.LlmProviderProperties;
 import com.dsi.rfp.domain.model.HealthStatus;
-import com.dsi.rfp.domain.model.LlmProvider;
 import com.dsi.rfp.domain.model.SidecarReachability;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
+
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -31,17 +31,17 @@ public class HealthService {
 
     public HealthResponse check() {
         SidecarReachability ocrStatus = pingOcrSidecar();
-        String model =
-            props.getProvider() == LlmProvider.OPENROUTER
-                ? props.getOpenrouter().getModel()
-                : props.getOllama().getModel();
+        String model = switch (props.getProvider()) {
+            case OPENROUTER -> props.getOpenrouter().getModel();
+            case OLLAMA -> props.getOllama().getModel();
+        };
 
         log.info(
-            "event=health.check component=HealthService status=INFO"
-            + " provider={} model={} ocr={}",
+            "event=health.check component=HealthService status=INFO provider={} model={} ocr={}",
             props.getProvider().jsonValue(),
             model,
-            ocrStatus);
+            ocrStatus
+        );
 
         return HealthResponse.builder()
                              .status(HealthStatus.UP)
@@ -52,17 +52,28 @@ public class HealthService {
     }
 
     private SidecarReachability pingOcrSidecar() {
-        try {
-            restClient.get().uri(ocrSidecarUrl + "/health").retrieve().body(String.class);
-            return SidecarReachability.REACHABLE;
-        } catch (RestClientException e) {
-            log.warn(
-                "event=ocr.ping component=HealthService status=WARN"
-                + " sidecarUrl={} error={}",
-                ocrSidecarUrl,
-                e.getMessage());
+        return CompletableFuture.supplyAsync(
+                                    () -> {
+                                        restClient.get()
+                                                  .uri(String.format("%s/health", ocrSidecarUrl))
+                                                  .retrieve()
+                                                  .body(String.class);
+                                        return SidecarReachability.REACHABLE;
+                                    }
+                                )
+                                .exceptionally(this::handleOcrPingFailure)
+                                .join();
+    }
 
-            return SidecarReachability.UNREACHABLE;
-        }
+    private SidecarReachability handleOcrPingFailure(Throwable throwable) {
+        log.warn(
+            "event=ocr.ping component=HealthService status=WARN"
+            + " sidecarUrl={} error={}",
+            ocrSidecarUrl,
+            throwable.getMessage(),
+            throwable
+        );
+
+        return SidecarReachability.UNREACHABLE;
     }
 }

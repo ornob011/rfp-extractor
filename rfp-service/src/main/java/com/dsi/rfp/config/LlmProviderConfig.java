@@ -26,18 +26,18 @@ public class LlmProviderConfig {
 
     @PostConstruct
     void validateConfiguration() {
-        String model =
-            props.getProvider() == LlmProvider.OPENROUTER
-                ? props.getOpenrouter().getModel()
-                : props.getOllama().getModel();
+        String model = switch (props.getProvider()) {
+            case OPENROUTER -> {
+                validateOpenRouterConfig();
+                yield props.getOpenrouter().getModel();
+            }
+            case OLLAMA -> props.getOllama().getModel();
+        };
         log.info(
             "event=llm.config component=LlmProviderConfig status=INFO"
             + " provider={} model={}",
             props.getProvider().jsonValue(),
             model);
-        if (props.getProvider() == LlmProvider.OPENROUTER) {
-            validateOpenRouterConfig();
-        }
     }
 
     @Bean
@@ -84,7 +84,7 @@ public class LlmProviderConfig {
         if (!StringUtils.hasText(props.getOpenrouter().getApiKey())) {
             throw new IllegalStateException(
                 "OpenRouter API key must not be blank when provider=openrouter. "
-                + "Set app.llm.openrouter.api-key or OPENROUTER_API_KEY env var.");
+                    + "Set app.llm.openrouter.api-key or OPENROUTER_API_KEY env var.");
         }
     }
 }

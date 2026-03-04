@@ -51,6 +51,10 @@ __pycache__/
 .venv/
 venv/
 
+### SonarQube ###
+sonar-project.properties
+.scannerwork/
+
 ### OS ###
 .DS_Store
 Thumbs.db
