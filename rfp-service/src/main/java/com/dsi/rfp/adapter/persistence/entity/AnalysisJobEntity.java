@@ -37,4 +37,6 @@ public class AnalysisJobEntity extends BaseEntity {
     private String errorMessage;
 
     private int progressPercent;
+
+    private int pageCount;
 }
