@@ -9,10 +9,10 @@ export const rfpClient = axios.create({
     headers: { 'Content-Type': 'application/json' },
 });
 
-export async function submitRfp(file: File): Promise<{ jobId: string; status: JobStatus }> {
+export async function submitRfp(file: File): Promise<{ jobId: number; status: JobStatus }> {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await rfpClient.post<{ jobId: string; status: JobStatus }>(
+    const response = await rfpClient.post<{ jobId: number; status: JobStatus }>(
         '/api/v1/rfp/submit',
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } },
@@ -22,6 +22,11 @@ export async function submitRfp(file: File): Promise<{ jobId: string; status: Jo
 
 export async function getJobStatus(jobId: string): Promise<JobStatusResponse> {
     const response = await rfpClient.get<JobStatusResponse>(`/api/v1/rfp/status/${jobId}`);
+    return response.data;
+}
+
+export async function listJobs(): Promise<JobStatusResponse[]> {
+    const response = await rfpClient.get<JobStatusResponse[]>('/api/v1/rfp/jobs');
     return response.data;
 }
 
