@@ -1,9 +1,11 @@
 package com.dsi.rfp.application.service;
 
 import com.dsi.rfp.adapter.extraction.PdfDocumentLoader;
-import com.dsi.rfp.domain.model.AnalysisStatus;
-import com.dsi.rfp.domain.model.ExtractionJob;
+import com.dsi.rfp.adapter.extraction.SectionSegmenter;
+import com.dsi.rfp.domain.model.*;
 import com.dsi.rfp.domain.port.out.JobStatePort;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,10 +16,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ExtractionPipelineServiceTest {
@@ -28,13 +31,19 @@ class ExtractionPipelineServiceTest {
     private JobStatePort jobStatePort;
     @Mock
     private PdfDocumentLoader pdfLoader;
+    @Mock
+    private SectionSegmenter sectionSegmenter;
 
     private ExtractionPipelineService service;
 
     @BeforeEach
     void setUp() {
         service = new ExtractionPipelineService(
-            classificationService, jobStatePort, pdfLoader
+            classificationService,
+            jobStatePort,
+            pdfLoader,
+            sectionSegmenter,
+            new ObjectMapper()
         );
     }
 
@@ -45,6 +54,8 @@ class ExtractionPipelineServiceTest {
         when(classificationService.classifyPages(jobId, path))
             .thenReturn(List.of());
         when(pdfLoader.getPageCount(path)).thenReturn(5);
+        when(sectionSegmenter.segment(eq(path), eq(pdfLoader), eq(5)))
+            .thenReturn(List.of());
         ExtractionJob job = ExtractionJob.builder()
                                          .jobId(jobId)
                                          .status(AnalysisStatus.RUNNING)
@@ -71,6 +82,8 @@ class ExtractionPipelineServiceTest {
         when(classificationService.classifyPages(jobId, path))
             .thenReturn(List.of());
         when(pdfLoader.getPageCount(path)).thenReturn(1);
+        when(sectionSegmenter.segment(eq(path), eq(pdfLoader), eq(1)))
+            .thenReturn(List.of());
         ExtractionJob job = ExtractionJob.builder()
                                          .jobId(jobId)
                                          .status(AnalysisStatus.RUNNING)
@@ -88,5 +101,36 @@ class ExtractionPipelineServiceTest {
                .updateStatus(jobId, AnalysisStatus.RUNNING);
         inOrder.verify(classificationService)
                .classifyPages(jobId, path);
+    }
+
+    @Test
+    void shouldSegmentSectionsAndPersistJson() throws IOException {
+        Long jobId = 3L;
+        Path path = Path.of("/tmp/test.pdf");
+        when(classificationService.classifyPages(jobId, path))
+            .thenReturn(List.of());
+        when(pdfLoader.getPageCount(path)).thenReturn(10);
+
+        Section section = Section.builder()
+                                 .id(UUID.randomUUID())
+                                 .title("Test Section").level(1).pageStart(0).pageEnd(9)
+                                 .confidence(SectionConfidence.builder().score(0.9).method(HeadingDetectionMethod.TOC).build())
+                                 .build();
+        when(sectionSegmenter.segment(eq(path), eq(pdfLoader), eq(10)))
+            .thenReturn(List.of(section));
+
+        ExtractionJob job = ExtractionJob.builder()
+                                         .jobId(jobId)
+                                         .status(AnalysisStatus.RUNNING)
+                                         .originalFilename("test.pdf")
+                                         .build();
+        when(jobStatePort.findById(jobId))
+            .thenReturn(Optional.of(job));
+        when(jobStatePort.save(any()))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        service.runAsync(jobId, path);
+
+        verify(jobStatePort).updateSectionsJson(eq(jobId), any(JsonNode.class));
     }
 }

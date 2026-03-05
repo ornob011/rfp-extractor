@@ -3,6 +3,8 @@ package com.dsi.rfp.application.service;
 import com.dsi.rfp.adapter.rest.JobStatusResponse;
 import com.dsi.rfp.domain.model.ExtractionJob;
 import com.dsi.rfp.domain.port.out.JobStatePort;
+import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,14 @@ public class RfpJobService {
         return jobStatePort.findAll().stream()
                            .map(this::toResponse)
                            .toList();
+    }
+
+    public JsonNode getSectionsJson(Long jobId) {
+        return jobStatePort.findById(jobId)
+                           .map(ExtractionJob::getSectionsJson)
+                           .orElseThrow(() -> new EntityNotFoundException(
+                               String.format("Job not found: %s", jobId)
+                           ));
     }
 
     private JobStatusResponse toResponse(ExtractionJob job) {

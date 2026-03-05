@@ -7,6 +7,7 @@ import com.dsi.rfp.adapter.persistence.repository.DocumentRepository;
 import com.dsi.rfp.domain.model.AnalysisStatus;
 import com.dsi.rfp.domain.model.ExtractionJob;
 import com.dsi.rfp.domain.port.out.JobStatePort;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -43,6 +44,7 @@ public class JpaJobStateRepository implements JobStatePort {
         entity.setProgressPercent(job.getProgress());
         entity.setErrorMessage(job.getErrorMessage());
         entity.setPageCount(job.getPageCount());
+        entity.setSectionsJson(job.getSectionsJson());
         AnalysisJobEntity saved = analysisJobRepository.save(entity);
         return mapper.toDomain(saved);
     }
@@ -77,6 +79,16 @@ public class JpaJobStateRepository implements JobStatePort {
         analysisJobRepository.findById(jobId)
                              .ifPresent(entity -> {
                                  entity.setProgressPercent(progress);
+                                 analysisJobRepository.save(entity);
+                             });
+    }
+
+    @Override
+    @Transactional
+    public void updateSectionsJson(Long jobId, JsonNode sectionsJson) {
+        analysisJobRepository.findById(jobId)
+                             .ifPresent(entity -> {
+                                 entity.setSectionsJson(sectionsJson);
                                  analysisJobRepository.save(entity);
                              });
     }

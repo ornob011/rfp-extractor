@@ -21,6 +21,7 @@ public class AnalysisJobMapper {
                             .errorMessage(entity.getErrorMessage())
                             .pageCount(entity.getPageCount())
                             .originalFilename(doc.getOriginalFilename())
+                            .sectionsJson(entity.getSectionsJson())
                             .build();
     }
 
@@ -35,6 +36,7 @@ public class AnalysisJobMapper {
                                 .errorMessage(job.getErrorMessage())
                                 .completedAt(job.getCompletedAt())
                                 .pageCount(job.getPageCount())
+                                .sectionsJson(job.getSectionsJson())
                                 .build();
     }
 }

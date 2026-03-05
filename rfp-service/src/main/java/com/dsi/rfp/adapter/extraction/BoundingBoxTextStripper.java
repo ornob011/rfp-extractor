@@ -44,6 +44,7 @@ class BoundingBoxTextStripper extends PDFTextStripper {
                      .text(text)
                      .fontSize(first.getFontSizeInPt())
                      .fontName(first.getFont().getName())
+                     .pageNumber(targetPage)
                      .build()
         );
     }

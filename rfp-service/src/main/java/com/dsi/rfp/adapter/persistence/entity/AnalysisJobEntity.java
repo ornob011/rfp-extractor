@@ -1,8 +1,11 @@
 package com.dsi.rfp.adapter.persistence.entity;
 
 import com.dsi.rfp.domain.model.AnalysisStatus;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
@@ -39,4 +42,7 @@ public class AnalysisJobEntity extends BaseEntity {
     private int progressPercent;
 
     private int pageCount;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    private JsonNode sectionsJson;
 }
