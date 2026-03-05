@@ -4,7 +4,7 @@
 **Version:** 1.0
 **Date:** 2026-03-01
 **Sprint Cadence:** 2-week sprints
-**Total Sprints:** 12 (+ separate wishlist track in `wishlist/001_wishlist.md`)
+**Total Sprints:** 12 (+ separate deferred backlog track)
 
 ---
 
@@ -124,28 +124,24 @@ A sprint is **Done** when ALL of the following are true:
 | 9      | `012`  | **Additional Rule Packs & Hot Reload**         | Works, consultancy, goods rule packs; hot-reload without restart; admin API for rule pack management                                                                                                                                                                  | Sprint 8 done  | Works/consultancy/goods rules run on respective doc types; hot-reload verified                                                           | Edit a rule YAML, reload without restart, see new result               |
 | 10     | `013`  | **Bid Clarity Pack Artifacts**                 | Clarification Questions DOCX, Ambiguity Register XLSX, Compliance Checklist XLSX, Risk Log XLSX, HTML audit report, artifact download API                                                                                                                             | Sprint 9 done  | All 5 artifacts generated and downloadable; clause references correct                                                                    | Download all 5 artifacts; open DOCX, verify page references            |
 | 11     | `014`  | **Security & RBAC**                            | Spring Security layer on existing `UserEntity` (Sprint 1): JWT auth, `JpaUserDetailsService`, BCrypt, RBAC (ANALYST/ADMIN/AUDITOR), per-document ownership, AES-256 encryption at rest, data retention (PostgreSQL), prompt injection filter, legacy Bangla rejection | Sprint 10 done | Signup/login/refresh/logout flow works; ANALYST cannot access another user's doc; encryption verified; rejection error for legacy Bangla | Demo role-based access and signup/login flow                           |
-| 12     | `015`  | **Deferred (Out of Scope)**                    | Operational hardening deferred to wishlist (unit-test-only baseline; no Actuator)                                                                                                                                                                                     | Sprint 11 done | N/A                                                                                                                                      | N/A                                                                    |
-| W-001  | `N/A`  | **Benchmark Dataset Wishlist**                 | Real-document ground-truth collection, annotation workflow, optional benchmark reporting                                                                                                                                                                              | Sprint 11 done | Benchmark suite executes when dataset is present; no impact on release gating                                                            | Run benchmark profile and publish scorecard                            |
 
 ---
 
 ## File Links
 
-| File                                           | Sprint    | Theme                                      |
-|------------------------------------------------|-----------|--------------------------------------------|
-| [004_sprint-1.md](004_sprint-1.md)             | Sprint 1  | Foundation & LLM Infrastructure            |
-| [005_sprint-2.md](005_sprint-2.md)             | Sprint 2  | Document Ingestion & Page Classification   |
-| [006_sprint-3.md](006_sprint-3.md)             | Sprint 3  | Section Segmentation & Clause IDs          |
-| [007_sprint-4.md](007_sprint-4.md)             | Sprint 4  | LangGraph4J Agent + Full Entity Extraction |
-| [008_sprint-5.md](008_sprint-5.md)             | Sprint 5  | Table Extraction                           |
-| [009_sprint-6.md](009_sprint-6.md)             | Sprint 6  | OCR & Mixed Pages                          |
-| [010_sprint-7.md](010_sprint-7.md)             | Sprint 7  | Repair Loop                                |
-| [011_sprint-8.md](011_sprint-8.md)             | Sprint 8  | Rule Pack Engine & ICT Rules               |
-| [012_sprint-9.md](012_sprint-9.md)             | Sprint 9  | Additional Rule Packs & Hot Reload         |
-| [013_sprint-10.md](013_sprint-10.md)           | Sprint 10 | Bid Clarity Pack Artifacts                 |
-| [014_sprint-11.md](014_sprint-11.md)           | Sprint 11 | Security & RBAC                            |
-| [001_wishlist.md](../wishlist/001_wishlist.md) | Wishlist  | Benchmark Dataset Wishlist (Non-Blocking)  |
-| [002_wishlist.md](../wishlist/002_wishlist.md) | Wishlist  | Deferred Operational Hardening             |
+| File                                 | Sprint    | Theme                                      |
+|--------------------------------------|-----------|--------------------------------------------|
+| [004_sprint-1.md](004_sprint-1.md)   | Sprint 1  | Foundation & LLM Infrastructure            |
+| [005_sprint-2.md](005_sprint-2.md)   | Sprint 2  | Document Ingestion & Page Classification   |
+| [006_sprint-3.md](006_sprint-3.md)   | Sprint 3  | Section Segmentation & Clause IDs          |
+| [007_sprint-4.md](007_sprint-4.md)   | Sprint 4  | LangGraph4J Agent + Full Entity Extraction |
+| [008_sprint-5.md](008_sprint-5.md)   | Sprint 5  | Table Extraction                           |
+| [009_sprint-6.md](009_sprint-6.md)   | Sprint 6  | OCR & Mixed Pages                          |
+| [010_sprint-7.md](010_sprint-7.md)   | Sprint 7  | Repair Loop                                |
+| [011_sprint-8.md](011_sprint-8.md)   | Sprint 8  | Rule Pack Engine & ICT Rules               |
+| [012_sprint-9.md](012_sprint-9.md)   | Sprint 9  | Additional Rule Packs & Hot Reload         |
+| [013_sprint-10.md](013_sprint-10.md) | Sprint 10 | Bid Clarity Pack Artifacts                 |
+| [014_sprint-11.md](014_sprint-11.md) | Sprint 11 | Security & RBAC                            |
 
 ---
 
@@ -224,7 +220,7 @@ Prompt changes require a version bump and a snapshot test update.
 
 ---
 
-## Ground Truth Data Requirements (Wishlist, Non-Blocking)
+## Ground Truth Data Requirements (Deferred, Non-Blocking)
 
 Optional benchmark track for real-document accuracy reporting:
 

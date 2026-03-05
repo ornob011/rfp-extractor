@@ -1240,7 +1240,7 @@ class SectionSegmenterTest {
 
 - Log INFO: `"SectionSegmenter using strategy={} with {} candidates"`
 - Log WARN: `"SectionSegmenter: no strategy produced {} headings — returning empty"`
-- Deferred to wishlist (unit-test-only baseline; no Actuator). Strategy choice remains visible through logs.
+- Deferred to future backlog (unit-test-only baseline; no Actuator). Strategy choice remains visible through logs.
 
 **Estimation:** 8 SP
 
@@ -1521,8 +1521,8 @@ public class RfpSchemaValidator {
         Set<ValidationMessage> messages = jsonSchema.validate(node);
         if (messages.isEmpty()) return SchemaValidationResult.ok();
         List<String> errors = messages.stream()
-            .map(ValidationMessage::getMessage)
-            .collect(Collectors.toList());
+                                      .map(ValidationMessage::getMessage)
+                                      .collect(Collectors.toList());
         return SchemaValidationResult.fail(errors);
     }
 }
@@ -2517,14 +2517,14 @@ class RfpSchemaValidatorTest {
 
 ### Epic 6 — Evaluation Harness and Optional Benchmark Dataset
 
-#### Story 6.0 — Optional Ground Truth Benchmark Track (deferred to wishlist, non-blocking)
+#### Story 6.0 — Optional Ground Truth Benchmark Track (deferred, non-blocking)
 
 **Description:**
 Collect, annotate, and validate a real-document benchmark dataset for future reporting. This is **not** a Sprint 3
-prerequisite. Sprint 3 acceptance uses deterministic fixtures and schema checks; real-document benchmarking is deferred
-to `wishlist/001_wishlist.md`.
+prerequisite. Sprint 3 acceptance uses deterministic fixtures and schema checks; real-document benchmarking remains
+deferred to the future backlog.
 
-**Assignment:** Backlog item tracked in `wishlist/001_wishlist.md`; no Sprint 3 staffing dependency.
+**Assignment:** Backlog item tracked outside Sprint 3; no Sprint 3 staffing dependency.
 
 **Annotation format** — each file at `testdata/ground-truth/{doc-id}.json` must include:
 
@@ -2534,12 +2534,12 @@ to `wishlist/001_wishlist.md`.
 4. Expected rule findings: `expected_rule_failures: ["BD-ICT-001", "BD-ICT-005"]` (which rules SHOULD fire on this doc).
 
 **Deliverable:** 5 fully annotated JSON files (all 4 fields above) + 10 partially annotated (sections + entities only)
-in `testdata/ground-truth/` when wishlist benchmark work starts.
+in `testdata/ground-truth/` when benchmark work starts.
 
 **Annotation JSON schema location:** `testdata/README.md` (see Story 6.1 below) must be committed before any JSON files
 are created, so annotators and the evaluator code share a single source of truth.
 
-**Acceptance Criterion (wishlist benchmark track):**
+**Acceptance Criterion (benchmark track):**
 
 - `GroundTruthLoader.load("testdata/ground-truth")` returns 15 documents without exceptions.
 - At least 5 documents have non-empty `entities` and at least 1 `expected_rule_failures` entry.
@@ -2931,11 +2931,11 @@ Update `GET /api/v1/rfp/result/{jobId}` in `RfpController`:
 public ResponseEntity<Map<String, Object>> getResult(@PathVariable UUID jobId) {
     // Sprint 3: return sections from job state
     return jobService.findById(jobId)
-        .map(job -> {
-            // Parse sectionsJson from job, return basic result
+                     .map(job -> {
+                         // Parse sectionsJson from job, return basic result
             ...
-        })
-        .orElse(ResponseEntity.notFound().build());
+                     })
+                     .orElse(ResponseEntity.notFound().build());
 }
 ```
 
@@ -3313,7 +3313,7 @@ scanning, not from bookmark resolution. Precise bookmark page number resolution 
 or `PDPageDestination` — implement in Sprint 5 if needed.
 
 **Assumption:** Real-document benchmark annotations are not available during Sprint 3 and are intentionally deferred to
-`wishlist/001_wishlist.md`. This does not block Sprint 3-12 delivery because fixture-based gates are the
+the future backlog. This does not block Sprint 3-12 delivery because fixture-based gates are the
 acceptance baseline.
 
 **Decision:** `SectionSegmenter` does not merge adjacent identical-level short sections in Sprint 3. Keep deterministic

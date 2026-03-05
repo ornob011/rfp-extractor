@@ -209,7 +209,7 @@ header("Retry-After","30")
 
 body(
     ProblemDetail.forStatusAndDetail(
-        status,
+    status,
     detail
     )
     );
@@ -1057,29 +1057,29 @@ The schema captures ALL 45 fields from the user's checklist, organized into type
 Each rule is a YAML entry validated against `rule-schema-v1.json`:
 
 ```yaml
--   id: BD-ICT-001
-    name: RFP Title Present
-    pack: bd-govt-ict-v1
-    version: "1.0.0"
-    severity: FATAL           # FATAL | HIGH | MEDIUM | LOW | INFO
-    check_type: structural    # structural (JMESPath) | semantic (LLM)
-    condition: "doc_meta.title != null && doc_meta.title != ''"
+-   id           : BD-ICT-001
+    name         : RFP Title Present
+    pack         : bd-govt-ict-v1
+    version      : "1.0.0"
+    severity     : FATAL           # FATAL | HIGH | MEDIUM | LOW | INFO
+    check_type   : structural    # structural (JMESPath) | semantic (LLM)
+    condition    : "doc_meta.title != null && doc_meta.title != ''"
     evidence_path: "doc_meta.title"
-    message: "RFP Title is missing from the document"
+    message      : "RFP Title is missing from the document"
 
--   id: BD-ICT-056
-    name: Scope Sufficiently Specific
-    pack: bd-govt-ict-v1
-    version: "1.0.0"
-    severity: HIGH
-    check_type: semantic
+-   id           : BD-ICT-056
+    name         : Scope Sufficiently Specific
+    pack         : bd-govt-ict-v1
+    version      : "1.0.0"
+    severity     : HIGH
+    check_type   : semantic
     evidence_path: "entities.evaluation.scope_summary.value"
-    llm_prompt: |
+    llm_prompt   : |
         You are a GOB ICT procurement expert. Evaluate if this scope of work is specific enough
         to price accurately. Reply with JSON: {"finding": true/false, "explanation": "...", "confidence": 0.0-1.0}
         finding=true means there IS a problem (scope is vague).
         Scope text: {{evidence}}
-    message: "Scope of work may be too vague to price accurately"
+    message      : "Scope of work may be too vague to price accurately"
 ```
 
 ---
