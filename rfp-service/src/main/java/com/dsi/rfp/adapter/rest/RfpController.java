@@ -1,9 +1,12 @@
 package com.dsi.rfp.adapter.rest;
 
+import com.dsi.rfp.agent.ConfidenceScoringConfig;
 import com.dsi.rfp.application.service.RfpJobService;
 import com.dsi.rfp.application.service.RfpSubmissionService;
 import com.dsi.rfp.domain.model.AnalysisStatus;
+import com.dsi.rfp.domain.model.RfpDocument;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,13 +23,19 @@ public class RfpController {
 
     private final RfpSubmissionService submissionService;
     private final RfpJobService jobService;
+    private final ObjectMapper objectMapper;
+    private final ConfidenceScoringConfig scoringConfig;
 
     public RfpController(
         RfpSubmissionService submissionService,
-        RfpJobService jobService
+        RfpJobService jobService,
+        ObjectMapper objectMapper,
+        ConfidenceScoringConfig scoringConfig
     ) {
         this.submissionService = submissionService;
         this.jobService = jobService;
+        this.objectMapper = objectMapper;
+        this.scoringConfig = scoringConfig;
     }
 
     @PostMapping("/submit")
@@ -73,12 +82,48 @@ public class RfpController {
 
     private ResponseEntity<RfpResultResponse> buildResultResponse(Long jobId) {
         JsonNode sectionsJson = jobService.getSectionsJson(jobId);
+        JsonNode resultJson = jobService.getResult(jobId)
+                                        .orElse(null);
+
+        ParsedResult parsedResult = parseResult(resultJson);
 
         RfpResultResponse response = RfpResultResponse.builder()
                                                       .jobId(jobId)
                                                       .sections(sectionsJson)
+                                                      .entities(parsedResult.entities())
+                                                      .confidenceMap(parsedResult.confidenceMap())
+                                                      .badgeThresholds(buildBadgeThresholds())
                                                       .build();
 
         return ResponseEntity.ok(response);
+    }
+
+    private ParsedResult parseResult(JsonNode resultJson) {
+        if (resultJson == null) {
+            return new ParsedResult(null, null);
+        }
+
+        RfpDocument result = objectMapper.convertValue(
+            resultJson,
+            RfpDocument.class
+        );
+
+        return new ParsedResult(
+            objectMapper.valueToTree(result.getEntities()),
+            objectMapper.valueToTree(result.getConfidenceMap())
+        );
+    }
+
+    private RfpResultResponse.BadgeThresholds buildBadgeThresholds() {
+        return new RfpResultResponse.BadgeThresholds(
+            scoringConfig.badgeHighThreshold(),
+            scoringConfig.badgeMediumThreshold()
+        );
+    }
+
+    private record ParsedResult(
+        JsonNode entities,
+        JsonNode confidenceMap
+    ) {
     }
 }
