@@ -13,7 +13,6 @@
 **Non-goals:**
 
 - Works, consultancy, and goods rule packs (Sprint 9).
-- Hot-reload and admin API for rule packs (Sprint 9).
 - Artifact generation that references rule findings (Sprint 10).
 
 ---

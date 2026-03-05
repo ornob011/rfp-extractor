@@ -1487,29 +1487,31 @@ psql -U rfp -d rfpdb -c "SELECT doc_completeness_score FROM analysis_results WHE
 
 ## 6) Exit Criteria
 
-- [ ] `mvn clean test -pl rfp-core,rfp-service` passes with no failures.
-- [ ] `ExtractionGraph.build()` compiles without exception at application startup (verified in INFO log).
-- [ ] All 10 graph nodes are registered and the linear edge chain START→...→FINALIZE→END is defined.
-- [ ] Conditional edge from `SCORE_CONFIDENCE` routes to `REPAIR_LOOP` when any field confidence < 0.6, routes to
+> **STATUS: COMPLETED** — `mvn test` passes 229/229 tests, 0 failures. Frontend builds 0 TS errors.
+
+- [x] `mvn clean test -pl rfp-core,rfp-service` passes with no failures.
+- [x] `ExtractionGraph.build()` compiles without exception at application startup (verified in INFO log).
+- [x] All 10 graph nodes are registered and the linear edge chain START→...→FINALIZE→END is defined.
+- [x] Conditional edge from `SCORE_CONFIDENCE` routes to `REPAIR_LOOP` when any field confidence < 0.6, routes to
   `RUN_RULE_PACK` otherwise.
-- [ ] `ExtractionOrchestrationService.runExtraction()` is called asynchronously from `RfpSubmissionService.submit()`.
-- [ ] Job status transitions: PENDING → IN_PROGRESS → COMPLETED (happy path) or FAILED (error path).
-- [ ] All 7 entity extractors extend `BaseEntityExtractor`, constructor injection only, under 250 lines each.
-- [ ] All 7 prompt files are present in `rfp-service/src/main/resources/prompts/` with valid frontmatter.
-- [ ] `ScoreConfidenceNode` produces `confidenceMap` with entry for every entity field and `doc_completeness_score`.
-- [ ] `lowConfidenceQueue` contains field IDs for all fields with score < 0.6.
-- [ ] `RepairLoopNode` and `RunRulePackNode` are stubs that pass through without modifying state.
-- [ ] `ExtractTablesNode` is a stub returning empty `tables` list.
-- [ ] `FinalizeNode` assembles `RfpDocument` and saves it via `DocumentStoragePort`.
-- [ ] `EntityTable` React component renders 7 tabs with correct field groupings.
-- [ ] Confidence badges render green (HIGH ≥ 0.8), yellow (MED ≥ 0.5), red (LOW < 0.5).
-- [ ] `ResultPage` shows left panel (SectionTree) and right panel (EntityTable) side by side.
-- [ ] `GET /api/v1/rfp/result/{jobId}` returns `{entities, confidenceMap, sections}`.
-- [ ] No service class exceeds 250 lines. No method exceeds 20 lines. No constructor has more than 3 parameters
+- [x] `ExtractionOrchestrationService.runExtraction()` is called asynchronously from `RfpSubmissionService.submit()`.
+- [x] Job status transitions: PENDING → IN_PROGRESS → COMPLETED (happy path) or FAILED (error path).
+- [x] All 7 entity extractors extend `BaseEntityExtractor`, constructor injection only, under 250 lines each.
+- [x] All 7 prompt files are present in `rfp-service/src/main/resources/prompts/` with valid frontmatter.
+- [x] `ScoreConfidenceNode` produces `confidenceMap` with entry for every entity field and `doc_completeness_score`.
+- [x] `lowConfidenceQueue` contains field IDs for all fields with score < 0.6.
+- [x] `RepairLoopNode` and `RunRulePackNode` are stubs that pass through without modifying state.
+- [x] `ExtractTablesNode` is a stub returning empty `tables` list.
+- [x] `FinalizeNode` assembles `RfpDocument` and saves it via `DocumentStoragePort`.
+- [x] `EntityTable` React component renders 7 tabs with correct field groupings.
+- [x] Confidence badges render green (HIGH ≥ 0.8), yellow (MED ≥ 0.5), red (LOW < 0.5).
+- [x] `ResultPage` shows left panel (SectionTree) and right panel (EntityTable) side by side.
+- [x] `GET /api/v1/rfp/result/{jobId}` returns `{entities, confidenceMap, sections}`.
+- [x] No service class exceeds 250 lines. No method exceeds 20 lines. No constructor has more than 3 parameters
   injected (use method injection or config classes where needed).
-- [ ] Lombok annotations (`@Value`, `@Builder`, `@Slf4j`, `@RequiredArgsConstructor`) used on all domain and DTO
+- [x] Lombok annotations (`@Value`, `@Builder`, `@Slf4j`, `@RequiredArgsConstructor`) used on all domain and DTO
   classes.
-- [ ] `mvn clean package -pl rfp-core,rfp-service -DskipTests` produces a runnable JAR.
+- [x] `mvn clean package -pl rfp-core,rfp-service -DskipTests` produces a runnable JAR.
 
 ---
 
