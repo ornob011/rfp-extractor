@@ -1,3 +1,5 @@
+import type { TableExtractionResult } from '@/types/table';
+
 export type JobStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'PARTIAL';
 
 export interface DocMeta {
@@ -123,5 +125,6 @@ export interface RfpResultResponse {
     sections: Section[];
     entities?: Record<string, unknown>;
     confidenceMap?: Record<string, number>;
+    tables?: TableExtractionResult[];
     badgeThresholds?: BadgeThresholds;
 }

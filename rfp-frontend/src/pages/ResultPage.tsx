@@ -3,8 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { getRfpResult } from '@/api/rfpClient';
 import { SectionTree } from '@/components/SectionTree';
 import { EntityTable } from '@/components/EntityTable';
+import { TableViewer } from '@/components/TableViewer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import type { TableExtractionResult } from '@/types/table';
 
 export function ResultPage() {
     const { jobId } = useParams<{ jobId: string }>();
@@ -72,10 +74,17 @@ export function ResultPage() {
             </div>
 
             <section className="rounded-lg border bg-card p-4">
-                <h2 className="mb-3 text-sm font-semibold text-foreground">Tables</h2>
-                <p className="text-muted-foreground text-sm italic">
-                    Table extraction available in Sprint 5.
-                </p>
+                <h2 className="mb-3 text-sm font-semibold text-foreground">
+                    Tables {result.tables && result.tables.length > 0 && (
+                        <span className="text-xs font-normal text-muted-foreground">
+                            ({result.tables.length})
+                        </span>
+                    )}
+                </h2>
+                <TablesPanel
+                    tables={result.tables}
+                    badgeThresholds={result.badgeThresholds}
+                />
             </section>
         </div>
     );
@@ -114,5 +123,36 @@ function EntityPanel(
             confidenceMap={confidenceMap ?? {}}
             badgeThresholds={badgeThresholds}
         />
+    );
+}
+
+function TablesPanel(
+    {
+        tables,
+        badgeThresholds,
+    }: {
+        tables: TableExtractionResult[] | undefined;
+        badgeThresholds?: { high: number; medium: number };
+    },
+) {
+    if (!tables || tables.length === 0) {
+        return (
+            <p className="text-muted-foreground text-sm italic">
+                No tables extracted.
+            </p>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            {tables.map((table) => (
+                <TableViewer
+                    key={table.tableId}
+                    table={table}
+                    highThreshold={badgeThresholds?.high}
+                    mediumThreshold={badgeThresholds?.medium}
+                />
+            ))}
+        </div>
     );
 }
