@@ -1,0 +1,489 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://dsi.com/schemas/rfp-schema-v1.json",
+    "title": "RFP Extraction Result",
+    "type": "object",
+    "required": [
+        "schema_version",
+        "doc_meta",
+        "sections",
+        "clauses",
+        "tables",
+        "entities",
+        "rule_pack_results",
+        "extraction_state"
+    ],
+    "properties": {
+        "schema_version": {
+            "type": "string"
+        },
+        "doc_meta": {
+            "type": "object",
+            "required": ["procurement_ref"],
+            "properties": {
+                "title": { "type": ["string", "null"] },
+                "procurement_ref": { "type": ["string", "null"] },
+                "issue_date": { "type": ["string", "null"], "format": "date" },
+                "rfp_type": {
+                    "type": ["string", "null"],
+                    "enum": ["ict", "works", "consultancy", "goods", "unknown", null]
+                },
+                "source_language": {
+                    "type": ["string", "null"],
+                    "enum": ["en", "bn", "mixed", "unknown", null]
+                },
+                "client_name": { "type": ["string", "null"] },
+                "extraction_model": { "type": ["string", "null"] },
+                "extraction_timestamp": { "type": ["string", "null"], "format": "date-time" }
+            }
+        },
+        "sections": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/section" }
+        },
+        "clauses": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id", "text"],
+                "properties": {
+                    "id": { "type": "string" },
+                    "section_id": { "type": ["string", "null"] },
+                    "page_start": { "type": "integer" },
+                    "page_end": { "type": "integer" },
+                    "text": { "type": "string" },
+                    "text_language": {
+                        "type": ["string", "null"],
+                        "enum": ["en", "bn", "mixed", null]
+                    },
+                    "tags": { "type": "array", "items": { "type": "string" } },
+                    "references": { "type": "array", "items": { "type": "string" } },
+                    "confidence": { "$ref": "#/definitions/confidence_with_ocr" }
+                }
+            }
+        },
+        "tables": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "string" },
+                    "section_id": { "type": ["string", "null"] },
+                    "clause_id": { "type": ["string", "null"] },
+                    "page_start": { "type": "integer" },
+                    "page_end": { "type": "integer" },
+                    "caption": { "type": ["string", "null"] },
+                    "type": {
+                        "type": ["string", "null"],
+                        "enum": ["DELIVERABLES", "EVALUATION", "PAYMENT", "STAFFING", "SCHEDULE", "OTHER", null]
+                    },
+                    "provenance": {
+                        "type": ["string", "null"],
+                        "enum": ["DIGITAL", "SCANNED", "MIXED", null]
+                    },
+                    "headers": { "type": "array", "items": { "type": "string" } },
+                    "rows": { "type": "array", "items": { "type": "array" } },
+                    "grid": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "row": { "type": "integer" },
+                                "col": { "type": "integer" },
+                                "value": { "type": ["string", "null"] },
+                                "rowspan": { "type": "integer", "default": 1 },
+                                "colspan": { "type": "integer", "default": 1 },
+                                "isHeader": { "type": "boolean", "default": false }
+                            }
+                        }
+                    },
+                    "confidence": {
+                        "type": "object",
+                        "properties": {
+                            "score": { "type": "number", "minimum": 0, "maximum": 1 },
+                            "method": {
+                                "type": ["string", "null"],
+                                "enum": ["lattice", "stream", "ocr_llm_reconstruct", null]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "entities": {
+            "type": "object",
+            "properties": {
+                "general": { "$ref": "#/definitions/entities_general" },
+                "submission": { "$ref": "#/definitions/entities_submission" },
+                "financial": { "$ref": "#/definitions/entities_financial" },
+                "ict": { "$ref": "#/definitions/entities_ict" },
+                "consultancy": { "$ref": "#/definitions/entities_consultancy" },
+                "goods": { "$ref": "#/definitions/entities_goods" },
+                "staffing": { "$ref": "#/definitions/entities_staffing" },
+                "support": { "$ref": "#/definitions/entities_support" },
+                "evaluation": { "$ref": "#/definitions/entities_evaluation" },
+                "pricing_factors": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                },
+                "rfp_amendments": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "description": { "type": ["string", "null"] },
+                            "date": { "type": ["string", "null"] },
+                            "clause_id": { "type": ["string", "null"] },
+                            "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                        }
+                    }
+                },
+                "other_info": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                }
+            }
+        },
+        "rule_pack_results": {
+            "type": "object",
+            "properties": {
+                "pack_id": { "type": ["string", "null"] },
+                "pack_version": { "type": ["string", "null"] },
+                "run_timestamp": { "type": ["string", "null"], "format": "date-time" },
+                "summary": {
+                    "type": "object",
+                    "properties": {
+                        "fatal": { "type": "integer" },
+                        "high": { "type": "integer" },
+                        "medium": { "type": "integer" },
+                        "low": { "type": "integer" },
+                        "info": { "type": "integer" }
+                    }
+                },
+                "findings": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "rule_id": { "type": "string" },
+                            "severity": {
+                                "type": "string",
+                                "enum": ["FATAL", "HIGH", "MEDIUM", "LOW", "INFO"]
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": ["PASS", "FAIL", "WARN", "SKIP"]
+                            },
+                            "message": { "type": "string" },
+                            "evidence": { "type": ["string", "null"] }
+                        }
+                    }
+                }
+            }
+        },
+        "extraction_state": {
+            "type": "object",
+            "properties": {
+                "job_id": { "type": "string" },
+                "doc_completeness_score": { "type": "number", "minimum": 0, "maximum": 1 },
+                "missing_fields": { "type": "array", "items": { "type": "string" } },
+                "manual_review_required": { "type": "array", "items": { "type": "string" } },
+                "page_summary": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "page": { "type": "integer", "minimum": 0 },
+                            "classification": {
+                                "type": "string",
+                                "enum": ["DIGITAL", "SCANNED", "MIXED"]
+                            },
+                            "method": { "type": ["string", "null"] },
+                            "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+                            "retries": { "type": "integer", "minimum": 0 }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "section": {
+            "type": "object",
+            "required": ["id", "title", "level"],
+            "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "title": { "type": "string" },
+                "level": { "type": "integer", "minimum": 1, "maximum": 6 },
+                "page_start": { "type": "integer", "minimum": 0 },
+                "page_end": { "type": "integer", "minimum": 0 },
+                "children": { "type": "array", "items": { "$ref": "#/definitions/section" } },
+                "confidence": {
+                    "type": "object",
+                    "properties": {
+                        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+                        "method": { "type": "string" }
+                    }
+                }
+            }
+        },
+        "confidence_with_ocr": {
+            "type": "object",
+            "properties": {
+                "score": { "type": "number", "minimum": 0, "maximum": 1 },
+                "method": { "type": "string" },
+                "ocr_confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+            }
+        },
+        "entity_field": {
+            "type": ["object", "null"],
+            "properties": {
+                "value": {},
+                "clause_id": { "type": ["string", "null"] },
+                "page": { "type": ["integer", "null"], "minimum": 0 },
+                "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+            }
+        },
+        "entity_field_no_page": {
+            "type": ["object", "null"],
+            "properties": {
+                "value": {},
+                "clause_id": { "type": ["string", "null"] },
+                "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+            }
+        },
+        "entities_general": {
+            "type": ["object", "null"],
+            "properties": {
+                "client_name": { "$ref": "#/definitions/entity_field" },
+                "submission_deadline": { "$ref": "#/definitions/entity_field" },
+                "issue_date": { "$ref": "#/definitions/entity_field" },
+                "method_of_selection": { "$ref": "#/definitions/entity_field" },
+                "procurement_method": { "$ref": "#/definitions/entity_field" },
+                "project_duration": { "$ref": "#/definitions/entity_field" },
+                "pre_bid_meeting": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "date": { "type": ["string", "null"] },
+                        "venue": { "type": ["string", "null"] },
+                        "clause_id": { "type": ["string", "null"] },
+                        "page": { "type": ["integer", "null"], "minimum": 0 },
+                        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                    }
+                },
+                "contact": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "name": { "type": ["string", "null"] },
+                        "email": { "type": ["string", "null"] },
+                        "phone": { "type": ["string", "null"] },
+                        "address": { "type": ["string", "null"] },
+                        "clause_id": { "type": ["string", "null"] },
+                        "page": { "type": ["integer", "null"], "minimum": 0 },
+                        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                    }
+                }
+            }
+        },
+        "entities_submission": {
+            "type": ["object", "null"],
+            "properties": {
+                "guidelines_summary": { "$ref": "#/definitions/entity_field_no_page" },
+                "number_of_copies": { "$ref": "#/definitions/entity_field_no_page" },
+                "soft_submission_required": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "value": { "type": ["boolean", "null"] },
+                        "email": { "type": ["string", "null"] },
+                        "clause_id": { "type": ["string", "null"] },
+                        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                    }
+                },
+                "submission_address": { "$ref": "#/definitions/entity_field_no_page" }
+            }
+        },
+        "entities_financial": {
+            "type": ["object", "null"],
+            "properties": {
+                "technical_financial_split": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "technical_weight": { "type": ["number", "null"] },
+                        "financial_weight": { "type": ["number", "null"] },
+                        "clause_id": { "type": ["string", "null"] },
+                        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                    }
+                },
+                "performance_security": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "percentage": { "type": ["number", "null"] },
+                        "type": { "type": ["string", "null"] },
+                        "clause_id": { "type": ["string", "null"] },
+                        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                    }
+                },
+                "bank_guarantee": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "required": { "type": ["boolean", "null"] },
+                        "details": { "type": ["string", "null"] },
+                        "clause_id": { "type": ["string", "null"] },
+                        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                    }
+                },
+                "payment_terms": { "$ref": "#/definitions/entity_field_no_page" },
+                "reimbursable_expenses": { "$ref": "#/definitions/entity_field_no_page" },
+                "bid_validity_period": { "$ref": "#/definitions/entity_field_no_page" }
+            }
+        },
+        "entities_ict": {
+            "type": ["object", "null"],
+            "properties": {
+                "total_users": { "$ref": "#/definitions/entity_field_no_page" },
+                "concurrent_users": { "$ref": "#/definitions/entity_field_no_page" },
+                "programming_language_preference": { "$ref": "#/definitions/entity_field_no_page" },
+                "system_language": { "$ref": "#/definitions/entity_field_no_page" },
+                "architecture": { "$ref": "#/definitions/entity_field_no_page" },
+                "tech_stack": { "$ref": "#/definitions/entity_field_no_page" },
+                "database": { "$ref": "#/definitions/entity_field_no_page" },
+                "hosting": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "type": { "type": ["string", "null"] },
+                        "details": { "type": ["string", "null"] },
+                        "clause_id": { "type": ["string", "null"] },
+                        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                    }
+                },
+                "data_migration_required": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "value": { "type": ["boolean", "null"] },
+                        "details": { "type": ["string", "null"] },
+                        "clause_id": { "type": ["string", "null"] },
+                        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                    }
+                },
+                "legacy_system": { "$ref": "#/definitions/entity_field_no_page" },
+                "hardware_requirements": { "$ref": "#/definitions/entity_field_no_page" },
+                "integrations": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "system": { "type": ["string", "null"] },
+                            "type": { "type": ["string", "null"] },
+                            "clause_id": { "type": ["string", "null"] },
+                            "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                        }
+                    }
+                },
+                "mobile_app_required": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "value": { "type": ["boolean", "null"] },
+                        "platforms": { "type": "array", "items": { "type": "string" } },
+                        "clause_id": { "type": ["string", "null"] },
+                        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                    }
+                },
+                "ui_mock_required": { "$ref": "#/definitions/entity_field_no_page" },
+                "presentation_required": { "$ref": "#/definitions/entity_field_no_page" },
+                "gantt_chart_required": { "$ref": "#/definitions/entity_field_no_page" },
+                "e_governance_compliance": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "required": { "type": ["boolean", "null"] },
+                        "framework": { "type": ["string", "null"] },
+                        "clause_id": { "type": ["string", "null"] },
+                        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                    }
+                }
+            }
+        },
+        "entities_consultancy": {
+            "type": ["object", "null"],
+            "properties": {
+                "reporting_requirements": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                },
+                "work_plan_required": { "$ref": "#/definitions/entity_field_no_page" },
+                "counterpart_support": { "$ref": "#/definitions/entity_field_no_page" },
+                "data_collection_methods": { "$ref": "#/definitions/entity_field_no_page" },
+                "training_requirements": { "$ref": "#/definitions/entity_field_no_page" }
+            }
+        },
+        "entities_goods": {
+            "type": ["object", "null"],
+            "properties": {
+                "technical_specifications": { "$ref": "#/definitions/entity_field_no_page" },
+                "delivery_schedule": { "$ref": "#/definitions/entity_field_no_page" },
+                "inspection_criteria": { "$ref": "#/definitions/entity_field_no_page" },
+                "incoterms": { "$ref": "#/definitions/entity_field_no_page" },
+                "delivery_address": { "$ref": "#/definitions/entity_field_no_page" },
+                "after_sales_service": { "$ref": "#/definitions/entity_field_no_page" },
+                "packaging_requirements": { "$ref": "#/definitions/entity_field_no_page" },
+                "country_of_origin": { "$ref": "#/definitions/entity_field_no_page" }
+            }
+        },
+        "entities_staffing": {
+            "type": ["object", "null"],
+            "properties": {
+                "staff_months": { "$ref": "#/definitions/entity_field_no_page" },
+                "onsite_resource_requirements": { "$ref": "#/definitions/entity_field_no_page" },
+                "marking_criteria": { "$ref": "#/definitions/entity_field_no_page" },
+                "key_personnel": { "$ref": "#/definitions/entity_field_no_page" },
+                "cv_requirements": { "$ref": "#/definitions/entity_field_no_page" }
+            }
+        },
+        "entities_support": {
+            "type": ["object", "null"],
+            "properties": {
+                "training": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "value": {},
+                        "duration": { "type": ["string", "null"] },
+                        "clause_id": { "type": ["string", "null"] },
+                        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                    }
+                },
+                "support_maintenance": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "value": {},
+                        "period": { "type": ["string", "null"] },
+                        "sla": { "type": ["string", "null"] },
+                        "clause_id": { "type": ["string", "null"] },
+                        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                    }
+                },
+                "warranty_period": { "$ref": "#/definitions/entity_field_no_page" }
+            }
+        },
+        "entities_evaluation": {
+            "type": ["object", "null"],
+            "properties": {
+                "criteria": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": { "type": "string" },
+                            "weight": { "type": ["number", "null"] },
+                            "clause_id": { "type": ["string", "null"] },
+                            "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                        }
+                    }
+                },
+                "criteria_total_weight": { "$ref": "#/definitions/entity_field_no_page" },
+                "eligibility_summary": { "$ref": "#/definitions/entity_field_no_page" },
+                "scope_summary": { "$ref": "#/definitions/entity_field_no_page" },
+                "scope_of_work": { "$ref": "#/definitions/entity_field_no_page" },
+                "similar_project_experience": { "$ref": "#/definitions/entity_field_no_page" }
+            }
+        }
+    }
+}
