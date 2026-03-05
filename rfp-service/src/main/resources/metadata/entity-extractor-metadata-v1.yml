@@ -1,0 +1,71 @@
+extractors:
+  GENERAL:
+    promptResourcePath: prompts/entity-general-v1.md
+    requiredFields:
+      - client_name
+      - submission_deadline
+      - issue_date
+      - method_of_selection
+      - procurement_method
+      - project_duration
+      - pre_bid_meeting
+      - contact
+  SUBMISSION:
+    promptResourcePath: prompts/entity-submission-v1.md
+    requiredFields:
+      - guidelines_summary
+      - number_of_copies
+      - soft_submission_required
+      - submission_address
+  FINANCIAL:
+    promptResourcePath: prompts/entity-financial-v1.md
+    requiredFields:
+      - technical_financial_split
+      - performance_security
+      - bank_guarantee
+      - payment_terms
+      - reimbursable_expenses
+      - bid_validity_period
+  ICT:
+    promptResourcePath: prompts/entity-ict-v1.md
+    requiredFields:
+      - total_users
+      - concurrent_users
+      - programming_language_preference
+      - system_language
+      - architecture
+      - tech_stack
+      - database
+      - hosting
+      - data_migration_required
+      - legacy_system
+      - hardware_requirements
+      - integrations
+      - mobile_app_required
+      - ui_mock_required
+      - presentation_required
+      - gantt_chart_required
+      - e_governance_compliance
+  STAFFING:
+    promptResourcePath: prompts/entity-staffing-v1.md
+    requiredFields:
+      - staff_months
+      - onsite_resource_requirements
+      - marking_criteria
+      - key_personnel
+      - cv_requirements
+  SUPPORT:
+    promptResourcePath: prompts/entity-support-v1.md
+    requiredFields:
+      - training
+      - support_maintenance
+      - warranty_period
+  EVALUATION:
+    promptResourcePath: prompts/entity-evaluation-v1.md
+    requiredFields:
+      - criteria
+      - criteria_total_weight
+      - eligibility_summary
+      - scope_summary
+      - scope_of_work
+      - similar_project_experience

@@ -1,0 +1,12 @@
+version: 1
+includedPromptKeys:
+  - GENERAL
+  - SUBMISSION
+  - FINANCIAL
+  - ICT
+  - STAFFING
+  - SUPPORT
+  - EVALUATION
+excludedSchemaDomains:
+  - consultancy
+  - goods
