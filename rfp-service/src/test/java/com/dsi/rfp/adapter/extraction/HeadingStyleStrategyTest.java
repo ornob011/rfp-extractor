@@ -51,7 +51,7 @@ class HeadingStyleStrategyTest {
         );
         when(loader.loadFontMetadata(any())).thenReturn(fonts);
         when(loader.getPageCount(any())).thenReturn(1);
-        when(loader.loadPageBoundingBoxes(any(), eq(0))).thenReturn(List.of(
+        when(loader.loadPageBoundingBoxes(any(Path.class), eq(0))).thenReturn(List.of(
             TextBlock.builder().text("Title").fontName("Heading1")
                      .fontSize(14).x(0).y(0).width(100).height(14).pageNumber(0).build()
         ));
@@ -70,7 +70,7 @@ class HeadingStyleStrategyTest {
         );
         when(loader.loadFontMetadata(any())).thenReturn(fonts);
         when(loader.getPageCount(any())).thenReturn(1);
-        when(loader.loadPageBoundingBoxes(any(), eq(0))).thenReturn(List.of(
+        when(loader.loadPageBoundingBoxes(any(Path.class), eq(0))).thenReturn(List.of(
             TextBlock.builder().text("Subtitle").fontName("Heading2")
                      .fontSize(12).x(0).y(0).width(100).height(12).pageNumber(0).build()
         ));

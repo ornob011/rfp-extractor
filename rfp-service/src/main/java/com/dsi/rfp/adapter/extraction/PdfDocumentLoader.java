@@ -65,13 +65,24 @@ public class PdfDocumentLoader {
         int pageNumber
     ) throws IOException {
         try (PDDocument doc = Loader.loadPDF(filePath.toFile())) {
-            BoundingBoxTextStripper stripper =
-                new BoundingBoxTextStripper(pageNumber);
-            stripper.setStartPage(pageNumber);
-            stripper.setEndPage(pageNumber);
-            stripper.getText(doc);
-            return stripper.getTextBlocks();
+            return loadPageBoundingBoxes(
+                doc,
+                pageNumber
+            );
         }
+    }
+
+    public List<TextBlock> loadPageBoundingBoxes(
+        PDDocument doc,
+        int pageNumber
+    ) throws IOException {
+        BoundingBoxTextStripper stripper = new BoundingBoxTextStripper(pageNumber);
+
+        stripper.setStartPage(pageNumber);
+        stripper.setEndPage(pageNumber);
+        stripper.getText(doc);
+
+        return stripper.getTextBlocks();
     }
 
     public Map<String, FontInfo> loadFontMetadata(Path filePath) throws IOException {

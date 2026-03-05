@@ -29,6 +29,20 @@ class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(TableExtractionUnavailableException.class)
+    ProblemDetail handleTableExtractionUnavailable(TableExtractionUnavailableException ex) {
+        log.warn(
+            "event=table.extraction.unavailable component=GlobalExceptionHandler status=503 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            ex.getMessage()
+        );
+    }
+
     @ExceptionHandler(LlmResponseParseException.class)
     ProblemDetail handleLlmResponseParse(LlmResponseParseException ex) {
         log.warn(
