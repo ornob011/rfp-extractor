@@ -1,0 +1,25 @@
+version: 1
+extractorOrder:
+  - lattice
+  - stream
+methods:
+  lattice: lattice
+  stream: stream
+lattice:
+  minLinesForTable: 4
+  maxCells: 200
+  lineTolerance: 2.0
+stream:
+  yProximityTolerance: 3.0
+  columnGapRatio: 0.03
+  confidence: 0.6
+  minColumns: 2
+  minRows: 2
+continuation:
+  requiredSignals: 1
+  headerDistanceThreshold: 3
+  footerKeywords:
+    - total
+    - sub total
+    - subtotal
+    - grand total

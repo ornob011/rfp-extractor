@@ -1,0 +1,50 @@
+version: 2
+tieBreakOrder:
+  - EVALUATION
+  - PAYMENT
+  - STAFFING
+  - SCHEDULE
+  - DELIVERABLES
+  - OTHER
+keywords:
+  DELIVERABLES:
+    deliverable: 1.0
+    milestone: 1.0
+    output: 0.8
+    activity: 0.7
+    work package: 1.2
+    task: 0.6
+  EVALUATION:
+    evaluation: 1.2
+    criteria: 1.0
+    score: 1.0
+    weight: 0.9
+    marking: 0.8
+    points: 0.8
+    rating: 0.8
+  PAYMENT:
+    payment: 1.2
+    amount: 0.8
+    invoice: 1.0
+    installment: 1.0
+    disbursement: 1.0
+    budget: 0.7
+    cost: 0.7
+  STAFFING:
+    staff: 1.0
+    personnel: 1.0
+    expert: 0.8
+    consultant: 0.8
+    position: 0.8
+    qualification: 0.8
+    experience: 0.8
+  SCHEDULE:
+    schedule: 1.0
+    timeline: 1.0
+    duration: 0.8
+    start date: 0.8
+    end date: 0.8
+    gantt: 0.9
+    phase: 0.7
+    week: 0.6
+    month: 0.6
