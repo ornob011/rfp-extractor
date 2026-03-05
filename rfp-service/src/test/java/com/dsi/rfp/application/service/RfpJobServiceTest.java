@@ -4,6 +4,9 @@ import com.dsi.rfp.adapter.rest.JobStatusResponse;
 import com.dsi.rfp.domain.model.AnalysisStatus;
 import com.dsi.rfp.domain.model.ExtractionJob;
 import com.dsi.rfp.domain.port.out.JobStatePort;
+import com.dsi.rfp.domain.port.out.ResultPersistencePort;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,11 +27,14 @@ class RfpJobServiceTest {
     @Mock
     private JobStatePort jobStatePort;
 
+    @Mock
+    private ResultPersistencePort resultPersistencePort;
+
     private RfpJobService service;
 
     @BeforeEach
     void setUp() {
-        service = new RfpJobService(jobStatePort);
+        service = new RfpJobService(jobStatePort, resultPersistencePort);
     }
 
     @Test
@@ -68,6 +74,30 @@ class RfpJobServiceTest {
         when(jobStatePort.findAll())
             .thenReturn(Collections.emptyList());
         List<JobStatusResponse> result = service.findAll();
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldReturnResultWhenPresent() {
+        Long jobId = 42L;
+        JsonNode mockResult = new ObjectMapper().createObjectNode().put("test", "value");
+        when(resultPersistencePort.findResult(jobId))
+            .thenReturn(Optional.of(mockResult));
+
+        Optional<JsonNode> result = service.getResult(jobId);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().get("test").asText()).isEqualTo("value");
+    }
+
+    @Test
+    void shouldReturnEmptyResultWhenNotFound() {
+        Long jobId = 99L;
+        when(resultPersistencePort.findResult(jobId))
+            .thenReturn(Optional.empty());
+
+        Optional<JsonNode> result = service.getResult(jobId);
+
         assertThat(result).isEmpty();
     }
 }

@@ -2,7 +2,7 @@ package com.dsi.rfp.adapter.extraction;
 
 import com.dsi.rfp.domain.model.EmbeddedImageInfo;
 import com.dsi.rfp.domain.model.PageClassification;
-import com.dsi.rfp.domain.model.PageClassificationResult;
+import com.dsi.rfp.domain.model.PageSummary;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +19,7 @@ class PageClassifierTest {
     void shouldClassifyDigitalPage() {
         String text = "A".repeat(1000);
         PDRectangle dims = new PDRectangle(612, 792);
-        PageClassificationResult result = classifier.classify(
+        PageSummary result = classifier.classify(
             1, text, dims, Collections.emptyList()
         );
         assertThat(result.getClassification()).isEqualTo(PageClassification.DIGITAL);
@@ -35,7 +35,7 @@ class PageClassifierTest {
                                                         .width((float) Math.sqrt(pageArea * 0.85))
                                                         .height((float) Math.sqrt(pageArea * 0.85))
                                                         .build();
-        PageClassificationResult result = classifier.classify(
+        PageSummary result = classifier.classify(
             1, "", dims, List.of(largeImage)
         );
         assertThat(result.getClassification()).isEqualTo(PageClassification.SCANNED);
@@ -52,7 +52,7 @@ class PageClassifierTest {
                                                          .width((float) Math.sqrt(pageArea * 0.70))
                                                          .height((float) Math.sqrt(pageArea * 0.70))
                                                          .build();
-        PageClassificationResult result = classifier.classify(
+        PageSummary result = classifier.classify(
             1, text, dims, List.of(mediumImage)
         );
         assertThat(result.getClassification()).isEqualTo(PageClassification.MIXED);
@@ -61,7 +61,7 @@ class PageClassifierTest {
     @Test
     void shouldClassifyBlankPageAsScanned() {
         PDRectangle dims = new PDRectangle(612, 792);
-        PageClassificationResult result = classifier.classify(
+        PageSummary result = classifier.classify(
             1, "", dims, Collections.emptyList()
         );
         assertThat(result.getClassification()).isEqualTo(PageClassification.SCANNED);
@@ -71,7 +71,7 @@ class PageClassifierTest {
     void shouldPopulateAllResultFields() {
         String text = "Hello World";
         PDRectangle dims = new PDRectangle(612, 792);
-        PageClassificationResult result = classifier.classify(
+        PageSummary result = classifier.classify(
             5, text, dims, Collections.emptyList()
         );
         assertThat(result.getPageNumber()).isEqualTo(5);

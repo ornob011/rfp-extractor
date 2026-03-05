@@ -4,7 +4,7 @@ import com.dsi.rfp.adapter.extraction.PageClassifier;
 import com.dsi.rfp.adapter.extraction.PdfDocumentLoader;
 import com.dsi.rfp.domain.model.EmbeddedImageInfo;
 import com.dsi.rfp.domain.model.PageClassification;
-import com.dsi.rfp.domain.model.PageClassificationResult;
+import com.dsi.rfp.domain.model.PageSummary;
 import com.dsi.rfp.domain.port.out.JobStatePort;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,11 +57,11 @@ class PageClassificationServiceTest {
             .thenReturn(Collections.emptyList());
         when(pageClassifier.classify(
             anyInt(), anyString(), any(), anyList()
-        )).thenReturn(PageClassificationResult.builder()
-                                              .classification(PageClassification.DIGITAL)
-                                              .build());
+        )).thenReturn(PageSummary.builder()
+                                 .classification(PageClassification.DIGITAL)
+                                 .build());
 
-        List<PageClassificationResult> results =
+        List<PageSummary> results =
             service.classifyPages(jobId, path);
 
         assertThat(results).hasSize(3);
@@ -80,9 +80,9 @@ class PageClassificationServiceTest {
             .thenReturn(Collections.emptyList());
         when(pageClassifier.classify(
             anyInt(), anyString(), any(), anyList()
-        )).thenReturn(PageClassificationResult.builder()
-                                              .classification(PageClassification.DIGITAL)
-                                              .build());
+        )).thenReturn(PageSummary.builder()
+                                 .classification(PageClassification.DIGITAL)
+                                 .build());
 
         service.classifyPages(jobId, path);
 
@@ -101,9 +101,9 @@ class PageClassificationServiceTest {
         List<EmbeddedImageInfo> images = Collections.emptyList();
         when(pdfLoader.loadPageImages(path, 1)).thenReturn(images);
         when(pageClassifier.classify(1, "hello", dims, images))
-            .thenReturn(PageClassificationResult.builder()
-                                                .classification(PageClassification.DIGITAL)
-                                                .build());
+            .thenReturn(PageSummary.builder()
+                                   .classification(PageClassification.DIGITAL)
+                                   .build());
 
         service.classifyPages(jobId, path);
 

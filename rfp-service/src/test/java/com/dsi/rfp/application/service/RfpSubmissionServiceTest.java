@@ -37,7 +37,7 @@ class RfpSubmissionServiceTest {
     @Mock
     private DocumentRepository documentRepository;
     @Mock
-    private ExtractionPipelineService pipelineService;
+    private ExtractionOrchestrationService orchestrationService;
 
     private RfpSubmissionService service;
 
@@ -45,7 +45,7 @@ class RfpSubmissionServiceTest {
     void setUp() {
         service = new RfpSubmissionService(
             validationService, fileStoragePort, jobStatePort,
-            documentRepository, pipelineService
+            documentRepository, orchestrationService
         );
     }
 
@@ -78,7 +78,7 @@ class RfpSubmissionServiceTest {
         Long result = service.submit("test.pdf", "content".getBytes());
 
         assertThat(result).isEqualTo(42L);
-        verify(pipelineService).runAsync(eq(42L), eq(stored));
+        verify(orchestrationService).runExtraction(eq(42L), eq(stored));
     }
 
     @Test
@@ -131,9 +131,9 @@ class RfpSubmissionServiceTest {
 
         service.submit("test.pdf", "data".getBytes());
 
-        var inOrder = inOrder(jobStatePort, pipelineService);
+        var inOrder = inOrder(jobStatePort, orchestrationService);
         inOrder.verify(jobStatePort).save(any(ExtractionJob.class));
-        inOrder.verify(pipelineService).runAsync(eq(42L), eq(stored));
+        inOrder.verify(orchestrationService).runExtraction(eq(42L), eq(stored));
     }
 
     @Test
