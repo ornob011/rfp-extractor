@@ -3,7 +3,7 @@ package com.dsi.rfp.application.service;
 import com.dsi.rfp.adapter.extraction.PageClassifier;
 import com.dsi.rfp.adapter.extraction.PdfDocumentLoader;
 import com.dsi.rfp.domain.model.EmbeddedImageInfo;
-import com.dsi.rfp.domain.model.PageClassificationResult;
+import com.dsi.rfp.domain.model.PageSummary;
 import com.dsi.rfp.domain.port.out.JobStatePort;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
@@ -32,13 +32,13 @@ public class PageClassificationService {
         this.jobStatePort = jobStatePort;
     }
 
-    public List<PageClassificationResult> classifyPages(
+    public List<PageSummary> classifyPages(
         Long jobId,
         Path pdfPath
     ) throws IOException {
         int pageCount = pdfLoader.getPageCount(pdfPath);
 
-        List<PageClassificationResult> results = new ArrayList<>();
+        List<PageSummary> results = new ArrayList<>();
 
         for (int page = 1; page <= pageCount; page++) {
             String text = pdfLoader.loadPageText(
@@ -56,7 +56,7 @@ public class PageClassificationService {
                 page
             );
 
-            PageClassificationResult result = pageClassifier.classify(
+            PageSummary result = pageClassifier.classify(
                 page,
                 text,
                 dims,
