@@ -2,7 +2,7 @@ package com.dsi.rfp.adapter.extraction;
 
 import com.dsi.rfp.domain.model.EmbeddedImageInfo;
 import com.dsi.rfp.domain.model.PageClassification;
-import com.dsi.rfp.domain.model.PageClassificationResult;
+import com.dsi.rfp.domain.model.PageSummary;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.springframework.stereotype.Component;
@@ -18,7 +18,7 @@ public class PageClassifier {
     private static final double DIGITAL_RASTER_COVERAGE_MAX = 0.60;
     private static final double SCANNED_RASTER_COVERAGE_MIN = 0.80;
 
-    public PageClassificationResult classify(
+    public PageSummary classify(
         int pageNumber,
         String pageText,
         PDRectangle pageDimensions,
@@ -53,17 +53,17 @@ public class PageClassifier {
             charCount
         );
 
-        return PageClassificationResult.builder()
-                                       .pageNumber(pageNumber)
-                                       .classification(classification)
-                                       .charDensity(charDensity)
-                                       .rasterCoverage(rasterCoverage)
-                                       .charCount(charCount)
-                                       .pageWidth(pageWidth)
-                                       .pageHeight(pageHeight)
-                                       .pageAreaPixels(pageArea)
-                                       .totalImageArea(totalImageArea)
-                                       .build();
+        return PageSummary.builder()
+                          .pageNumber(pageNumber)
+                          .classification(classification)
+                          .charDensity(charDensity)
+                          .rasterCoverage(rasterCoverage)
+                          .charCount(charCount)
+                          .pageWidth(pageWidth)
+                          .pageHeight(pageHeight)
+                          .pageAreaPixels(pageArea)
+                          .totalImageArea(totalImageArea)
+                          .build();
     }
 
     private double computeCharDensity(

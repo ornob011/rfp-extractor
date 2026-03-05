@@ -43,6 +43,23 @@ public class LlmAdapter {
         );
     }
 
+    public Optional<String> extractRaw(
+        String systemPrompt,
+        String userContent
+    ) {
+        String raw = joinAndUnwrap(
+            caller.call(systemPrompt, userContent)
+        );
+
+        if (!StringUtils.hasText(raw)) {
+            return Optional.empty();
+        }
+
+        return Optional.of(
+            JSON_RESPONSE_CLEANER.clean(raw)
+        );
+    }
+
     public Optional<String> judgeSnippet(
         String prompt,
         String snippet
