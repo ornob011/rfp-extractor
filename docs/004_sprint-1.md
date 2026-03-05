@@ -49,9 +49,9 @@
 - `rfp-extractor/rfp-service/pom.xml` + Spring Boot app that starts on port 8080.
 - `LlmProviderProperties`, `LlmProviderConfig`, `LlmAdapter`, `LlmResilienceConfig` fully implemented.
 - `GET /api/v1/health` returning provider name, model, and OCR reachability.
-- Python FastAPI at `rfp-python-ocr/` with `GET /health` responding `{"status":"ok","version":"1.0.0"}`.
+- Python FastAPI at `rfp-python-sidecar/` with `GET /health` responding `{"status":"ok","version":"1.0.0"}`.
 - React frontend at `rfp-frontend/` with upload page skeleton compiled by Vite.
-- `docker-compose.yml` with health checks on all **four** services (postgres, rfp-python-ocr, rfp-service,
+- `docker-compose.yml` with health checks on all **four** services (postgres, rfp-python-sidecar, rfp-service,
   rfp-frontend).
   Redis is NOT in the stack.
 - `prompts/` directory with `README.md` and `prompts/entity-general-v1.md` placeholder.
@@ -494,7 +494,7 @@ app.upload.max-size-mb=100
 # Storage
 app.storage.base-path=/tmp/rfp-storage
 # OCR Sidecar
-app.ocr.sidecar-url=http://localhost:8000
+app.sidecar.url=http://localhost:8000
 # Database (local defaults)
 spring.datasource.url=jdbc:postgresql://localhost:5432/rfpdb
 spring.datasource.username=${POSTGRES_USER:rfpuser}
@@ -512,7 +512,7 @@ File: `rfp-service/src/main/resources/application-docker.properties`:
 
 ```properties
 spring.datasource.url=jdbc:postgresql://postgres:5432/rfpdb
-app.ocr.sidecar-url=http://rfp-python-ocr:8000
+app.sidecar.url=http://rfp-python-sidecar:8000
 app.storage.base-path=/app/rfp-storage
 ```
 
@@ -1337,7 +1337,7 @@ void setUp() {
 #### Story 3.1 — FastAPI Skeleton with Health Endpoint
 
 **Description:**
-Create the `rfp-python-ocr/` directory with a minimal FastAPI application. Only the `/health` endpoint is implemented.
+Create the `rfp-python-sidecar/` directory with a minimal FastAPI application. Only the `/health` endpoint is implemented.
 The OCR logic is a stub that raises `NotImplementedError`. This gives the Docker Compose networking something to
 health-check against in Sprint 1.
 
@@ -1355,7 +1355,7 @@ Then NotImplementedError is raised with message "OCR not yet implemented, coming
 
 **Interfaces/Contracts:**
 
-File: `rfp-python-ocr/main.py`:
+File: `rfp-python-sidecar/main.py`:
 
 ```python
 from contextlib import asynccontextmanager
@@ -1384,7 +1384,7 @@ async def health():
     return HealthResponse(status="ok", version="1.0.0")
 ```
 
-File: `rfp-python-ocr/ocr_service.py`:
+File: `rfp-python-sidecar/ocr_service.py`:
 
 ```python
 from typing import Optional
@@ -1403,7 +1403,7 @@ class OcrService:
         raise NotImplementedError("OCR not yet implemented, coming Sprint 6")
 ```
 
-File: `rfp-python-ocr/requirements.txt`:
+File: `rfp-python-sidecar/requirements.txt`:
 
 ```
 fastapi==0.115.5
@@ -1415,7 +1415,7 @@ pytesseract==0.3.13
 # easyocr==1.7.2  # Uncomment in Sprint 6 — requires GPU/CPU heavy install
 ```
 
-File: `rfp-python-ocr/Dockerfile`:
+File: `rfp-python-sidecar/Dockerfile`:
 
 ```dockerfile
 FROM python:3.11-slim
@@ -1808,7 +1808,7 @@ public class HealthService {
     private final LlmProviderProperties props;
     private final RestClient restClient;
 
-    @Value("${app.ocr.sidecar-url}")
+    @Value("${app.sidecar.url}")
     private String ocrSidecarUrl;
 
     public HealthResponse check() {
@@ -1893,7 +1893,7 @@ class HealthServiceTest {
 #### Story 6.1 — docker-compose.yml with Full Stack
 
 **Description:**
-Write `rfp-extractor/docker-compose.yml` defining all four services (postgres, rfp-python-ocr, rfp-service,
+Write `rfp-extractor/docker-compose.yml` defining all four services (postgres, rfp-python-sidecar, rfp-service,
 rfp-frontend) with health checks, environment variable injection from `.env`, and proper service dependencies.
 Redis is NOT in the stack — job state is in PostgreSQL.
 
@@ -1910,7 +1910,7 @@ Then it uses pg_isready and reports healthy before rfp-service starts
 
 Given the rfp-service
 When it starts
-Then it depends_on: [postgres, rfp-python-ocr] with condition: service_healthy
+Then it depends_on: [postgres, rfp-python-sidecar] with condition: service_healthy
 And no Redis service is defined in docker-compose.yml
 ```
 
@@ -1939,9 +1939,9 @@ services:
             retries     : 5
             start_period: 20s
 
-    rfp-python-ocr:
+    rfp-python-sidecar:
         build      :
-            context   : ./rfp-python-ocr
+            context   : ./rfp-python-sidecar
             dockerfile: Dockerfile
         ports      :
             - "8000:8000"
@@ -1969,7 +1969,7 @@ services:
         depends_on :
             postgres      :
                 condition: service_healthy
-            rfp-python-ocr:
+            rfp-python-sidecar:
                 condition: service_healthy
         healthcheck:
             test        : [ "CMD", "curl", "-f", "http://localhost:8080/api/v1/health" ]
@@ -2662,7 +2662,7 @@ repository. Minimum 2 tests per repository covering the custom query methods.
 - `application.properties` + `application-docker.properties`.
 - `LlmProviderProperties.java`.
 - `AsyncConfig.java`.
-- `rfp-python-ocr/` (all files).
+- `rfp-python-sidecar/` (all files).
 - `rfp-frontend/` (all files from Story 4.1).
 - `docker-compose.yml` + Dockerfiles + `.env.example`.
 - `prompts/` directory (README + entity-general-v1.md).
@@ -2677,7 +2677,7 @@ repository. Minimum 2 tests per repository covering the custom query methods.
 - [ ] Docker Compose health checks defined for all four services (no Redis service present).
 - [ ] `.env.example` committed; `.env` in `.gitignore`.
 - [ ] `rfp-frontend/` has TypeScript strict mode enabled in `tsconfig.json`.
-- [ ] `rfp-python-ocr/requirements.txt` has easyocr commented out.
+- [ ] `rfp-python-sidecar/requirements.txt` has easyocr commented out.
 - [ ] No hardcoded secrets in any committed file.
 - [ ] Prompt file has valid YAML frontmatter (validate with a YAML linter).
 
@@ -2766,7 +2766,7 @@ Expected output:
 
 ```
 rfp-service-1       | Started RfpApplication in 8.342 seconds
-rfp-python-ocr-1    | INFO:     Application startup complete.
+rfp-python-sidecar-1    | INFO:     Application startup complete.
 rfp-frontend-1      | nginx: configuration file /etc/nginx/nginx.conf test is successful
 ```
 
@@ -2813,7 +2813,7 @@ Expected: `<title>Vite + React + TS</title>` (or configured title)
 ### Step 6: Verify OCR Stub Raises NotImplementedError
 
 ```bash
-docker compose exec rfp-python-ocr python3 -c "
+docker compose exec rfp-python-sidecar python3 -c "
 from ocr_service import OcrService
 s = OcrService()
 try:

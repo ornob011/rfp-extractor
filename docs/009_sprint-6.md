@@ -17,7 +17,7 @@ reconstructed via an LLM prompt. OCR confidence is propagated into every extract
 - `PageClassifier` labels pages as `DIGITAL`, `SCANNED`, or `MIXED`.
 - `LlmAdapter` is Resilience4j-wrapped (Sprint 1) and accepts a model ID override parameter.
 - Python sidecar container starts and responds to `GET /health` (Sprint 1 stub).
-- `docker-compose.yml` runs `rfp-python-ocr` on port 8000.
+- `docker-compose.yml` runs `rfp-python-sidecar` on port 8000.
 - `RestClient` bean is available in the Spring context.
 - `DocumentChunkingService` (Sprint 4) is available.
 
@@ -27,10 +27,10 @@ reconstructed via an LLM prompt. OCR confidence is propagated into every extract
 
 | #    | Deliverable                                  | Type               | Location                                                                   |
 |------|----------------------------------------------|--------------------|----------------------------------------------------------------------------|
-| D-01 | `image_utils.py`                             | Python module      | `rfp-python-ocr/image_utils.py`                                            |
-| D-02 | `layout_detector.py`                         | Python module      | `rfp-python-ocr/layout_detector.py`                                        |
-| D-03 | `ocr_service.py`                             | Python module      | `rfp-python-ocr/ocr_service.py`                                            |
-| D-04 | `main.py` (full impl)                        | Python FastAPI app | `rfp-python-ocr/main.py`                                                   |
+| D-01 | `image_utils.py`                             | Python module      | `rfp-python-sidecar/image_utils.py`                                            |
+| D-02 | `layout_detector.py`                         | Python module      | `rfp-python-sidecar/layout_detector.py`                                        |
+| D-03 | `ocr_service.py`                             | Python module      | `rfp-python-sidecar/ocr_service.py`                                            |
+| D-04 | `main.py` (full impl)                        | Python FastAPI app | `rfp-python-sidecar/main.py`                                                   |
 | D-05 | OCR DTO records                              | Java records       | `rfp-service/.../adapter/ocr/`                                             |
 | D-06 | `OcrSidecarClient`                           | Java class         | `rfp-service/.../adapter/ocr/OcrSidecarClient.java`                        |
 | D-07 | `OcrResilienceConfig`                        | Java class         | `rfp-service/.../adapter/ocr/OcrResilienceConfig.java`                     |
@@ -43,7 +43,7 @@ reconstructed via an LLM prompt. OCR confidence is propagated into every extract
 | D-14 | `prompts/scanned-table-reconstruction-v1.md` | Prompt file        | `prompts/scanned-table-reconstruction-v1.md`                               |
 | D-15 | `ResultPage.tsx` page summary tab (updated)  | React update       | `rfp-frontend/src/pages/ResultPage.tsx`                                    |
 | D-16 | Unit tests — Java                            | Java test classes  | `rfp-service/src/test/java/.../adapter/ocr/` and `.../adapter/extraction/` |
-| D-17 | Unit tests — Python                          | pytest files       | `rfp-python-ocr/tests/`                                                    |
+| D-17 | Unit tests — Python                          | pytest files       | `rfp-python-sidecar/tests/`                                                    |
 
 ---
 
@@ -77,7 +77,7 @@ Scenario: Convert bytes to PIL Image
 **Interfaces / Contracts:**
 
 ```python
-# rfp-python-ocr/image_utils.py
+# rfp-python-sidecar/image_utils.py
 
 from pdf2image import convert_from_path
 from PIL import Image
@@ -115,7 +115,7 @@ def bytes_to_pil(image_bytes: bytes) -> Image.Image:
 3. `requirements.txt` additions: `pdf2image>=1.17.0`, `Pillow>=10.0.0`.
 
 4. System dependency: `poppler-utils` must be installed in the Docker container. Add
-   `RUN apt-get install -y poppler-utils` to `rfp-python-ocr/Dockerfile`.
+   `RUN apt-get install -y poppler-utils` to `rfp-python-sidecar/Dockerfile`.
 
 **Dependencies:** `pdf2image`, `Pillow`, `poppler-utils` (system).
 
@@ -123,10 +123,10 @@ def bytes_to_pil(image_bytes: bytes) -> Image.Image:
 
 | Risk                                                                          | Mitigation                                                                                       |
 |-------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| `pdf2image` requires `poppler-utils` system package not present in base image | Add `RUN apt-get install -y poppler-utils` in Dockerfile; document in `rfp-python-ocr/README.md` |
+| `pdf2image` requires `poppler-utils` system package not present in base image | Add `RUN apt-get install -y poppler-utils` in Dockerfile; document in `rfp-python-sidecar/README.md` |
 | High DPI (300+) produces large images consuming excess memory                 | Cap DPI at 400 in `render_pdf_page_to_image`; log warning if `dpi > 400`                         |
 
-**Test Plan — `rfp-python-ocr/tests/test_image_utils.py`:**
+**Test Plan — `rfp-python-sidecar/tests/test_image_utils.py`:**
 
 ```python
 def test_render_returns_png_bytes(tmp_path):
@@ -168,7 +168,7 @@ Scenario: Image with free-flowing text paragraphs
 **Interfaces / Contracts:**
 
 ```python
-# rfp-python-ocr/layout_detector.py
+# rfp-python-sidecar/layout_detector.py
 
 from pydantic import BaseModel
 from typing import List
@@ -217,7 +217,7 @@ def detect_layout(image: Image.Image, reader=None) -> LayoutDetectionResult:
 
 **Dependencies:** `easyocr`, `numpy`, `pydantic`.
 
-**Test Plan — `rfp-python-ocr/tests/test_layout_detector.py`:**
+**Test Plan — `rfp-python-sidecar/tests/test_layout_detector.py`:**
 
 ```python
 def test_detects_grid_as_table(mock_reader):
@@ -262,7 +262,7 @@ Scenario: extract_page_with_layout returns both OCR and layout
 **Interfaces / Contracts:**
 
 ```python
-# rfp-python-ocr/ocr_service.py
+# rfp-python-sidecar/ocr_service.py
 
 from pydantic import BaseModel
 from typing import List, Tuple
@@ -332,7 +332,7 @@ class OcrService:
 
 **Dependencies:** `easyocr`, `pytesseract`, `tesseract-ocr` system package (add to Dockerfile).
 
-**Test Plan — `rfp-python-ocr/tests/test_ocr_service.py`:**
+**Test Plan — `rfp-python-sidecar/tests/test_ocr_service.py`:**
 
 ```python
 def test_uses_easyocr_when_confidence_high(mock_reader):
@@ -381,7 +381,7 @@ Scenario: OCR service not ready
 **Interfaces / Contracts:**
 
 ```python
-# rfp-python-ocr/main.py
+# rfp-python-sidecar/main.py
 
 from fastapi import FastAPI, HTTPException
 from contextlib import asynccontextmanager
@@ -445,7 +445,7 @@ def ocr_page_with_layout(request: OcrRequest): ...
 4. `requirements.txt` additions: `fastapi>=0.115.0`, `uvicorn[standard]>=0.30.0`, `easyocr>=1.7.2`,
    `pytesseract>=0.3.13`.
 
-5. `Dockerfile` (update `rfp-python-ocr/Dockerfile`):
+5. `Dockerfile` (update `rfp-python-sidecar/Dockerfile`):
 
 ```dockerfile
 FROM python:3.11-slim
@@ -457,7 +457,7 @@ COPY . .
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-**Test Plan — `rfp-python-ocr/tests/test_main.py`:** Use `fastapi.testclient.TestClient`.
+**Test Plan — `rfp-python-sidecar/tests/test_main.py`:** Use `fastapi.testclient.TestClient`.
 
 ```python
 def test_health_returns_200():
@@ -568,9 +568,9 @@ public class OcrSidecarClient {
 
     private final RestClient restClient;
 
-    // Base URL injected from @Value("${app.ocr.sidecar.url:http://rfp-python-ocr:8000}")
+    // Base URL injected from @Value("${app.sidecar.url:http://rfp-python-sidecar:8000}")
     public OcrSidecarClient(RestClient.Builder builder,
-                            @Value("${app.ocr.sidecar.url:http://rfp-python-ocr:8000}") String baseUrl) {
+                            @Value("${app.sidecar.url:http://rfp-python-sidecar:8000}") String baseUrl) {
         this.restClient = builder
             .baseUrl(baseUrl)
             .build();
@@ -679,7 +679,7 @@ public class OcrResilienceConfig {
 
 ```properties
 # OCR sidecar URL
-app.ocr.sidecar.url=http://rfp-python-ocr:8000
+app.sidecar.url=http://rfp-python-sidecar:8000
 # Resilience4j OCR retry — configured programmatically in OcrResilienceConfig
 ```
 
@@ -1318,16 +1318,16 @@ Scenario: Confidence bar for each page
 
 **Contents:**
 
-- `rfp-python-ocr/image_utils.py`
-- `rfp-python-ocr/layout_detector.py`
-- `rfp-python-ocr/ocr_service.py`
-- `rfp-python-ocr/main.py` (full, replacing Sprint 1 stub)
-- `rfp-python-ocr/Dockerfile` (updated with poppler + tesseract)
-- `rfp-python-ocr/requirements.txt` (updated)
-- `rfp-python-ocr/tests/test_image_utils.py`
-- `rfp-python-ocr/tests/test_layout_detector.py`
-- `rfp-python-ocr/tests/test_ocr_service.py`
-- `rfp-python-ocr/tests/test_main.py`
+- `rfp-python-sidecar/image_utils.py`
+- `rfp-python-sidecar/layout_detector.py`
+- `rfp-python-sidecar/ocr_service.py`
+- `rfp-python-sidecar/main.py` (full, replacing Sprint 1 stub)
+- `rfp-python-sidecar/Dockerfile` (updated with poppler + tesseract)
+- `rfp-python-sidecar/requirements.txt` (updated)
+- `rfp-python-sidecar/tests/test_image_utils.py`
+- `rfp-python-sidecar/tests/test_layout_detector.py`
+- `rfp-python-sidecar/tests/test_ocr_service.py`
+- `rfp-python-sidecar/tests/test_main.py`
 
 **Review Checklist:**
 
@@ -1502,7 +1502,7 @@ curl http://localhost:8080/api/v1/rfp/result/$JOB_ID \
 
 | #     | Criterion                                                                                                       | Measure                                                                                  |
 |-------|-----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| EC-01 | Python sidecar passes all pytest tests                                                                          | `pytest rfp-python-ocr/tests/ -v` → 0 failures                                           |
+| EC-01 | Python sidecar passes all pytest tests                                                                          | `pytest rfp-python-sidecar/tests/ -v` → 0 failures                                           |
 | EC-02 | `GET /health` on sidecar returns `{"status": "ok"}` within 2 seconds after container start                      | Manual curl or Docker healthcheck                                                        |
 | EC-03 | `ScannedPageExtractor` extracts text from 3 fixture scanned-page PDFs with `confidence >= 0.5`                  | Manual check against `testdata/fixtures/scanned-*.pdf`                                   |
 | EC-04 | `ColumnDetector` correctly identifies 2-column layout on 4 of 5 known 2-column test documents                   | Manual verification: correct reading order (left column before right)                    |

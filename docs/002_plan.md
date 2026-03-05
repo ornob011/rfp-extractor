@@ -635,7 +635,7 @@ rfp-extractor/
 │       ├── pages/                   ← UploadPage, JobStatusPage, ResultPage, AdminPage
 │       ├── components/              ← SectionTree, EntityTable, RulePackResults, ArtifactDownload
 │       └── api/                     ← API client (axios)
-├── rfp-python-ocr/                  ← Python FastAPI OCR sidecar
+├── rfp-python-sidecar/                  ← Python FastAPI OCR sidecar
 │   ├── main.py                      ← FastAPI app
 │   ├── ocr_service.py               ← easyOCR + Tesseract orchestration
 │   └── requirements.txt
@@ -1243,9 +1243,9 @@ Hello-world end-to-end.
 
 **Python OCR Sidecar**
 
-- [ ] `rfp-python-ocr/main.py` — FastAPI app with health endpoint `GET /health`
-- [ ] `rfp-python-ocr/requirements.txt` — `fastapi`, `uvicorn`, `easyocr`, `pytesseract`, `Pillow`, `pdf2image`
-- [ ] `rfp-python-ocr/ocr_service.py` — skeleton with `extract_page(page_image_bytes, lang)` stub
+- [ ] `rfp-python-sidecar/main.py` — FastAPI app with health endpoint `GET /health`
+- [ ] `rfp-python-sidecar/requirements.txt` — `fastapi`, `uvicorn`, `easyocr`, `pytesseract`, `Pillow`, `pdf2image`
+- [ ] `rfp-python-sidecar/ocr_service.py` — skeleton with `extract_page(page_image_bytes, lang)` stub
 
 **Frontend Skeleton**
 
@@ -1255,7 +1255,7 @@ Hello-world end-to-end.
 
 **Infrastructure**
 
-- [ ] `docker-compose.yml` — services: `postgres`, `rfp-service` (Spring Boot), `rfp-python-ocr` (FastAPI),
+- [ ] `docker-compose.yml` — services: `postgres`, `rfp-service` (Spring Boot), `rfp-python-sidecar` (FastAPI),
   `rfp-frontend` (Nginx)
 - [ ] Health check endpoints: `GET /api/v1/health` → 200 + provider info
 
@@ -1473,12 +1473,12 @@ propagated.
 
 **Python OCR Sidecar (full implementation)**
 
-- [ ] `rfp-python-ocr/ocr_service.py`:
+- [ ] `rfp-python-sidecar/ocr_service.py`:
     - `extract_page(image_bytes: bytes, lang: str = "eng+ben") → OcrResult`
     - Uses easyOCR for primary extraction (better Bangla accuracy)
     - Falls back to Tesseract for Latin-heavy pages (faster)
     - Returns: `{text, word_confidences: [{word, confidence, bbox}], page_confidence, word_count}`
-- [ ] `rfp-python-ocr/main.py`:
+- [ ] `rfp-python-sidecar/main.py`:
     - `POST /ocr/page` — body: `{image_base64, lang}`, returns `OcrResult`
     - `POST /ocr/page-with-layout` — body: `{image_base64}`, returns `{has_table, table_regions, text_regions}`
     - `GET /health`
@@ -1488,7 +1488,7 @@ propagated.
 
 - [ ] `OcrSidecarClient.java` (adapter) — Spring `@Component` using `RestClient`:
     - `extractPage(byte[] imageBytes, String lang) → OcrResult`
-    - Configurable base URL: `app.ocr.sidecar.url=http://rfp-python-ocr:8000`
+    - Configurable base URL: `app.sidecar.url=http://rfp-python-sidecar:8000`
     - Timeout: 60s per page (configurable)
     - On failure: throw `OcrUnavailableException` → page marked as `confidence: 0.0, method: "ocr_failed"`
 
