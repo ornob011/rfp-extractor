@@ -1,0 +1,16 @@
+defaultMedianFontSize: 10.0
+headingFontDelta: 2.0
+maxHeadingLength: 100
+levels:
+  - minExclusive: 10.0
+    maxInclusive:
+    level: 1
+  - minExclusive: 6.0
+    maxInclusive: 10.0
+    level: 2
+  - minExclusive: 3.0
+    maxInclusive: 6.0
+    level: 3
+  - minExclusive:
+    maxInclusive: 3.0
+    level: 4
