@@ -55,6 +55,9 @@ venv/
 sonar-project.properties
 .scannerwork/
 
+### Test data ###
+testdata/pdfs/
+
 ### OS ###
 .DS_Store
 Thumbs.db
