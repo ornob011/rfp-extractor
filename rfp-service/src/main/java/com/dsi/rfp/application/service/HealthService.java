@@ -22,7 +22,7 @@ public class HealthService {
     public HealthService(
         LlmProviderProperties props,
         RestClient restClient,
-        @Value("${app.ocr.sidecar-url}") String ocrSidecarUrl
+        @Value("${app.sidecar.url}") String ocrSidecarUrl
     ) {
         this.props = props;
         this.restClient = restClient;
