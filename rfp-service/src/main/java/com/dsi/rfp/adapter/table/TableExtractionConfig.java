@@ -7,10 +7,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Component
@@ -83,6 +85,35 @@ public class TableExtractionConfig {
         return config.methods().stream();
     }
 
+    public Resource scannedPromptResource() {
+        return new ClassPathResource(config.scanned().promptResourcePath());
+    }
+
+    public String scannedPromptTemplate() {
+        Resource resource = scannedPromptResource();
+
+        try (InputStream input = resource.getInputStream()) {
+            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException exception) {
+            throw new SystemIoException(
+                String.format("Failed to load scanned table prompt: %s", resource),
+                exception
+            );
+        }
+    }
+
+    public int scannedMaxOcrTextLength() {
+        return config.scanned().maxOcrTextLength();
+    }
+
+    public double scannedConfidenceFactor() {
+        return config.scanned().confidenceFactor();
+    }
+
+    public String scannedLlmMethod() {
+        return config.scanned().llmMethod();
+    }
+
     public TableExtractionStrategy latticeStrategy() {
         return TableExtractionStrategy.fromString(config.methods().lattice());
     }
@@ -111,7 +142,8 @@ public class TableExtractionConfig {
         Methods methods,
         Lattice lattice,
         Stream stream,
-        Continuation continuation
+        Continuation continuation,
+        Scanned scanned
     ) {
 
         private ConfigDocument {
@@ -137,6 +169,10 @@ public class TableExtractionConfig {
 
             if (continuation == null) {
                 throw new EntityMetadataContractException("Table extraction config must define continuation");
+            }
+
+            if (scanned == null) {
+                throw new EntityMetadataContractException("Table extraction config must define scanned");
             }
         }
     }
@@ -168,5 +204,23 @@ public class TableExtractionConfig {
         int headerDistanceThreshold,
         java.util.List<String> footerKeywords
     ) {
+    }
+
+    private record Scanned(
+        String promptResourcePath,
+        int maxOcrTextLength,
+        double confidenceFactor,
+        String llmMethod
+    ) {
+
+        private Scanned {
+            if (promptResourcePath == null) {
+                throw new EntityMetadataContractException("Table extraction config scanned section must define promptResourcePath");
+            }
+
+            if (llmMethod == null) {
+                throw new EntityMetadataContractException("Table extraction config scanned section must define llmMethod");
+            }
+        }
     }
 }

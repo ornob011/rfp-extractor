@@ -3,6 +3,7 @@ package com.dsi.rfp.adapter.table;
 import com.dsi.rfp.domain.model.TableExtractionResult;
 import com.dsi.rfp.domain.model.TableExtractionStrategy;
 import com.dsi.rfp.domain.model.TableType;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -70,7 +71,7 @@ class StreamTableExtractorTest {
                 )
             ),
             0.0,
-            ""
+            StringUtils.EMPTY
         );
 
         when(tableEngineClient.extractTables(
