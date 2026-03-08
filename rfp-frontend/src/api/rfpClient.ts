@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { JobStatus, JobStatusResponse, RfpResultResponse } from '../types/rfp';
+import type { RulePackSummary, ReloadResult } from '../types/rulepack';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
 
@@ -32,5 +33,15 @@ export async function listJobs(): Promise<JobStatusResponse[]> {
 
 export async function getRfpResult(jobId: string): Promise<RfpResultResponse> {
     const response = await rfpClient.get<RfpResultResponse>(`/api/v1/rfp/result/${jobId}`);
+    return response.data;
+}
+
+export async function listRulePacks(): Promise<RulePackSummary[]> {
+    const response = await rfpClient.get<RulePackSummary[]>('/api/v1/admin/rule-packs');
+    return response.data;
+}
+
+export async function reloadRulePacks(): Promise<ReloadResult> {
+    const response = await rfpClient.post<ReloadResult>('/api/v1/admin/rule-packs/reload');
     return response.data;
 }

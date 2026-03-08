@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Upload, Briefcase, LogOut } from 'lucide-react';
+import { Upload, Briefcase, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SidebarNavProps {
@@ -10,6 +10,7 @@ interface SidebarNavProps {
 const navItems = [
     { to: '/jobs', label: 'Jobs', icon: Briefcase },
     { to: '/upload', label: 'Upload', icon: Upload },
+    { to: '/admin', label: 'Admin', icon: Settings },
 ];
 
 export function SidebarNav({ collapsed = false, onNavigate }: SidebarNavProps) {
