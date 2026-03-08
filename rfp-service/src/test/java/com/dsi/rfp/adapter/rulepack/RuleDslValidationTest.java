@@ -65,7 +65,7 @@ class RuleDslValidationTest {
 
         assertThat(totalRuleCount)
             .as("Total rule count across all packs")
-            .isEqualTo(80);
+            .isEqualTo(168);
     }
 
     private JsonNode readYaml(Resource ruleResource) throws IOException {

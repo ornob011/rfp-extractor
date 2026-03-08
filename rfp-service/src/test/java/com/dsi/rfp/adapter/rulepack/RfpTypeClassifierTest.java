@@ -74,6 +74,66 @@ class RfpTypeClassifierTest {
         assertThat(result.confidence()).isGreaterThan(0.0d);
     }
 
+    @Test
+    void shouldClassifyAsWorksWhenConstructionSignalsExist() {
+        RfpDocument doc = RfpDocument.builder()
+                                     .sections(List.of(
+                                         section("Civil Works"),
+                                         section("Bill of Quantities")
+                                     ))
+                                     .entities(RfpEntities.builder()
+                                                          .scopeOfWork("Construction of bridge and road infrastructure")
+                                                          .scopeSummary("Construction of road and bridge site foundation")
+                                                          .build())
+                                     .build();
+
+        RulePackClassification result = classifier.classify(doc);
+
+        assertThat(result.resolvedType()).isEqualTo(RfpType.WORKS);
+        assertThat(result.candidatePackIds()).contains("bd-govt-works-v1");
+    }
+
+    @Test
+    void shouldClassifyAsConsultancyWhenAdvisorySignalsExist() {
+        RfpDocument doc = RfpDocument.builder()
+                                     .sections(List.of(
+                                         section("Terms of Reference"),
+                                         section("Consulting Methodology")
+                                     ))
+                                     .entities(RfpEntities.builder()
+                                                          .scopeOfWork("Feasibility study and advisory technical assistance")
+                                                          .scopeSummary("Consultant advisory feasibility study methodology")
+                                                          .staffMonths("36 person-months")
+                                                          .methodOfSelection("QCBS")
+                                                          .cvRequirements("International format CV required")
+                                                          .build())
+                                     .build();
+
+        RulePackClassification result = classifier.classify(doc);
+
+        assertThat(result.resolvedType()).isEqualTo(RfpType.CONSULTANCY);
+        assertThat(result.candidatePackIds()).contains("bd-govt-consultancy-v1");
+    }
+
+    @Test
+    void shouldClassifyAsGoodsWhenSupplySignalsExist() {
+        RfpDocument doc = RfpDocument.builder()
+                                     .sections(List.of(
+                                         section("Procurement of Goods"),
+                                         section("Supply of Equipment")
+                                     ))
+                                     .entities(RfpEntities.builder()
+                                                          .scopeOfWork("Supply and delivery of goods equipment purchase")
+                                                          .scopeSummary("Supply goods equipment delivery procurement purchase")
+                                                          .build())
+                                     .build();
+
+        RulePackClassification result = classifier.classify(doc);
+
+        assertThat(result.resolvedType()).isEqualTo(RfpType.GOODS);
+        assertThat(result.candidatePackIds()).contains("bd-govt-goods-v1");
+    }
+
     private Section section(String title) {
         return Section.builder()
                       .title(title)
