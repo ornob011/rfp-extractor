@@ -1,0 +1,815 @@
+pack_id: bd-govt-ict-v1
+pack_version: "1.0.0"
+rfp_type: ICT
+rules:
+  # ── FATAL (8 rules) ──────────────────────────────────────────────────────
+
+  - id: BD-ICT-001
+    name: RFP Title Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "sections[?title] | length(@) > `0`"
+    evidence_path: "sections[0].title"
+    message: "RFP Title is missing from the document"
+
+  - id: BD-ICT-002
+    name: Scope of Work Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.scopeOfWork != null"
+    evidence_path: "entities.scopeOfWork"
+    message: "Scope of work is missing from the document"
+
+  - id: BD-ICT-004
+    name: Client Name Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.clientName != null"
+    evidence_path: "entities.clientName"
+    message: "Client / Procuring Entity name is missing"
+
+  - id: BD-ICT-005
+    name: Submission Deadline Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.submissionDeadline != null"
+    evidence_path: "entities.submissionDeadline"
+    message: "Submission deadline is missing"
+
+  - id: BD-ICT-014
+    name: Technical Financial Split Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.technicalFinancialSplit != null"
+    evidence_path: "entities.technicalFinancialSplit"
+    message: "Technical / Financial evaluation split ratio is missing"
+
+  - id: BD-ICT-040
+    name: Staffing Criteria Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.markingCriteria != null"
+    evidence_path: "entities.markingCriteria"
+    message: "Staffing / marking criteria are missing"
+
+  - id: BD-ICT-045
+    name: Evaluation Criteria Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.criteria != null"
+    evidence_path: "entities.criteriaTotalWeight"
+    message: "Evaluation criteria are missing from the RFP"
+
+  - id: BD-ICT-050
+    name: Eligibility Requirements Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.eligibilitySummary != null"
+    evidence_path: "entities.eligibilitySummary"
+    message: "Eligibility requirements are missing"
+
+  # ── STRUCTURAL HIGH (25 rules) ──────────────────────────────────────────
+
+  - id: BD-ICT-003
+    name: Issue Date Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.issueDate != null"
+    evidence_path: "entities.issueDate"
+    message: "RFP issue date is missing"
+
+  - id: BD-ICT-007
+    name: Method of Selection Stated
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.methodOfSelection != null"
+    evidence_path: "entities.methodOfSelection"
+    message: "Method of selection (QCBS/CQS/FBS/LCS) is not stated"
+
+  - id: BD-ICT-008
+    name: Procurement Method Stated
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.procurementMethod != null"
+    evidence_path: "entities.procurementMethod"
+    message: "Procurement method (OTM/LTM/DPM) is not stated"
+
+  - id: BD-ICT-009
+    name: Project Duration Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.projectDuration != null"
+    evidence_path: "entities.projectDuration"
+    message: "Project duration / implementation timeline is missing"
+
+  - id: BD-ICT-011
+    name: Submission Guidelines Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.guidelinesSummary != null"
+    evidence_path: "entities.guidelinesSummary"
+    message: "Submission guidelines are missing"
+
+  - id: BD-ICT-015
+    name: Evaluation Weights Sum to 100
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.criteriaTotalWeight != null"
+    evidence_path: "entities.criteriaTotalWeight"
+    message: "Evaluation criteria total weight is missing or may not sum to 100"
+
+  - id: BD-ICT-016
+    name: Performance Security Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.performanceSecurity != null"
+    evidence_path: "entities.performanceSecurity"
+    message: "Performance security requirements are not specified"
+
+  - id: BD-ICT-017
+    name: Contact Information Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.contact != null"
+    evidence_path: "entities.contact"
+    message: "Contact information for the procuring entity is missing"
+
+  - id: BD-ICT-018
+    name: Total Users Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.totalUsers != null"
+    evidence_path: "entities.totalUsers"
+    message: "Total number of users is not specified"
+
+  - id: BD-ICT-019
+    name: Concurrent Users Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.concurrentUsers != null"
+    evidence_path: "entities.concurrentUsers"
+    message: "Number of concurrent users is not specified"
+
+  - id: BD-ICT-021
+    name: System Language Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.systemLanguage != null"
+    evidence_path: "entities.systemLanguage"
+    message: "System language requirement (Bangla/English/both) is not specified"
+
+  - id: BD-ICT-025
+    name: Staff Months Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.staffMonths != null"
+    evidence_path: "entities.staffMonths"
+    message: "Staff-months for key personnel are not specified"
+
+  - id: BD-ICT-026
+    name: System Integrations Listed
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.integrations != null"
+    evidence_path: "entities.integrations"
+    message: "System integration requirements are not listed"
+
+  - id: BD-ICT-027
+    name: Hosting Type Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.hosting != null"
+    evidence_path: "entities.hosting"
+    message: "Hosting type (on-premise/cloud/BCC NDC) is not specified"
+
+  - id: BD-ICT-035
+    name: Training Requirements Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.training != null"
+    evidence_path: "entities.training"
+    message: "Training requirements are not specified"
+
+  - id: BD-ICT-036
+    name: Support and Maintenance Terms Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.supportMaintenance != null"
+    evidence_path: "entities.supportMaintenance"
+    message: "Support and maintenance terms are not specified"
+
+  - id: BD-ICT-037
+    name: Warranty Period Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.warrantyPeriod != null"
+    evidence_path: "entities.warrantyPeriod"
+    message: "Warranty period is not specified"
+
+  - id: BD-ICT-038
+    name: Key Personnel Requirements Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.keyPersonnel != null"
+    evidence_path: "entities.keyPersonnel"
+    message: "Key personnel requirements are not specified"
+
+  - id: BD-ICT-041
+    name: Payment Terms Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.paymentTerms != null"
+    evidence_path: "entities.paymentTerms"
+    message: "Payment terms / schedule are not specified"
+
+  - id: BD-ICT-042
+    name: Bank Guarantee Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.bankGuarantee != null"
+    evidence_path: "entities.bankGuarantee"
+    message: "Bank guarantee requirement is not specified"
+
+  - id: BD-ICT-044
+    name: E-Governance Compliance Stated
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.eGovernanceCompliance != null"
+    evidence_path: "entities.eGovernanceCompliance"
+    message: "E-Governance / Digital Bangladesh compliance is not stated"
+
+  - id: BD-ICT-051
+    name: Technical Qualification Requirements Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.similarProjectExperience != null"
+    evidence_path: "entities.similarProjectExperience"
+    message: "Technical qualification requirements are missing"
+
+  - id: BD-ICT-052
+    name: Staff CV Requirements Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.cvRequirements != null"
+    evidence_path: "entities.cvRequirements"
+    message: "Staff CV requirements are not specified"
+
+  - id: BD-ICT-053
+    name: Bid Validity Period Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.bidValidityPeriod != null"
+    evidence_path: "entities.bidValidityPeriod"
+    message: "Bid validity period is not specified"
+
+  - id: BD-ICT-079
+    name: Selection Method Matches Split Ratio
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.methodOfSelection != null && entities.technicalFinancialSplit != null"
+    evidence_path: "entities.methodOfSelection"
+    message: "Selection method and technical-financial split ratio must both be present for consistency verification"
+
+  # ── STRUCTURAL MEDIUM (18 rules) ────────────────────────────────────────
+
+  - id: BD-ICT-010
+    name: Pre-bid Meeting Details Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.preBidMeeting != null"
+    evidence_path: "entities.preBidMeeting"
+    message: "Pre-bid meeting date/details are not specified"
+
+  - id: BD-ICT-012
+    name: Number of Copies Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.numberOfCopies != null"
+    evidence_path: "entities.numberOfCopies"
+    message: "Number of proposal copies required is not specified"
+
+  - id: BD-ICT-013
+    name: Soft Submission Required
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.softSubmissionRequired != null"
+    evidence_path: "entities.softSubmissionRequired"
+    message: "Soft copy submission requirement is not specified"
+
+  - id: BD-ICT-020
+    name: Programming Language Preference Stated
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.programmingLanguagePreference != null"
+    evidence_path: "entities.programmingLanguagePreference"
+    message: "Programming language preference is not stated"
+
+  - id: BD-ICT-022
+    name: System Architecture Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.architecture != null"
+    evidence_path: "entities.architecture"
+    message: "System architecture is not specified"
+
+  - id: BD-ICT-023
+    name: Technology Stack Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.techStack != null"
+    evidence_path: "entities.techStack"
+    message: "Technology stack requirements are not specified"
+
+  - id: BD-ICT-024
+    name: Database Requirements Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.database != null"
+    evidence_path: "entities.database"
+    message: "Database requirements are not specified"
+
+  - id: BD-ICT-028
+    name: Data Migration Requirements Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.dataMigrationRequired != null"
+    evidence_path: "entities.dataMigrationRequired"
+    message: "Data migration requirements are not addressed"
+
+  - id: BD-ICT-029
+    name: Legacy System Integration Addressed
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.legacySystem != null"
+    evidence_path: "entities.legacySystem"
+    message: "Legacy system integration considerations are missing"
+
+  - id: BD-ICT-030
+    name: Hardware Requirements Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.hardwareRequirements != null"
+    evidence_path: "entities.hardwareRequirements"
+    message: "Hardware requirements are not specified"
+
+  - id: BD-ICT-031
+    name: Onsite Resource Requirements Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.onsiteResourceRequirements != null"
+    evidence_path: "entities.onsiteResourceRequirements"
+    message: "Onsite resource requirements are not specified"
+
+  - id: BD-ICT-032
+    name: UI Mock / Wireframe Required
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.uiMockRequired != null"
+    evidence_path: "entities.uiMockRequired"
+    message: "UI mock / wireframe requirement is not specified"
+
+  - id: BD-ICT-033
+    name: Presentation Requirement Stated
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.presentationRequired != null"
+    evidence_path: "entities.presentationRequired"
+    message: "Presentation / demo requirement is not stated"
+
+  - id: BD-ICT-034
+    name: Reimbursable Expenses Defined
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.reimbursableExpenses != null"
+    evidence_path: "entities.reimbursableExpenses"
+    message: "Reimbursable expenses policy is not defined"
+
+  - id: BD-ICT-039
+    name: Gantt Chart Required
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.ganttChartRequired != null"
+    evidence_path: "entities.ganttChartRequired"
+    message: "Gantt chart / project plan requirement is not specified"
+
+  - id: BD-ICT-043
+    name: Mobile Application Requirement Stated
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.mobileAppRequired != null"
+    evidence_path: "entities.mobileAppRequired"
+    message: "Mobile application requirement is not stated"
+
+  - id: BD-ICT-054
+    name: Deadline and Bid Validity Consistent
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.submissionDeadline != null && entities.bidValidityPeriod != null"
+    evidence_path: "entities.bidValidityPeriod"
+    message: "Deadline and bid validity period may be inconsistent (both must be present)"
+
+  - id: BD-ICT-080
+    name: Concurrent Users Within Total Users
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.concurrentUsers != null && entities.totalUsers != null"
+    evidence_path: "entities.concurrentUsers"
+    message: "Concurrent users and total users must both be present for logical consistency (concurrent should not exceed total)"
+
+  # ── INFO (1 rule) ────────────────────────────────────────────────────────
+
+  - id: BD-ICT-055
+    name: Submission Address Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: INFO
+    check_type: structural
+    condition: "entities.submissionAddress != null"
+    evidence_path: "entities.submissionAddress"
+    message: "Submission address for proposal delivery is not specified"
+
+  # ── SEMANTIC HIGH (18 rules) ─────────────────────────────────────────────
+
+  - id: BD-ICT-006
+    name: Submission Time Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.submissionDeadline"
+    llm_prompt: "The submission deadline should include a specific time of day (e.g. 2:00 PM, 14:00), not just a date. Check if the text specifies both a date and a time for proposal submission."
+    message: "Submission deadline may not include a specific time of day"
+
+  - id: BD-ICT-046
+    name: SLA Requirements Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.supportMaintenance"
+    llm_prompt: "Check if the support and maintenance text includes SLA-specific terms such as uptime percentage, response time, resolution time, penalty clauses, or service credits. Generic maintenance mentions without quantified SLA terms are insufficient."
+    message: "Support and maintenance terms may lack specific SLA requirements"
+
+  - id: BD-ICT-047
+    name: Source Code Ownership Stated
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.scopeOfWork"
+    llm_prompt: "Check if the scope of work addresses source code ownership or intellectual property (IP) rights. Look for mentions of who owns the source code, IP transfer, licensing terms, or open-source obligations."
+    message: "Scope of work may not address source code ownership or IP rights"
+
+  - id: BD-ICT-048
+    name: Data Ownership Stated
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.scopeOfWork"
+    llm_prompt: "Check if the scope of work addresses data ownership, data privacy, or data protection terms. Look for mentions of who owns the data, data handling policies, privacy compliance, or data return/deletion obligations."
+    message: "Scope of work may not address data ownership or privacy terms"
+
+  - id: BD-ICT-049
+    name: Acceptance Testing Criteria Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.scopeOfWork"
+    llm_prompt: "Check if the scope of work includes acceptance testing or UAT (User Acceptance Testing) criteria. Look for mentions of test plans, acceptance procedures, pass/fail criteria, or sign-off processes."
+    message: "Scope of work may not include acceptance testing or UAT criteria"
+
+  - id: BD-ICT-056
+    name: Scope of Work is Specific
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.scopeOfWork"
+    llm_prompt: "The scope of work must be specific and measurable, not vague. Check if the scope describes concrete deliverables, tasks, and measurable outcomes rather than generic statements."
+    message: "Scope of work may be vague or insufficiently specific"
+
+  - id: BD-ICT-057
+    name: Acceptance Criteria are Measurable
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.scopeOfWork"
+    llm_prompt: "Acceptance criteria should be measurable and objective. Check if the text defines clear pass/fail criteria with quantifiable metrics rather than subjective assessments."
+    message: "Acceptance criteria may not be measurable or objective"
+
+  - id: BD-ICT-058
+    name: No Contradictory Requirements
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.scopeSummary"
+    llm_prompt: "Check for contradictory or conflicting requirements in the text. Look for statements that contradict each other regarding timelines, scope, technology choices, or deliverables."
+    message: "Document may contain contradictory requirements"
+
+  - id: BD-ICT-062
+    name: SLA Terms are Quantified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.supportMaintenance"
+    llm_prompt: "SLA terms must include quantified metrics such as uptime percentage, response time in hours, resolution time, and penalty clauses. Check if the SLA terms are quantified with specific numbers."
+    message: "SLA terms may lack quantified metrics (uptime %, response time, penalties)"
+
+  - id: BD-ICT-063
+    name: Integration API Details Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.integrations"
+    llm_prompt: "System integration requirements should specify API protocols (REST, SOAP, etc.), data formats, authentication methods, and the systems to integrate with. Check if sufficient technical detail is provided."
+    message: "Integration requirements may lack API-level technical details"
+
+  - id: BD-ICT-065
+    name: Eligibility Criteria are Non-Discriminatory
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.eligibilitySummary"
+    llm_prompt: "Check if the eligibility criteria contain unreasonable barriers, discriminatory requirements, or overly restrictive conditions that could limit fair competition. PPR 2008 prohibits eligibility criteria that unfairly exclude qualified bidders. Look for requirements like excessive turnover thresholds, unnecessary certifications, or geographic restrictions."
+    message: "Eligibility criteria may contain discriminatory or overly restrictive requirements"
+
+  - id: BD-ICT-066
+    name: Marking Criteria are Measurable
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.markingCriteria"
+    llm_prompt: "Check if the marking/scoring criteria are objective, quantifiable, and measurable rather than relying on subjective assessments. Look for clear scoring rubrics with defined point allocations, specific metrics, and transparent evaluation methods. Vague criteria like 'quality of approach' without defined scoring parameters are insufficient."
+    message: "Marking criteria may lack objective and measurable scoring parameters"
+
+  - id: BD-ICT-067
+    name: Key Personnel Roles Clearly Defined
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.keyPersonnel"
+    llm_prompt: "Check if key personnel requirements clearly define each role with specific qualifications, minimum years of experience, educational requirements, and responsibilities. Generic role titles without detailed qualification requirements are insufficient."
+    message: "Key personnel requirements may lack clear role definitions, qualifications, or experience requirements"
+
+  - id: BD-ICT-072
+    name: Technical-Financial Split Follows Standard Ratios
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.technicalFinancialSplit"
+    llm_prompt: "Check if the technical-financial evaluation split follows standard QCBS ratios. Typical BD government ICT procurement uses 70-80% technical and 20-30% financial weight. Splits outside this range (e.g. 50:50 or 90:10) should be flagged as non-standard."
+    message: "Technical-financial split ratio may not follow standard QCBS ratios (70-80 technical / 20-30 financial)"
+
+  - id: BD-ICT-073
+    name: Technical Score Threshold Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.eligibilitySummary"
+    llm_prompt: "Check if the document specifies a minimum technical score threshold for qualification. PPR 2008 requires a minimum technical score (typically 60-75%) that proposals must achieve before financial envelopes are opened. Look for mentions of minimum passing score, technical qualification threshold, or cut-off marks."
+    message: "Minimum technical score threshold may not be specified (PPR 2008 typically requires 60-75%)"
+
+  - id: BD-ICT-074
+    name: Two-Envelope System Specified
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.guidelinesSummary"
+    llm_prompt: "Check if the submission guidelines specify a two-envelope system with separate technical and financial proposals. Standard BD government procurement requires technical and financial proposals in separate sealed envelopes. Look for mentions of separate envelopes, two-envelope submission, or distinct technical and financial proposal packages."
+    message: "Submission guidelines may not specify the standard two-envelope system for technical and financial proposals"
+
+  - id: BD-ICT-077
+    name: Security Audit Requirements Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.scopeOfWork"
+    llm_prompt: "Check if the scope of work includes security audit or vulnerability assessment requirements. Government ICT systems should require VAPT (Vulnerability Assessment and Penetration Testing), security audit, code review, or equivalent security testing before deployment. Look for mentions of security testing, penetration testing, VAPT, or security certification."
+    message: "Scope of work may not include security audit or VAPT requirements for the ICT system"
+
+  - id: BD-ICT-078
+    name: Data Localization Required
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.hosting"
+    llm_prompt: "Check if the hosting requirements include data localization or data sovereignty provisions. BD government policy requires government data to remain within Bangladesh. Look for mentions of data localization, in-country hosting, data sovereignty, BCC NDC, or restrictions on data leaving Bangladesh."
+    message: "Hosting requirements may not specify data localization or data sovereignty provisions"
+
+  # ── SEMANTIC MEDIUM (10 rules) ─────────────────────────────────────────
+
+  - id: BD-ICT-059
+    name: SLA Targets are Realistic
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.supportMaintenance"
+    llm_prompt: "SLA targets should be realistic and achievable. Check if uptime targets (e.g. 99.99%), response times, or penalty amounts are unreasonably demanding or unrealistic for the project scope."
+    message: "SLA targets may be unrealistic for the project scope"
+
+  - id: BD-ICT-060
+    name: Payment Tied to Deliverables
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.paymentTerms"
+    llm_prompt: "Payment milestones should be tied to specific deliverables or acceptance criteria, not arbitrary dates. Check if payments are linked to measurable deliverables."
+    message: "Payment terms may not be tied to specific deliverables"
+
+  - id: BD-ICT-061
+    name: Training Scope is Bounded
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.training"
+    llm_prompt: "Training requirements should specify the number of trainees, duration, topics, and delivery method. Check if the training scope is bounded with clear limits rather than open-ended."
+    message: "Training scope may be unbounded or insufficiently specified"
+
+  - id: BD-ICT-064
+    name: Implementation Deadline is Reasonable
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.projectDuration"
+    llm_prompt: "The implementation timeline should be reasonable given the scope of work. Check if the timeline appears too short for the described scope, or if it lacks intermediate milestones."
+    message: "Implementation deadline may be too short for the described scope"
+
+  - id: BD-ICT-068
+    name: Performance Security Within PPR Norms
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.performanceSecurity"
+    llm_prompt: "Check if the performance security requirement falls within PPR 2008 norms. The performance security is typically 5-10% of the contract value. Amounts significantly above or below this range should be flagged. Look for the percentage or amount specified and assess if it is reasonable."
+    message: "Performance security percentage may not be within standard PPR 2008 norms (typically 5-10%)"
+
+  - id: BD-ICT-069
+    name: Bank Guarantee Amount Reasonable
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.bankGuarantee"
+    llm_prompt: "Check if the bank guarantee amount or percentage is reasonable for the project scope. Look for the specified amount or percentage and assess whether it is proportionate to the contract value. Excessively high guarantees can unfairly exclude smaller firms."
+    message: "Bank guarantee amount may not be proportionate to the contract value"
+
+  - id: BD-ICT-070
+    name: Warranty Period Reasonable for ICT
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.warrantyPeriod"
+    llm_prompt: "Check if the warranty period is reasonable for ICT procurement. Typical ICT warranty periods are 1-3 years. Periods shorter than 1 year may be insufficient for software systems, while periods exceeding 3 years may be unreasonable without corresponding maintenance contracts."
+    message: "Warranty period may not be reasonable for ICT procurement (typically 1-3 years)"
+
+  - id: BD-ICT-071
+    name: Bid Validity Period Meets Minimum
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.bidValidityPeriod"
+    llm_prompt: "Check if the bid validity period meets the minimum requirements under PPR 2008. The bid validity period should typically be 90-180 days. Periods shorter than 90 days may be insufficient for evaluation, while periods exceeding 180 days place excessive burden on bidders."
+    message: "Bid validity period may not meet PPR 2008 minimum requirements (typically 90-180 days)"
+
+  - id: BD-ICT-075
+    name: Conflict of Interest Clause Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.scopeSummary"
+    llm_prompt: "Check if the document includes a conflict of interest clause or provision. CPTU guidelines require disclosure and management of conflicts of interest. Look for mentions of conflict of interest, related party restrictions, or ethical conduct requirements."
+    message: "Document may not include a conflict of interest clause as required by CPTU guidelines"
+
+  - id: BD-ICT-076
+    name: Dispute Resolution Clause Present
+    pack: bd-govt-ict-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.scopeSummary"
+    llm_prompt: "Check if the document includes a dispute resolution or arbitration clause. Standard procurement contracts should specify how disputes will be resolved, including arbitration procedures, governing law, and escalation mechanisms."
+    message: "Document may not include a dispute resolution or arbitration clause"
