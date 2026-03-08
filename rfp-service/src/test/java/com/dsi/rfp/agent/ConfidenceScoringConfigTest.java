@@ -69,10 +69,10 @@ class ConfidenceScoringConfigTest {
 
         assertThat(strategies).containsKeys(
             "TOC", "BOOKMARK", "HEADING_STYLE", "NUMBERED",
-            "BANGLA", "FONT_SIZE", "ALL_CAPS", "LLM", "DEFAULT"
+            "BANGLA", "FONT_SIZE", "ALL_CAPS", "LLM", "UNKNOWN"
         );
         assertThat(strategies.get("TOC")).isEqualTo(1.0);
-        assertThat(strategies.get("DEFAULT")).isEqualTo(0.60);
+        assertThat(strategies.get("UNKNOWN")).isEqualTo(0.60);
     }
 
     @Test
@@ -80,10 +80,10 @@ class ConfidenceScoringConfigTest {
         Map<String, Double> provenance = config.tableProvenanceConfidence();
 
         assertThat(provenance).containsKeys(
-            "LATTICE", "STREAM", "OCR_LLM_RECONSTRUCT", "DEFAULT"
+            "LATTICE", "STREAM", "OCR_LLM_RECONSTRUCT", "UNKNOWN"
         );
         assertThat(provenance.get("LATTICE")).isEqualTo(0.85);
-        assertThat(provenance.get("DEFAULT")).isEqualTo(0.50);
+        assertThat(provenance.get("UNKNOWN")).isEqualTo(0.50);
     }
 
     @Test

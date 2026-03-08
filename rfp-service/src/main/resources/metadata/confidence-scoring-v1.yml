@@ -333,14 +333,14 @@ sectionStrategyConfidence:
   FONT_SIZE: 0.70
   ALL_CAPS: 0.55
   LLM: 0.75
-  DEFAULT: 0.60
+  UNKNOWN: 0.60
 
 # --- Table Provenance Confidence (Sprint 7) ---
 tableProvenanceConfidence:
   LATTICE: 0.85
   STREAM: 0.65
   OCR_LLM_RECONSTRUCT: 0.55
-  DEFAULT: 0.50
+  UNKNOWN: 0.50
 
 # --- Repair Limits (Sprint 7) ---
 repair:
