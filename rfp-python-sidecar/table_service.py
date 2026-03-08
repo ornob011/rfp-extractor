@@ -1,9 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from importlib import import_module
 from typing import Literal
 
 import camelot
+
+
+@dataclass(frozen=True)
+class TableBoundingBox:
+    x: float
+    y: float
+    width: float
+    height: float
 
 
 @dataclass(frozen=True)
@@ -20,9 +29,11 @@ class TableCell:
 class ExtractedTable:
     caption: str | None
     headers: list[str]
+    rows: list[list[str]]
     grid: list[list[TableCell]]
     confidence: float
     method: str
+    bbox: TableBoundingBox | None
 
 
 class TableService:
@@ -38,15 +49,43 @@ class TableService:
             flavor=strategy,
         )
 
-        return [self._to_extracted_table(table, strategy) for table in tables]
+        return [
+            self._to_extracted_table(
+                table,
+                strategy,
+                document_path,
+                page_number,
+            )
+            for table in tables
+        ]
+
+    def extract_page_with_strategies(
+        self,
+        document_path: str,
+        page_number: int,
+        strategies: list[str],
+    ) -> list[ExtractedTable]:
+        extracted_tables = map(
+            lambda strategy: self.extract_page(
+                document_path,
+                page_number,
+                strategy,
+            ),
+            strategies,
+        )
+
+        return next((tables for tables in extracted_tables if tables), [])
 
     def _to_extracted_table(
         self,
         table: camelot.core.Table,
         strategy: str,
+        document_path: str,
+        page_number: int,
     ) -> ExtractedTable:
         raw_grid = table.df.fillna("").values.tolist()
         headers = raw_grid[0] if raw_grid else []
+        rows = raw_grid[1:] if raw_grid else []
         mapped_grid = [
             [
                 TableCell(
@@ -65,8 +104,40 @@ class TableService:
         return ExtractedTable(
             caption=None,
             headers=[str(value).strip() for value in headers],
+            rows=[[str(value).strip() for value in row] for row in rows],
             grid=mapped_grid,
             confidence=float(table.accuracy) / 100.0,
             method=strategy,
+            bbox=self._resolve_bbox(
+                table,
+                document_path,
+                page_number,
+            ),
         )
 
+    def _resolve_bbox(
+        self,
+        table: camelot.core.Table,
+        document_path: str,
+        page_number: int,
+    ) -> TableBoundingBox | None:
+        bbox = getattr(table, "_bbox", None)
+
+        if bbox is None:
+            return None
+
+        pdfplumber = import_module("pdfplumber")
+
+        with pdfplumber.open(document_path) as pdf:
+            page = pdf.pages[page_number - 1]
+            page_width = float(page.width)
+            page_height = float(page.height)
+
+        x0, y0, x1, y1 = bbox
+
+        return TableBoundingBox(
+            x=x0 / page_width,
+            y=(page_height - y1) / page_height,
+            width=(x1 - x0) / page_width,
+            height=(y1 - y0) / page_height,
+        )

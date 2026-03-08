@@ -7,4 +7,6 @@ pytesseract==0.3.13
 pdfplumber==0.11.5
 camelot-py==1.0.9
 opencv-python-headless==4.11.0.86
-# easyocr==1.7.2  # Uncomment in Sprint 6 — requires GPU/CPU heavy install
+easyocr==1.7.2
+numpy==1.26.4
+PyYAML==6.0.2

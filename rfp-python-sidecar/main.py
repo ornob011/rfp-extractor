@@ -2,11 +2,14 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Literal
 
-from fastapi import FastAPI
-from pydantic import BaseModel
+import easyocr
+from fastapi import FastAPI, HTTPException
+from pydantic import Base64Bytes, BaseModel
 
-from ocr_service import OcrService
-from table_service import TableService
+from layout_detector import LayoutDetectionResult
+from ocr_service import OcrResult, OcrService
+from reading_order import ReadingOrderResult
+from table_service import ExtractedTable, TableService
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +21,15 @@ async def lifespan(app: FastAPI):
         " jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA"
         " message=RFP sidecar starting up"
     )
-    app.state.ocr_service = OcrService()
-    app.state.table_service = TableService()
+
+    app.state.table_service = getattr(app.state, "table_service", None) or TableService()
+    app.state.ocr_service = getattr(app.state, "ocr_service", None) or OcrService(
+        easyocr.Reader(["en", "bn"], gpu=False),
+        app.state.table_service,
+    )
+
     yield
+
     logger.info(
         "event=shutdown component=rfp-sidecar status=INFO"
         " jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA"
@@ -34,6 +43,7 @@ app = FastAPI(title="RFP Python Sidecar", version="1.0.0", lifespan=lifespan)
 class HealthResponse(BaseModel):
     status: str
     version: str
+    ocr_engine: str
 
 
 class TableExtractRequest(BaseModel):
@@ -59,13 +69,39 @@ class TableResponse(BaseModel):
     method: str
 
 
+class ScannedTableResponse(BaseModel):
+    headers: list[str]
+    rows: list[list[str]]
+    confidence: float
+    method: str
+
+
 class TableExtractResponse(BaseModel):
     tables: list[TableResponse]
 
 
+class OcrRequest(BaseModel):
+    image_base64: Base64Bytes
+    lang: str = "eng+ben"
+    dpi: int = 300
+    document_path: str | None = None
+    page_number: int | None = None
+
+
+class OcrPageWithLayoutResponse(BaseModel):
+    ocr_result: OcrResult
+    layout: LayoutDetectionResult
+    reading_order: ReadingOrderResult
+    scanned_tables: list[ScannedTableResponse]
+
+
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
-    return HealthResponse(status="ok", version="1.0.0")
+    return HealthResponse(
+        status="ok",
+        version="1.0.0",
+        ocr_engine="easyocr+tesseract",
+    )
 
 
 @app.post("/v1/table/extract", response_model=TableExtractResponse)
@@ -77,27 +113,86 @@ async def extract_table(request: TableExtractRequest) -> TableExtractResponse:
     )
 
     response_tables = [
-        TableResponse(
-            caption=table.caption,
-            headers=table.headers,
-            grid=[
-                [
-                    TableCellResponse(
-                        row=cell.row,
-                        col=cell.col,
-                        value=cell.value,
-                        rowspan=cell.rowspan,
-                        colspan=cell.colspan,
-                        isHeader=cell.is_header,
-                    )
-                    for cell in row
-                ]
-                for row in table.grid
-            ],
-            confidence=table.confidence,
-            method=table.method,
-        )
+        _table_response(table)
         for table in extracted_tables
     ]
 
     return TableExtractResponse(tables=response_tables)
+
+
+@app.post("/ocr/page", response_model=OcrResult)
+async def ocr_page(request: OcrRequest) -> OcrResult:
+    ocr_service: OcrService | None = getattr(app.state, "ocr_service", None)
+
+    if ocr_service is None:
+        raise HTTPException(
+            status_code=503,
+            detail="OCR service not available",
+        )
+
+    return ocr_service.extract_page(bytes(request.image_base64), request.lang)
+
+
+@app.post("/ocr/page-with-layout", response_model=OcrPageWithLayoutResponse)
+async def ocr_page_with_layout(
+    request: OcrRequest,
+) -> OcrPageWithLayoutResponse:
+    ocr_service: OcrService | None = getattr(app.state, "ocr_service", None)
+
+    if ocr_service is None:
+        raise HTTPException(
+            status_code=503,
+            detail="OCR service not available",
+        )
+
+    ocr_result, layout, reading_order, scanned_tables = ocr_service.extract_page_with_layout(
+        bytes(request.image_base64),
+        request.document_path,
+        request.page_number,
+    )
+
+    return OcrPageWithLayoutResponse(
+        ocr_result=ocr_result,
+        layout=layout,
+        reading_order=reading_order,
+        scanned_tables=[
+            _scanned_table_response(table)
+            for table in scanned_tables
+        ],
+    )
+
+
+def _table_response(
+    table: ExtractedTable,
+) -> TableResponse:
+    return TableResponse(
+        caption=table.caption,
+        headers=table.headers,
+        grid=[
+            [
+                TableCellResponse(
+                    row=cell.row,
+                    col=cell.col,
+                    value=cell.value,
+                    rowspan=cell.rowspan,
+                    colspan=cell.colspan,
+                    isHeader=cell.is_header,
+                )
+                for cell in row
+            ]
+            for row in table.grid
+        ],
+        confidence=table.confidence,
+        method=table.method,
+    )
+
+
+def _scanned_table_response(
+    table: ExtractedTable,
+) -> ScannedTableResponse:
+    return ScannedTableResponse(
+        headers=table.headers,
+        rows=table.rows,
+        confidence=table.confidence,
+        method=table.method,
+    )
