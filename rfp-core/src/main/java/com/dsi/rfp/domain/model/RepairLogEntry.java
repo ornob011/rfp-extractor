@@ -9,15 +9,22 @@ import java.time.Instant;
 @Builder
 public class RepairLogEntry {
 
-    String fieldId;
+    String componentId;
 
-    String previousValue;
+    RepairComponentType componentType;
 
-    String newValue;
+    int attemptNumber;
 
-    String repairReason;
+    RepairStrategy strategy;
 
-    int iterationNumber;
+    double beforeConfidence;
 
-    Instant timestamp;
+    double afterConfidence;
+
+    RepairOutcome outcome;
+
+    String reason;
+
+    @Builder.Default
+    Instant timestamp = Instant.now();
 }

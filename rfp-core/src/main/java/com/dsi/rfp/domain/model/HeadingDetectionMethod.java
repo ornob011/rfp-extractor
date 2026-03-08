@@ -7,5 +7,6 @@ public enum HeadingDetectionMethod {
     NUMBERED,
     BANGLA,
     FONT_SIZE,
-    ALL_CAPS
+    ALL_CAPS,
+    LLM
 }
