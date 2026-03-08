@@ -5,10 +5,12 @@ import { SectionTree } from '@/components/SectionTree';
 import { EntityTable } from '@/components/EntityTable';
 import { TableViewer } from '@/components/TableViewer';
 import { PageSummaryTab } from '@/components/PageSummaryTab';
+import { RulePackResultsPanel } from '@/components/RulePackResults';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { TableExtractionResult } from '@/types/table';
 import type { PageDetail } from '@/types/rfp';
+import type { RulePackResults } from '@/types/rulepack';
 
 export function ResultPage() {
     const { jobId } = useParams<{ jobId: string }>();
@@ -99,6 +101,11 @@ export function ResultPage() {
                 </h2>
                 <PagesPanel pageDetails={result.pageDetails} />
             </section>
+
+            <section className="rounded-lg border bg-card p-4">
+                <h2 className="mb-3 text-sm font-semibold text-foreground">Rule Pack</h2>
+                <RulePackPanel rulePackResults={result.rulePackResults} />
+            </section>
         </div>
     );
 }
@@ -182,4 +189,18 @@ function PagesPanel(
     }
 
     return <PageSummaryTab pageDetails={pageDetails} />;
+}
+
+function RulePackPanel(
+    { rulePackResults }: { rulePackResults: RulePackResults | undefined },
+) {
+    if (!rulePackResults) {
+        return (
+            <p className="text-muted-foreground text-sm italic">
+                No rule pack results available.
+            </p>
+        );
+    }
+
+    return <RulePackResultsPanel results={rulePackResults} />;
 }

@@ -1,4 +1,5 @@
 import type { TableExtractionResult } from '@/types/table';
+import type { RulePackResults } from '@/types/rulepack';
 
 export type JobStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'PARTIAL';
 
@@ -155,5 +156,6 @@ export interface RfpResultResponse {
     confidenceMap?: Record<string, number>;
     tables?: TableExtractionResult[];
     pageDetails?: PageDetail[];
+    rulePackResults?: RulePackResults;
     badgeThresholds?: BadgeThresholds;
 }
