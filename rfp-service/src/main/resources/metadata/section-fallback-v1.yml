@@ -1,0 +1,12 @@
+version: 1
+promptResourcePath: prompts/section-segmentation-fallback-v1.md
+trigger:
+  minPages: 20
+  minSections: 3
+prompt:
+  pageWindow: 3
+  maxTextChars: 3500
+merge:
+  dedupLevenshteinThreshold: 3
+confidence:
+  score: 0.75
