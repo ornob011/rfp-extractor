@@ -25,4 +25,13 @@ public class RfpDocument {
 
     @Builder.Default
     List<Clause> clauses = List.of();
+
+    @Builder.Default
+    List<PageSummary> pageClassifications = List.of();
+
+    @Builder.Default
+    Map<Integer, Double> pageConfidences = Map.of();
+
+    @Builder.Default
+    Map<Integer, PageExtractionMethod> pageExtractionMethods = Map.of();
 }
