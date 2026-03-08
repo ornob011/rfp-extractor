@@ -12,6 +12,7 @@ import com.dsi.rfp.domain.model.ValidationResult;
 import com.dsi.rfp.domain.port.out.FileStoragePort;
 import com.dsi.rfp.domain.port.out.JobStatePort;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -127,7 +128,7 @@ public class RfpSubmissionService {
                                                                         .originalFilename(filename)
                                                                         .contentType(MediaType.APPLICATION_PDF_VALUE)
                                                                         .fileSizeBytes(size)
-                                                                        .storagePath("")
+                                                                        .storagePath(StringUtils.EMPTY)
                                                                         .sha256Checksum(checksum)
                                                                         .build();
                                      return documentRepository.save(doc);

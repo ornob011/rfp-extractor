@@ -1,6 +1,7 @@
 package com.dsi.rfp.config;
 
 import com.dsi.rfp.domain.model.LlmProvider;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -12,7 +13,7 @@ class LlmProviderConfigTest {
     void shouldThrowWhenOpenRouterApiKeyIsBlankAndProviderIsOpenrouter() {
         LlmProviderProperties props = new LlmProviderProperties();
         props.setProvider(LlmProvider.OPENROUTER);
-        props.getOpenrouter().setApiKey("");
+        props.getOpenrouter().setApiKey(StringUtils.EMPTY);
         LlmProviderConfig config = new LlmProviderConfig(props);
         assertThatThrownBy(config::validateConfiguration)
             .isInstanceOf(IllegalStateException.class)
