@@ -1,0 +1,341 @@
+pack_id: bd-govt-works-v1
+pack_version: "1.0.0"
+rfp_type: WORKS
+rules:
+  # ── FATAL (8 rules) ──────────────────────────────────────────────────────
+
+  - id: BD-W-001
+    name: RFP Title Present
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "sections[?title] | length(@) > `0`"
+    evidence_path: "sections[0].title"
+    message: "RFP title is missing from the document"
+
+  - id: BD-W-002
+    name: Procurement Reference Present
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.procurementReference != null"
+    evidence_path: "entities.procurementReference"
+    message: "Procurement reference number is missing. PPR 2008 requires a unique procurement reference for all works tenders."
+
+  - id: BD-W-003
+    name: Client Name Present
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.clientName != null"
+    evidence_path: "entities.clientName"
+    message: "Client / Employer name is missing"
+
+  - id: BD-W-004
+    name: Submission Deadline Present
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.submissionDeadline != null"
+    evidence_path: "entities.submissionDeadline"
+    message: "Submission deadline is missing. This is a PPR 2008 mandatory field."
+
+  - id: BD-W-005
+    name: Contractor Eligibility Requirements Present
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.eligibilitySummary != null"
+    evidence_path: "entities.eligibilitySummary"
+    message: "Eligibility / experience requirements for the contractor are absent. Contractor qualification criteria (minimum years of experience, annual turnover) must be stated."
+
+  - id: BD-W-006
+    name: Scope of Work / Bill of Quantities Present
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.scopeOfWork != null"
+    evidence_path: "entities.scopeOfWork"
+    message: "Scope of work or Bill of Quantities (BOQ) is missing. A BOQ or detailed work schedule is mandatory for works contracts."
+
+  - id: BD-W-007
+    name: Evaluation Criteria Present
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.criteria != null"
+    evidence_path: "entities.criteriaTotalWeight"
+    message: "Evaluation criteria are missing. PPR 2008 requires explicit evaluation criteria for works contracts."
+
+  - id: BD-W-009
+    name: Technical-Financial Split Specified
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.technicalFinancialSplit != null"
+    evidence_path: "entities.technicalFinancialSplit"
+    message: "Technical-financial split ratio is not specified. Works contracts must state whether evaluation is single-stage or two-envelope."
+
+  # ── HIGH (14 rules: 11 structural + 3 semantic) ──────────────────────────
+
+  - id: BD-W-027
+    name: Method of Selection Specified
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.methodOfSelection != null"
+    evidence_path: "entities.methodOfSelection"
+    message: "Method of selection (LCB/ICB/NCB/Direct Contracting) is not stated"
+
+  - id: BD-W-028
+    name: Procurement Method Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.procurementMethod != null"
+    evidence_path: "entities.procurementMethod"
+    message: "Procurement method (OTM/LTM/DPM) is not stated"
+
+  - id: BD-W-008
+    name: Evaluation Criteria Weights Sum Present
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.criteriaTotalWeight != null"
+    evidence_path: "entities.criteriaTotalWeight"
+    message: "Evaluation criteria weights total is missing. Weights must sum to 100."
+
+  - id: BD-W-010
+    name: Performance Security Percentage Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.performanceSecurity != null"
+    evidence_path: "entities.performanceSecurity"
+    message: "Performance security percentage is missing. Standard GOB works contracts require 10% of contract price."
+
+  - id: BD-W-011
+    name: Bank Guarantee Mentioned
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.bankGuarantee != null"
+    evidence_path: "entities.bankGuarantee"
+    message: "Bank guarantee requirement is not specified. Works contracts typically require a bank guarantee as performance security."
+
+  - id: BD-W-012
+    name: Payment Terms Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.paymentTerms != null"
+    evidence_path: "entities.paymentTerms"
+    message: "Payment terms are absent. Payment milestones and schedule must be defined for works contracts."
+
+  - id: BD-W-013
+    name: Project Duration Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.projectDuration != null"
+    evidence_path: "entities.projectDuration"
+    message: "Project duration / completion period is not specified"
+
+  - id: BD-W-014
+    name: Submission Address Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.submissionAddress != null"
+    evidence_path: "entities.submissionAddress"
+    message: "Submission address or contact information is missing"
+
+  - id: BD-W-015
+    name: Bid Validity Period Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.bidValidityPeriod != null"
+    evidence_path: "entities.bidValidityPeriod"
+    message: "Bid validity period is not stated"
+
+  - id: BD-W-016
+    name: Liquidated Damages Clause Present
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.pricingFactors != null"
+    evidence_path: "entities.pricingFactors"
+    message: "No liquidated damages clause found. Works contracts must specify LD rates for delay (typically 0.05-0.15% of contract value per day, capped at 5-10%)."
+
+  - id: BD-W-017
+    name: Retention Money Clause Present
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.retentionMoney != null"
+    evidence_path: "entities.retentionMoney"
+    message: "No retention money clause found. Standard GOB works contracts retain 10% (5% released at completion, 5% at defects liability end)."
+
+  - id: BD-W-018
+    name: Defects Liability Period Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.supportMaintenance != null"
+    evidence_path: "entities.supportMaintenance"
+    message: "Defects liability period is not stated. Typical duration is 6-12 months from date of completion certificate."
+
+  - id: BD-W-022
+    name: Key Personnel Requirements Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.keyPersonnel != null"
+    evidence_path: "entities.keyPersonnel"
+    message: "Key personnel or staff requirements (site engineer, project manager) are not specified"
+
+  # ── MEDIUM (8 structural rules) ──────────────────────────────────────────
+
+  - id: BD-W-019
+    name: Site Inspection Requirement Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.siteInspection != null"
+    evidence_path: "entities.siteInspection"
+    message: "Site inspection / visit requirement not found. Tenderers should visit the site before submission to understand site conditions."
+
+  - id: BD-W-020
+    name: Pre-Bid Meeting Information Present
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.preBidMeeting != null"
+    evidence_path: "entities.preBidMeeting"
+    message: "Pre-bid meeting details are missing"
+
+  - id: BD-W-021
+    name: Number of Bid Copies Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.numberOfCopies != null"
+    evidence_path: "entities.numberOfCopies"
+    message: "Number of bid copies required is not stated"
+
+  - id: BD-W-023
+    name: Reimbursable Expenses Policy Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.reimbursableExpenses != null"
+    evidence_path: "entities.reimbursableExpenses"
+    message: "Reimbursable expenses policy is not defined"
+
+  - id: BD-W-024
+    name: Extension of Time Clause Present
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.extensionOfTime != null"
+    evidence_path: "entities.extensionOfTime"
+    message: "No extension of time (EOT) clause found. Works contracts must define conditions under which the completion date may be extended."
+
+  - id: BD-W-025
+    name: Mobilization Advance Mentioned
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.mobilizationAdvance != null"
+    evidence_path: "entities.mobilizationAdvance"
+    message: "Mobilization advance / advance payment clause not found. GOB works contracts typically allow 10-20% advance secured by bank guarantee."
+
+  - id: BD-W-026
+    name: Insurance Requirements Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.insuranceRequirements != null"
+    evidence_path: "entities.insuranceRequirements"
+    message: "Insurance requirements (Contractor All Risk, Third Party Liability, Workmen's Compensation) are not specified."
+
+  - id: BD-W-029
+    name: Programme of Work Required
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.ganttChartRequired != null"
+    evidence_path: "entities.ganttChartRequired"
+    message: "No requirement for programme of work, Gantt chart, or construction schedule found"
+
+  - id: BD-W-030
+    name: On-Site Resource Requirements Stated
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.onsiteResourceRequirements != null"
+    evidence_path: "entities.onsiteResourceRequirements"
+    message: "On-site resource requirements are not specified"
+
+  # ── SEMANTIC (3 rules) ───────────────────────────────────────────────────
+
+  - id: BD-W-031
+    name: Scope of Works Is Sufficiently Specific to Estimate
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.scopeOfWork"
+    llm_prompt: "Assess whether the scope of works described is sufficiently specific for a contractor to accurately prepare a cost estimate and bill of quantities. It must define work types, approximate quantities, site conditions, and materials. Vague language like 'miscellaneous civil works' without elaboration is insufficient."
+    message: "Scope of works is insufficiently specific for cost estimation. A contractor cannot reliably price the BOQ without more detail."
+
+  - id: BD-W-032
+    name: Payment Terms Tied to Measurable Milestones
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.paymentTerms"
+    llm_prompt: "Determine whether the payment terms are clearly tied to measurable, objective milestones (e.g., completion of foundation work, structural work, finishing, commissioning) rather than vague time periods or discretionary events."
+    message: "Payment terms are not clearly tied to measurable milestones, creating dispute risk"
+
+  - id: BD-W-033
+    name: Liquidated Damages Rate Is Proportional
+    pack: bd-govt-works-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.scopeOfWork"
+    llm_prompt: "Evaluate whether the document mentions liquidated damages and if the LD rate per day is proportional and commercially reasonable (typically 0.05-0.15% of contract value per day, up to a cap of 5-10%). An LD rate exceeding 0.5% per day without a cap, or an uncapped LD clause, is excessive."
+    message: "Liquidated damages rate appears disproportionate (too high or uncapped). Seek clarification before bidding."
