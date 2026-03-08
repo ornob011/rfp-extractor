@@ -4,6 +4,8 @@ import com.dsi.rfp.agent.ConfidenceScoringConfig;
 import com.dsi.rfp.application.service.RfpJobService;
 import com.dsi.rfp.application.service.RfpSubmissionService;
 import com.dsi.rfp.domain.model.AnalysisStatus;
+import com.dsi.rfp.domain.model.PageExtractionMethod;
+import com.dsi.rfp.domain.model.PageSummary;
 import com.dsi.rfp.domain.model.RfpDocument;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +17,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -93,6 +97,7 @@ public class RfpController {
                                                       .entities(parsedResult.entities())
                                                       .confidenceMap(parsedResult.confidenceMap())
                                                       .tables(parsedResult.tables())
+                                                      .pageDetails(parsedResult.pageDetails())
                                                       .badgeThresholds(buildBadgeThresholds())
                                                       .build();
 
@@ -101,7 +106,7 @@ public class RfpController {
 
     private ParsedResult parseResult(JsonNode resultJson) {
         if (resultJson == null) {
-            return new ParsedResult(null, null, null);
+            return new ParsedResult(null, null, null, null);
         }
 
         RfpDocument result = objectMapper.convertValue(
@@ -112,8 +117,62 @@ public class RfpController {
         return new ParsedResult(
             objectMapper.valueToTree(result.getEntities()),
             objectMapper.valueToTree(result.getConfidenceMap()),
-            objectMapper.valueToTree(result.getTables())
+            objectMapper.valueToTree(result.getTables()),
+            objectMapper.valueToTree(
+                buildPageDetails(result)
+            )
         );
+    }
+
+    private List<PageDetailDto> buildPageDetails(RfpDocument result) {
+        return result.getPageClassifications().stream()
+                     .map(page -> buildPageDetail(page, result))
+                     .toList();
+    }
+
+    private PageDetailDto buildPageDetail(
+        PageSummary page,
+        RfpDocument result
+    ) {
+        double confidence = result.getPageConfidences()
+                                  .getOrDefault(page.getPageNumber(), 1.0);
+
+        PageExtractionMethod method = resolveExtractionMethod(
+            page,
+            result
+        );
+
+        return new PageDetailDto(
+            page.getPageNumber(),
+            page.getClassification(),
+            method,
+            confidence
+        );
+    }
+
+    private PageExtractionMethod resolveExtractionMethod(
+        PageSummary page,
+        RfpDocument result
+    ) {
+        return Optional.ofNullable(
+                           pageExtractionMethods(result).get(page.getPageNumber())
+                       )
+                       .orElseGet(() -> defaultMethod(page));
+    }
+
+    private Map<Integer, PageExtractionMethod> pageExtractionMethods(
+        RfpDocument result
+    ) {
+        return Optional.ofNullable(result.getPageExtractionMethods())
+                       .orElse(Map.of());
+    }
+
+    private PageExtractionMethod defaultMethod(PageSummary page) {
+        return switch (page.getClassification()) {
+            case DIGITAL -> PageExtractionMethod.TEXT_LAYER;
+            case SCANNED -> PageExtractionMethod.OCR;
+            case MIXED -> PageExtractionMethod.TEXT_PLUS_OCR;
+        };
     }
 
     private RfpResultResponse.BadgeThresholds buildBadgeThresholds() {
@@ -126,7 +185,8 @@ public class RfpController {
     private record ParsedResult(
         JsonNode entities,
         JsonNode confidenceMap,
-        JsonNode tables
+        JsonNode tables,
+        JsonNode pageDetails
     ) {
     }
 }
