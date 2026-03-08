@@ -18,6 +18,7 @@ public class OcrSidecarClient {
 
     private static final String RESILIENCE_INSTANCE = "ocr";
     private static final int DEFAULT_DPI = 300;
+    private static final String DEFAULT_LANGUAGE = "eng+ben";
 
     private final RestClient restClient;
     private final String sidecarUrl;
@@ -35,10 +36,8 @@ public class OcrSidecarClient {
         byte[] imageBytes,
         String lang
     ) {
-        String base64 = Base64.getEncoder().encodeToString(imageBytes);
-
         OcrPageRequest request = new OcrPageRequest(
-            base64,
+            Base64.getEncoder().encodeToString(imageBytes),
             lang,
             DEFAULT_DPI
         );
@@ -84,12 +83,25 @@ public class OcrSidecarClient {
         String documentPath,
         int pageNumber
     ) {
-        String base64 = Base64.getEncoder().encodeToString(imageBytes);
+        return extractPageWithLayout(
+            imageBytes,
+            documentPath,
+            pageNumber,
+            DEFAULT_DPI
+        );
+    }
 
+    @Retry(name = RESILIENCE_INSTANCE)
+    public OcrPageWithLayoutResultDto extractPageWithLayout(
+        byte[] imageBytes,
+        String documentPath,
+        int pageNumber,
+        int dpi
+    ) {
         OcrPageRequest request = new OcrPageRequest(
-            base64,
-            "eng+ben",
-            DEFAULT_DPI,
+            Base64.getEncoder().encodeToString(imageBytes),
+            DEFAULT_LANGUAGE,
+            dpi,
             documentPath,
             pageNumber
         );
