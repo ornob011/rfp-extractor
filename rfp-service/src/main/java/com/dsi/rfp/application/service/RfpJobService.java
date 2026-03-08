@@ -1,40 +1,45 @@
 package com.dsi.rfp.application.service;
 
+import com.dsi.rfp.adapter.persistence.ExtractionStateCheckpointRepository;
 import com.dsi.rfp.adapter.rest.JobStatusResponse;
+import com.dsi.rfp.adapter.rest.RepairEventDto;
+import com.dsi.rfp.agent.ExtractionState;
 import com.dsi.rfp.domain.model.ExtractionJob;
+import com.dsi.rfp.domain.model.RepairLogEntry;
 import com.dsi.rfp.domain.port.out.JobStatePort;
 import com.dsi.rfp.domain.port.out.ResultPersistencePort;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
-@Slf4j
 @Service
 public class RfpJobService {
 
     private final JobStatePort jobStatePort;
     private final ResultPersistencePort resultPersistencePort;
+    private final ExtractionStateCheckpointRepository checkpointRepository;
 
     public RfpJobService(
         JobStatePort jobStatePort,
-        ResultPersistencePort resultPersistencePort
+        ResultPersistencePort resultPersistencePort,
+        ExtractionStateCheckpointRepository checkpointRepository
     ) {
         this.jobStatePort = jobStatePort;
         this.resultPersistencePort = resultPersistencePort;
+        this.checkpointRepository = checkpointRepository;
     }
 
     public Optional<JobStatusResponse> findById(Long jobId) {
         return jobStatePort.findById(jobId)
-                           .map(this::toResponse);
+                           .map(job -> toResponse(job, jobId));
     }
 
     public List<JobStatusResponse> findAll() {
         return jobStatePort.findAll().stream()
-                           .map(this::toResponse)
+                           .map(job -> toResponse(job, job.getJobId()))
                            .toList();
     }
 
@@ -50,7 +55,12 @@ public class RfpJobService {
         return resultPersistencePort.findResult(jobId);
     }
 
-    private JobStatusResponse toResponse(ExtractionJob job) {
+    private JobStatusResponse toResponse(
+        ExtractionJob job,
+        Long jobId
+    ) {
+        Optional<ExtractionState> checkpoint = checkpointRepository.load(jobId);
+
         return JobStatusResponse.builder()
                                 .jobId(job.getJobId())
                                 .status(job.getStatus())
@@ -60,6 +70,24 @@ public class RfpJobService {
                                 .errorMessage(job.getErrorMessage())
                                 .originalFilename(job.getOriginalFilename())
                                 .pageCount(job.getPageCount())
+                                .repairEvents(checkpoint.map(this::mapRepairEvents).orElse(List.of()))
+                                .totalRepairIterations(checkpoint.map(ExtractionState::totalRepairIterations).orElse(0))
+                                .lowConfidenceQueueSize(checkpoint.map(state -> state.lowConfidenceQueue().size()).orElse(0))
                                 .build();
+    }
+
+    private List<RepairEventDto> mapRepairEvents(ExtractionState state) {
+        return state.repairLog().stream()
+                    .map(this::toRepairEvent)
+                    .toList();
+    }
+
+    private RepairEventDto toRepairEvent(RepairLogEntry entry) {
+        return new RepairEventDto(
+            entry.getComponentId(),
+            entry.getAttemptNumber(),
+            entry.getStrategy(),
+            entry.getOutcome()
+        );
     }
 }

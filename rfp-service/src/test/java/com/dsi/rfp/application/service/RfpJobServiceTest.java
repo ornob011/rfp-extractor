@@ -1,5 +1,6 @@
 package com.dsi.rfp.application.service;
 
+import com.dsi.rfp.adapter.persistence.ExtractionStateCheckpointRepository;
 import com.dsi.rfp.adapter.rest.JobStatusResponse;
 import com.dsi.rfp.domain.model.AnalysisStatus;
 import com.dsi.rfp.domain.model.ExtractionJob;
@@ -30,11 +31,18 @@ class RfpJobServiceTest {
     @Mock
     private ResultPersistencePort resultPersistencePort;
 
+    @Mock
+    private ExtractionStateCheckpointRepository checkpointRepository;
+
     private RfpJobService service;
 
     @BeforeEach
     void setUp() {
-        service = new RfpJobService(jobStatePort, resultPersistencePort);
+        service = new RfpJobService(
+            jobStatePort,
+            resultPersistencePort,
+            checkpointRepository
+        );
     }
 
     @Test
