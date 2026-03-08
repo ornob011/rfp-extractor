@@ -44,7 +44,6 @@ public class TableSectionLinker {
         flattenSections(sections)
             .sorted(
                 Comparator.comparingInt(Section::getLevel)
-                          .reversed()
             )
             .forEach(section -> index.put(
                 Range.closed(
