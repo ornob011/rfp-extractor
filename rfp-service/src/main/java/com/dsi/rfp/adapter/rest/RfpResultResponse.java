@@ -14,6 +14,7 @@ public class RfpResultResponse {
     private final JsonNode confidenceMap;
     private final JsonNode tables;
     private final JsonNode pageDetails;
+    private final JsonNode rulePackResults;
     private final BadgeThresholds badgeThresholds;
 
     public record BadgeThresholds(

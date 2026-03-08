@@ -98,6 +98,7 @@ public class RfpController {
                                                       .confidenceMap(parsedResult.confidenceMap())
                                                       .tables(parsedResult.tables())
                                                       .pageDetails(parsedResult.pageDetails())
+                                                      .rulePackResults(parsedResult.rulePackResults())
                                                       .badgeThresholds(buildBadgeThresholds())
                                                       .build();
 
@@ -106,7 +107,7 @@ public class RfpController {
 
     private ParsedResult parseResult(JsonNode resultJson) {
         if (resultJson == null) {
-            return new ParsedResult(null, null, null, null);
+            return new ParsedResult(null, null, null, null, null);
         }
 
         RfpDocument result = objectMapper.convertValue(
@@ -118,9 +119,8 @@ public class RfpController {
             objectMapper.valueToTree(result.getEntities()),
             objectMapper.valueToTree(result.getConfidenceMap()),
             objectMapper.valueToTree(result.getTables()),
-            objectMapper.valueToTree(
-                buildPageDetails(result)
-            )
+            objectMapper.valueToTree(buildPageDetails(result)),
+            objectMapper.valueToTree(result.getRulePackResults())
         );
     }
 
@@ -186,7 +186,8 @@ public class RfpController {
         JsonNode entities,
         JsonNode confidenceMap,
         JsonNode tables,
-        JsonNode pageDetails
+        JsonNode pageDetails,
+        JsonNode rulePackResults
     ) {
     }
 }
