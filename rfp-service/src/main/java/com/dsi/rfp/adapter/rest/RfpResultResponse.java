@@ -1,5 +1,6 @@
 package com.dsi.rfp.adapter.rest;
 
+import com.dsi.rfp.domain.model.RfpType;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +16,7 @@ public class RfpResultResponse {
     private final JsonNode tables;
     private final JsonNode pageDetails;
     private final JsonNode rulePackResults;
+    private final RfpType rfpType;
     private final BadgeThresholds badgeThresholds;
 
     public record BadgeThresholds(

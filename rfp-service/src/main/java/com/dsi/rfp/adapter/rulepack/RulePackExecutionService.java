@@ -30,6 +30,7 @@ public class RulePackExecutionService {
         return Optional.of(packs)
                        .filter(resolvedPacks -> !resolvedPacks.isEmpty())
                        .map(resolvedPacks -> mergeResults(
+                           classification,
                            resolvedPacks.stream()
                                         .map(pack -> rulePackPort.runPack(
                                             pack,
@@ -70,13 +71,17 @@ public class RulePackExecutionService {
                        .orElse(List.of());
     }
 
-    private RulePackResults mergeResults(List<RulePackResults> results) {
+    private RulePackResults mergeResults(
+        RulePackClassification classification,
+        List<RulePackResults> results
+    ) {
         return switch (results.size()) {
             case 0 -> emptyResults();
             case 1 -> results.getFirst();
             default -> RulePackResults.builder()
                                       .packId(config.mergedPackId())
                                       .packVersion(config.mergedPackVersion())
+                                      .rfpType(classification.resolvedType())
                                       .runTimestamp(resolveRunTimestamp(results))
                                       .summary(buildSummary(results))
                                       .findings(
@@ -125,6 +130,7 @@ public class RulePackExecutionService {
         return RulePackResults.builder()
                               .packId(config.mergedPackId())
                               .packVersion(config.mergedPackVersion())
+                              .rfpType(RfpType.UNKNOWN)
                               .runTimestamp(Instant.now())
                               .summary(Map.of())
                               .findings(List.of())

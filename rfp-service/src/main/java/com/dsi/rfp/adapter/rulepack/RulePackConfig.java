@@ -2,10 +2,10 @@ package com.dsi.rfp.adapter.rulepack;
 
 import com.dsi.rfp.domain.exception.EntityMetadataContractException;
 import com.dsi.rfp.domain.exception.SystemIoException;
+import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
-import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;

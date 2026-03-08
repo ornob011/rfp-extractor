@@ -3,9 +3,11 @@ package com.dsi.rfp.adapter.rulepack;
 import com.dsi.rfp.domain.model.RfpDocument;
 import com.dsi.rfp.domain.model.RfpEntities;
 import com.dsi.rfp.domain.model.Section;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -47,6 +49,8 @@ public class RfpTypeClassifier {
     }
 
     private String scopeSummary(RfpEntities entities) {
-        return entities == null ? "" : entities.getScopeSummary();
+        return Optional.ofNullable(entities)
+                       .map(RfpEntities::getScopeSummary)
+                       .orElse(StringUtils.EMPTY);
     }
 }

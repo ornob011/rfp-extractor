@@ -49,17 +49,17 @@ class CandidatePackResolver {
                                              ) >= pack.minimumApplicabilityScore())
                                              .sorted(
                                                  Comparator.<RulePackMetadata.PackPolicy>comparingInt(
-                                                         pack -> packScores.getOrDefault(
-                                                             pack.packId(),
-                                                             0
-                                                         )
-                                                     )
-                                                     .reversed()
-                                                     .thenComparing(
-                                                         Comparator.comparingInt(RulePackMetadata.PackPolicy::priority)
-                                                                   .reversed()
-                                                     )
-                                                     .thenComparing(RulePackMetadata.PackPolicy::packId)
+                                                               pack -> packScores.getOrDefault(
+                                                                   pack.packId(),
+                                                                   0
+                                                               )
+                                                           )
+                                                           .reversed()
+                                                           .thenComparing(
+                                                               Comparator.comparingInt(RulePackMetadata.PackPolicy::priority)
+                                                                         .reversed()
+                                                           )
+                                                           .thenComparing(RulePackMetadata.PackPolicy::packId)
                                              )
                                              .map(RulePackMetadata.PackPolicy::packId)
                                              .toList();
