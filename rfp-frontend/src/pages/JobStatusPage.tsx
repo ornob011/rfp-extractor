@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getJobStatus } from '@/api/rfpClient';
 import { StatusBadge } from '@/components/StatusBadge';
+import { AuditPanel } from '@/components/AuditPanel';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -95,6 +96,17 @@ export function JobStatusPage() {
                         </div>
                     )}
 
+                    {(job.totalRepairIterations !== undefined && job.totalRepairIterations > 0) && (
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">
+                                Repair iterations: {job.totalRepairIterations}
+                            </span>
+                            <span className="text-muted-foreground">
+                                Items pending: {job.lowConfidenceQueueSize ?? 0}
+                            </span>
+                        </div>
+                    )}
+
                     <div className="flex justify-between">
                         <span className="text-muted-foreground">Submitted</span>
                         <span className="text-sm">{new Date(job.submittedAt).toLocaleString()}</span>
@@ -112,6 +124,11 @@ export function JobStatusPage() {
                             <AlertDescription>{job.errorMessage}</AlertDescription>
                         </Alert>
                     )}
+
+                    <AuditPanel
+                        repairEvents={job.repairEvents ?? []}
+                        totalRepairIterations={job.totalRepairIterations ?? 0}
+                    />
 
                     {job.status === 'COMPLETED' && (
                         <Button asChild className="w-full">
