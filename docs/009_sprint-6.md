@@ -27,10 +27,10 @@ reconstructed via an LLM prompt. OCR confidence is propagated into every extract
 
 | #    | Deliverable                                  | Type               | Location                                                                   |
 |------|----------------------------------------------|--------------------|----------------------------------------------------------------------------|
-| D-01 | `image_utils.py`                             | Python module      | `rfp-python-sidecar/image_utils.py`                                            |
-| D-02 | `layout_detector.py`                         | Python module      | `rfp-python-sidecar/layout_detector.py`                                        |
-| D-03 | `ocr_service.py`                             | Python module      | `rfp-python-sidecar/ocr_service.py`                                            |
-| D-04 | `main.py` (full impl)                        | Python FastAPI app | `rfp-python-sidecar/main.py`                                                   |
+| D-01 | `image_utils.py`                             | Python module      | `rfp-python-sidecar/image_utils.py`                                        |
+| D-02 | `layout_detector.py`                         | Python module      | `rfp-python-sidecar/layout_detector.py`                                    |
+| D-03 | `ocr_service.py`                             | Python module      | `rfp-python-sidecar/ocr_service.py`                                        |
+| D-04 | `main.py` (full impl)                        | Python FastAPI app | `rfp-python-sidecar/main.py`                                               |
 | D-05 | OCR DTO records                              | Java records       | `rfp-service/.../adapter/ocr/`                                             |
 | D-06 | `OcrSidecarClient`                           | Java class         | `rfp-service/.../adapter/ocr/OcrSidecarClient.java`                        |
 | D-07 | `OcrResilienceConfig`                        | Java class         | `rfp-service/.../adapter/ocr/OcrResilienceConfig.java`                     |
@@ -43,7 +43,7 @@ reconstructed via an LLM prompt. OCR confidence is propagated into every extract
 | D-14 | `prompts/scanned-table-reconstruction-v1.md` | Prompt file        | `prompts/scanned-table-reconstruction-v1.md`                               |
 | D-15 | `ResultPage.tsx` page summary tab (updated)  | React update       | `rfp-frontend/src/pages/ResultPage.tsx`                                    |
 | D-16 | Unit tests — Java                            | Java test classes  | `rfp-service/src/test/java/.../adapter/ocr/` and `.../adapter/extraction/` |
-| D-17 | Unit tests — Python                          | pytest files       | `rfp-python-sidecar/tests/`                                                    |
+| D-17 | Unit tests — Python                          | pytest files       | `rfp-python-sidecar/tests/`                                                |
 
 ---
 
@@ -121,10 +121,10 @@ def bytes_to_pil(image_bytes: bytes) -> Image.Image:
 
 **Risks + Mitigations:**
 
-| Risk                                                                          | Mitigation                                                                                       |
-|-------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| Risk                                                                          | Mitigation                                                                                           |
+|-------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
 | `pdf2image` requires `poppler-utils` system package not present in base image | Add `RUN apt-get install -y poppler-utils` in Dockerfile; document in `rfp-python-sidecar/README.md` |
-| High DPI (300+) produces large images consuming excess memory                 | Cap DPI at 400 in `render_pdf_page_to_image`; log warning if `dpi > 400`                         |
+| High DPI (300+) produces large images consuming excess memory                 | Cap DPI at 400 in `render_pdf_page_to_image`; log warning if `dpi > 400`                             |
 
 **Test Plan — `rfp-python-sidecar/tests/test_image_utils.py`:**
 
@@ -659,11 +659,11 @@ public class OcrResilienceConfig {
     @Bean
     public RetryConfig ocrRetryConfig() {
         return RetryConfig.custom()
-            .maxAttempts(2)
-            .waitDuration(Duration.ofSeconds(2))
-            .retryExceptions(OcrUnavailableException.class, ResourceAccessException.class)
-            .ignoreExceptions(IllegalArgumentException.class)
-            .build();
+                          .maxAttempts(2)
+                          .waitDuration(Duration.ofSeconds(2))
+                          .retryExceptions(OcrUnavailableException.class, ResourceAccessException.class)
+                          .ignoreExceptions(IllegalArgumentException.class)
+                          .build();
     }
 
     @Bean
@@ -1502,7 +1502,7 @@ curl http://localhost:8080/api/v1/rfp/result/$JOB_ID \
 
 | #     | Criterion                                                                                                       | Measure                                                                                  |
 |-------|-----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| EC-01 | Python sidecar passes all pytest tests                                                                          | `pytest rfp-python-sidecar/tests/ -v` → 0 failures                                           |
+| EC-01 | Python sidecar passes all pytest tests                                                                          | `pytest rfp-python-sidecar/tests/ -v` → 0 failures                                       |
 | EC-02 | `GET /health` on sidecar returns `{"status": "ok"}` within 2 seconds after container start                      | Manual curl or Docker healthcheck                                                        |
 | EC-03 | `ScannedPageExtractor` extracts text from 3 fixture scanned-page PDFs with `confidence >= 0.5`                  | Manual check against `testdata/fixtures/scanned-*.pdf`                                   |
 | EC-04 | `ColumnDetector` correctly identifies 2-column layout on 4 of 5 known 2-column test documents                   | Manual verification: correct reading order (left column before right)                    |
