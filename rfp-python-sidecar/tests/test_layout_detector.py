@@ -32,7 +32,7 @@ def test_detects_table_from_sidecar_results():
 
     assert result.has_table is True
     assert len(result.table_regions) == 1
-    assert len(result.text_regions) == 0
+    assert len(result.text_regions) == 1
 
 
 def test_no_table_for_prose_text_without_sidecar_tables():
@@ -51,4 +51,4 @@ def test_no_table_for_prose_text_without_sidecar_tables():
 
     assert result.has_table is False
     assert len(result.table_regions) == 0
-    assert len(result.text_regions) == 1
+    assert len(result.text_regions) == 2

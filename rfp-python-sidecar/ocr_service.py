@@ -95,17 +95,15 @@ class OcrService:
         document_path: str | None,
         page_number: int | None,
     ) -> list[ExtractedTable]:
-        if document_path is None:
-            return []
-
-        if page_number is None:
-            return []
-
-        return self._table_service.extract_page_with_strategies(
-            document_path,
-            page_number,
-            CONFIG.scanned_tables.strategies,
-        )
+        match (document_path, page_number):
+            case (str(path), int(page)):
+                return self._table_service.extract_page_with_strategies(
+                    path,
+                    page,
+                    CONFIG.scanned_tables.strategies,
+                )
+            case _:
+                return []
 
     def _extract_with_easyocr(
         self,
@@ -187,7 +185,8 @@ class OcrService:
 
     @staticmethod
     def _mean_confidence(words: list[OcrWord]) -> float:
-        if not words:
-            return 0.0
-
-        return sum(w.confidence for w in words) / len(words)
+        match len(words):
+            case 0:
+                return 0.0
+            case _:
+                return sum(w.confidence for w in words) / len(words)
