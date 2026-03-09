@@ -26,7 +26,7 @@
   `RfpTypeClassifier` (ICT + GOODS patterns), `RunRulePackNode`, `rules/bd-govt-ict-v1.yaml` (64 rules),
   `RulePackApplicationService`, `RulePackResults.tsx`, and 64 parameterized JUnit tests are all present and green.
 - `RulePackLoader` provides pack loading and supports explicit reload invocation.
-- `rule-schema-v1.json` (networknt) exists and validates `bd-govt-ict-v1.yaml` successfully.
+- `rule-pack-schema-v1.json` (networknt) exists and validates `bd-govt-ict-v1.yaml` successfully.
 - `mvn test` is green on the Sprint 8 codebase.
 - The Sprint 8 `RfpTypeClassifier` recognizes `ICT` and `GOODS` types; the class is open for extension (keyword map is a
   mutable data structure, not a switch statement).
@@ -38,7 +38,7 @@
 - `rules/bd-govt-works-v1.yaml` — 33 rules (30 structural + 3 semantic).
 - `rules/bd-govt-consultancy-v1.yaml` — 33 rules (30 structural + 3 semantic).
 - `rules/bd-govt-goods-v1.yaml` — 22 rules (20 structural + 2 semantic).
-- `RfpTypeClassifier.java` updated with WORKS and CONSULTANCY keyword groups.
+- `RfpTypeClassifier.java` updated with WORKS and CONSULTANCY routing signals in `rule-pack-v1.yml`.
 - `RulePackAdminService.java` — `application/service/`.
 - `AdminRulePackController.java` — `adapter/api/`.
 - `AdminPage.tsx` — React frontend.
@@ -57,7 +57,7 @@
 
 **Description:**
 Author a YAML rule pack for GOB civil/construction works contracts. The pack must conform to
-`schema/rule-schema-v1.json` and be loadable by `RulePackLoader` without errors. All JMESPath expressions are verified
+`schema/rule-pack-schema-v1.json` and be loadable by `RulePackLoader` without errors. All JMESPath expressions are verified
 against the `RfpDocument` JSON structure established in Sprint 4. Structural rules use JMESPath; semantic rules invoke
 the LLM judgment checker.
 
@@ -83,7 +83,7 @@ Then all 33 parameterized tests pass with exit code 0
 
 **Interfaces/Contracts:**
 
-Rule pack YAML header contract (matches rule-schema-v1.json):
+Rule pack YAML header contract (matches rule-pack-schema-v1.json):
 
 ```yaml
 id         : bd-govt-works-v1
@@ -427,7 +427,7 @@ rules      :
         category           : "SEMANTIC_FINANCIAL"
 ```
 
-**Dependencies:** Sprint 8 `RulePackLoader`, `RulePackRunner`, `RuleFinding`, `rule-schema-v1.json`.
+**Dependencies:** Sprint 8 `RulePackLoader`, `RulePackRunner`, `RuleFinding`, `rule-pack-schema-v1.json`.
 
 **Risks:**
 
@@ -487,12 +487,12 @@ size());
 **Description:**
 Author the consultancy/ToR rule pack covering TOR objectives, team composition, reporting requirements, CV requirements,
 methodology evaluation, and standard GOB consultancy procurement fields. All 33 rules must follow the
-`rule-schema-v1.json` contract.
+`rule-pack-schema-v1.json` contract.
 
 **Acceptance Criteria:**
 
 ```gherkin
-Given rules/bd-govt-consultancy-v1.yaml exists and is valid per rule-schema-v1.json
+Given rules/bd-govt-consultancy-v1.yaml exists and is valid per rule-pack-schema-v1.json
 When RulePackLoader.loadAll() is called
 Then pack "bd-govt-consultancy-v1" is present with ruleCount = 33
 
@@ -1130,26 +1130,26 @@ of("BD-G-014",docWithPricingFactors(List.of("bid bond 2% of contract value")),PA
 #### Story 2.1 — Add WORKS and CONSULTANCY Keyword Groups
 
 **Description:**
-Update `RfpTypeClassifier` to recognize `WORKS` and `CONSULTANCY` RFP types by adding new keyword groups to the existing
-keyword scoring map. The classifier must score keywords from the document title, scope section, and procurement method
-fields and return the type with the highest score, or `UNKNOWN` if no type exceeds the threshold.
+Update `rule-pack-v1.yml` and `RfpTypeClassifier` to recognize `WORKS` and `CONSULTANCY` by adding pack routing signals
+for those packs. The classifier must score pack applicability from weighted text and entity signals, then return a
+typed classification result with candidate pack ids.
 
 **Acceptance Criteria:**
 
 ```gherkin
 Given an RfpDocument with title "Construction of District Hospital Building"
 When RfpTypeClassifier.classify(doc) is called
-Then the result is RfpType.WORKS
+Then the candidate pack list includes the WORKS pack
 
 Given an RfpDocument with title "Consultancy Services for Preparation of DPP"
 When RfpTypeClassifier.classify(doc) is called
-Then the result is RfpType.CONSULTANCY
+Then the candidate pack list includes the CONSULTANCY pack
 
 Given an RfpDocument with no relevant keywords
 When RfpTypeClassifier.classify(doc) is called
-Then the result is RfpType.UNKNOWN
+Then the result is UNKNOWN with no candidate packs
 
-Given a classified document of type WORKS
+Given a classified document with WORKS as the winning routing result
 When RunRulePackNode selects the rule pack
 Then it selects "bd-govt-works-v1" pack
 ```
@@ -1859,7 +1859,7 @@ in the response DTO from `RfpController` (add to `RfpResultDto` if not already p
 
 **Review Checklist:**
 
-- [ ] All YAML files validate against `schema/rule-schema-v1.json` (run `RulePackLoader` startup validation in local
+- [ ] All YAML files validate against `schema/rule-pack-schema-v1.json` (run `RulePackLoader` startup validation in local
   test)
 - [ ] JMESPath expressions use only `NOT_NULL_OR_EMPTY`, `NOT_EMPTY_ARRAY`, `BETWEEN_95_AND_105` conditions supported by
   `JmesPathEvaluator`

@@ -1,0 +1,81 @@
+version: 2
+resources:
+  schemaResourcePath: schema/rule-pack-schema-v1.json
+  rulesPattern: classpath:rules/*.yaml
+  promptResourcePath: prompts/rule-judgment-v1.md
+routing:
+  minimumLeadMargin: 2
+  runAllWhenNoCandidate: true
+  minimumConfidenceForExclusiveRouting: 0.75
+  merge:
+    packId: all-applicable
+    packVersion: "1.0.0"
+packs:
+  - packId: bd-govt-ict-v1
+    rfpType: ICT
+    enabled: true
+    priority: 100
+    minimumApplicabilityScore: 4
+    exclusiveThreshold: 8
+    signals:
+      sectionTitleKeywords:
+        weight: 2
+        values:
+          - software
+          - system
+          - application
+          - database
+          - ict
+          - digital
+          - platform
+          - portal
+          - information technology
+      scopeSummaryKeywords:
+        weight: 2
+        values:
+          - software
+          - system
+          - application
+          - database
+          - hosting
+          - integration
+          - automation
+          - digital
+          - e-governance
+      entityPresence:
+        weight: 3
+        fields:
+          - scopeOfWork
+          - technicalFinancialSplit
+          - totalUsers
+          - concurrentUsers
+          - database
+          - hosting
+          - integrations
+          - systemLanguage
+          - techStack
+          - architecture
+          - eGovernanceCompliance
+      entityValueKeywords:
+        weight: 2
+        fields:
+          scopeOfWork:
+            - software
+            - digital
+            - application
+            - platform
+            - portal
+            - system
+            - integration
+            - database
+          hosting:
+            - cloud
+            - datacenter
+            - bcc
+            - ndc
+            - on-premise
+          integrations:
+            - api
+            - integration
+            - interoperability
+            - sso

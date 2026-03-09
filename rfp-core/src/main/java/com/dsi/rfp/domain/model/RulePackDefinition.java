@@ -1,5 +1,6 @@
 package com.dsi.rfp.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -7,23 +8,23 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RulePackResults {
+public class RulePackDefinition {
 
+    @JsonProperty("pack_id")
     private String packId;
 
+    @JsonProperty("pack_version")
     private String packVersion;
 
-    private Instant runTimestamp;
+    @JsonProperty("rfp_type")
+    private RfpType rfpType;
 
-    @Builder.Default
-    private Map<RuleSeverity, Integer> summary = Map.of();
+    private List<RuleDefinition> rules;
 
-    @Builder.Default
-    private List<RuleFinding> findings = List.of();
+    private Instant loadedAt;
 }

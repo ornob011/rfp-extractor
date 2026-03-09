@@ -53,6 +53,7 @@ public class FinalizeNode implements NodeAction<ExtractionState> {
                           .pageClassifications(state.pageClassifications())
                           .pageConfidences(state.pageConfidences())
                           .pageExtractionMethods(state.pageExtractionMethods())
+                          .rulePackResults(state.rulePackResults())
                           .build();
     }
 }

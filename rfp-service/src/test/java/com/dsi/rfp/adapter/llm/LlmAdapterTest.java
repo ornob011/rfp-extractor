@@ -1,6 +1,8 @@
 package com.dsi.rfp.adapter.llm;
 
 import com.dsi.rfp.domain.exception.LlmUnavailableException;
+import com.dsi.rfp.domain.model.LlmJudgmentResult;
+import com.dsi.rfp.domain.model.RuleStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.Setter;
@@ -91,11 +93,39 @@ class LlmAdapterTest {
     }
 
     @Test
-    void shouldReturnJudgeResponseWhenCallerResponds() {
+    void shouldReturnFailJudgmentWhenLlmFindingIsTrue() {
+        String json = "{\"finding\":true,\"explanation\":\"vague scope\",\"confidence\":0.9}";
         when(caller.callJudge(anyString()))
-            .thenReturn(CompletableFuture.completedFuture("PASS"));
-        Optional<String> result = llmAdapter.judgeSnippet("judge prompt", "snippet");
-        assertThat(result).isPresent().contains("PASS");
+            .thenReturn(CompletableFuture.completedFuture(json));
+
+        LlmJudgmentResult result = llmAdapter.judgeSnippet("judge prompt", "snippet");
+
+        assertThat(result.isFinding()).isTrue();
+        assertThat(result.getStatus()).isEqualTo(RuleStatus.FAIL);
+        assertThat(result.getExplanation()).isEqualTo("vague scope");
+        assertThat(result.getConfidence()).isEqualTo(0.9);
+    }
+
+    @Test
+    void shouldReturnPassJudgmentWhenLlmFindingIsFalse() {
+        String json = "{\"finding\":false,\"explanation\":\"clear\",\"confidence\":0.95}";
+        when(caller.callJudge(anyString()))
+            .thenReturn(CompletableFuture.completedFuture(json));
+
+        LlmJudgmentResult result = llmAdapter.judgeSnippet("judge prompt", "snippet");
+
+        assertThat(result.isFinding()).isFalse();
+        assertThat(result.getStatus()).isEqualTo(RuleStatus.PASS);
+    }
+
+    @Test
+    void shouldReturnSkippedWhenLlmReturnsBlankJudgment() {
+        when(caller.callJudge(anyString()))
+            .thenReturn(CompletableFuture.completedFuture("   "));
+
+        LlmJudgmentResult result = llmAdapter.judgeSnippet("judge prompt", "snippet");
+
+        assertThat(result.getStatus()).isEqualTo(RuleStatus.SKIPPED);
     }
 
     private void stubCallerToReturn(String response) {

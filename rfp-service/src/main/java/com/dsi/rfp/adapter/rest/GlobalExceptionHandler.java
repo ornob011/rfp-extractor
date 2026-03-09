@@ -57,6 +57,48 @@ class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(RulePackLoadException.class)
+    ProblemDetail handleRulePackLoad(RulePackLoadException ex) {
+        log.error(
+            "event=rulepack.load.failed component=GlobalExceptionHandler status=500 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(RulePackEvaluationException.class)
+    ProblemDetail handleRulePackEvaluation(RulePackEvaluationException ex) {
+        log.error(
+            "event=rulepack.evaluation.failed component=GlobalExceptionHandler status=500 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(RulePackExecutionException.class)
+    ProblemDetail handleRulePackExecution(RulePackExecutionException ex) {
+        log.error(
+            "event=rulepack.execution.failed component=GlobalExceptionHandler status=500 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage()
+        );
+    }
+
     @ExceptionHandler(DocumentEncryptedException.class)
     ProblemDetail handleEncrypted(DocumentEncryptedException ex) {
         log.warn(

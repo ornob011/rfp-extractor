@@ -641,7 +641,7 @@ rfp-extractor/
 │   └── requirements.txt
 ├── schema/
 │   ├── rfp-schema-v1.json           ← RFP JSON Schema (canonical)
-│   └── rule-schema-v1.json          ← Rule YAML validation schema
+│   └── rule-pack-schema-v1.json          ← Rule YAML validation schema
 ├── rules/
 │   ├── bd-govt-ict-v1.yaml          ← 64 ICT rules (55 structural JMESPath + 9 semantic LLM)
 │   ├── bd-govt-works-v1.yaml        ← 33 Works contract rules (30 structural + 3 semantic)
@@ -1054,7 +1054,7 @@ The schema captures ALL 45 fields from the user's checklist, organized into type
 
 ## Rule Pack DSL
 
-Each rule is a YAML entry validated against `rule-schema-v1.json`:
+Each rule is a YAML entry validated against `rule-pack-schema-v1.json`:
 
 ```yaml
 -   id           : BD-ICT-001
@@ -1587,7 +1587,7 @@ propagated.
 
 **Rule Pack Infrastructure**
 
-- [ ] `RulePackLoader.java` — scans `rules/` directory, validates each YAML file against `schema/rule-schema-v1.json`,
+- [ ] `RulePackLoader.java` — scans `rules/` directory, validates each YAML file against `schema/rule-pack-schema-v1.json`,
   caches parsed rules, supports hot-reload (file watcher)
 - [ ] `JmesPathEvaluator.java` — wraps `io.burt:jmespath-java`. Evaluates `condition` expression against RFP JSON.
   Returns truthy/falsy.

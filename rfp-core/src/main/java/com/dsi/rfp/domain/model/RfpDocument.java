@@ -34,4 +34,6 @@ public class RfpDocument {
 
     @Builder.Default
     Map<Integer, PageExtractionMethod> pageExtractionMethods = Map.of();
+
+    RulePackResults rulePackResults;
 }

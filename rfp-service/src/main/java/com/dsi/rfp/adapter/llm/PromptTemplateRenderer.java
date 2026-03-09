@@ -12,9 +12,10 @@ public class PromptTemplateRenderer {
         String template,
         Map<String, Object> values
     ) {
-        return StringSubstitutor.replace(
-            template,
-            values
-        );
+        return new StringSubstitutor(
+            values,
+            "{{",
+            "}}"
+        ).replace(template);
     }
 }

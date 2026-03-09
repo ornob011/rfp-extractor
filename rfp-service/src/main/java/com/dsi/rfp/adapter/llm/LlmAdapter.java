@@ -1,5 +1,7 @@
 package com.dsi.rfp.adapter.llm;
 
+import com.dsi.rfp.domain.model.LlmJudgmentResult;
+import com.dsi.rfp.domain.model.RuleStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,12 @@ public class LlmAdapter {
 
     private static String joinAndUnwrap(CompletableFuture<String> future) {
         return future.join();
+    }
+
+    private static LlmJudgmentResult skippedJudgment() {
+        return LlmJudgmentResult.builder()
+                                .status(RuleStatus.SKIPPED)
+                                .build();
     }
 
     public <T> Optional<T> extractStructured(
@@ -60,18 +68,33 @@ public class LlmAdapter {
         );
     }
 
-    public Optional<String> judgeSnippet(
+    public LlmJudgmentResult judgeSnippet(
         String prompt,
         String snippet
     ) {
-        return Optional.ofNullable(
-                           joinAndUnwrap(
-                               caller.callJudge(
-                                   String.format("%s%n%n%s", prompt, snippet)
-                               )
-                           )
-                       )
-                       .filter(StringUtils::hasText);
+        String raw = joinAndUnwrap(
+            caller.callJudge(
+                String.format("%s%n%n%s", prompt, snippet)
+            )
+        );
+
+        return parseJudgmentResponse(raw);
+    }
+
+    private LlmJudgmentResult parseJudgmentResponse(String raw) {
+        if (!StringUtils.hasText(raw)) {
+            return skippedJudgment();
+        }
+
+        return parseResponse(raw, LlmJudgmentResult.class)
+            .map(this::applyStatusFromFinding)
+            .orElseGet(LlmAdapter::skippedJudgment);
+    }
+
+    private LlmJudgmentResult applyStatusFromFinding(LlmJudgmentResult result) {
+        RuleStatus status = result.isFinding() ? RuleStatus.FAIL : RuleStatus.PASS;
+        result.setStatus(status);
+        return result;
     }
 
     private <T> Optional<T> parseResponse(
