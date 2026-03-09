@@ -1720,8 +1720,8 @@ propagated.
 
 **Encryption at Rest** (fixes SEC-01)
 
-- [ ] `EncryptedFileStorageService.java` — wraps file writes with AES-256-GCM. Key from `app.storage.encryption-key` env
-  var.
+- [ ] `EncryptedFileStorageService.java` — wraps file writes with AEAD encryption. Keyset from
+  `app.storage.encryption.keyset` env var.
 - [ ] Decrypts on read transparently. PDFs and output artifacts are encrypted at rest.
 
 **Prompt Injection Filter** (fixes SEC-02)
@@ -1730,11 +1730,6 @@ propagated.
     - Strips: `ignore previous instructions`, `you are now`, `disregard`, `system:`, `<|im_start|>`
     - Wraps content in delimiters: `<document_content>...</document_content>` in all LLM prompts
     - Logs and flags document if injection pattern detected
-
-**Data Retention**
-
-- [ ] `DataRetentionScheduler.java` — `@Scheduled` daily. Soft-deletes jobs + files older than `app.retention.days` (
-  default 90). Hard-deletes after 7 more days. Logs to audit trail.
 
 **Legacy Bangla Encoding Detector** (placeholder for Sprint 13)
 
