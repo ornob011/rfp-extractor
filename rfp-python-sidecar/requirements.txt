@@ -4,7 +4,7 @@ pydantic==2.10.3
 Pillow==11.0.0
 pdf2image==1.17.0
 pytesseract==0.3.13
-pdfplumber==0.11.5
+pdfplumber==0.11.6
 camelot-py==1.0.9
 opencv-python-headless==4.11.0.86
 easyocr==1.7.2
