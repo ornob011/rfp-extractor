@@ -18,6 +18,7 @@ public class ExtractionJob {
     private final int progress;
     private final String errorMessage;
     private final String userId;
+    private final String submittedByUsername;
     private final int pageCount;
     private final String originalFilename;
     private final JsonNode sectionsJson;
