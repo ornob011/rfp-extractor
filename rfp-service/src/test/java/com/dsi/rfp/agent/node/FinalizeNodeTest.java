@@ -1,7 +1,9 @@
 package com.dsi.rfp.agent.node;
 
 import com.dsi.rfp.agent.ExtractionState;
+import com.dsi.rfp.application.service.ArtifactApplicationService;
 import com.dsi.rfp.domain.model.RfpEntities;
+import com.dsi.rfp.domain.model.RulePackResults;
 import com.dsi.rfp.domain.port.out.JobStatePort;
 import com.dsi.rfp.domain.port.out.ResultPersistencePort;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -16,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
@@ -28,6 +31,9 @@ class FinalizeNodeTest {
     @Mock
     private JobStatePort jobStatePort;
 
+    @Mock
+    private ArtifactApplicationService artifactApplicationService;
+
     private FinalizeNode node;
 
     @BeforeEach
@@ -35,6 +41,7 @@ class FinalizeNodeTest {
         node = new FinalizeNode(
             resultPersistencePort,
             jobStatePort,
+            artifactApplicationService,
             new ObjectMapper()
         );
     }
@@ -47,6 +54,13 @@ class FinalizeNodeTest {
 
         Map<String, Object> data = ExtractionState.initial(42L, "/tmp/x.pdf");
         data.put(ExtractionState.Key.ENTITIES.value(), entities);
+        data.put(
+            ExtractionState.Key.RULE_PACK_RESULTS.value(),
+            RulePackResults.builder()
+                           .packId("bd-govt-ict-v1")
+                           .findings(java.util.List.of())
+                           .build()
+        );
         ExtractionState state = new ExtractionState(data);
 
         Map<String, Object> result = node.apply(state);
@@ -66,10 +80,49 @@ class FinalizeNodeTest {
     @Test
     void shouldUpdateSectionsJson() {
         Map<String, Object> data = ExtractionState.initial(42L, "/tmp/x.pdf");
+        data.put(
+            ExtractionState.Key.RULE_PACK_RESULTS.value(),
+            RulePackResults.builder()
+                           .packId("bd-govt-ict-v1")
+                           .findings(java.util.List.of())
+                           .build()
+        );
         ExtractionState state = new ExtractionState(data);
 
         node.apply(state);
 
         verify(jobStatePort).updateSectionsJson(eq(42L), org.mockito.ArgumentMatchers.any(JsonNode.class));
+    }
+
+    @Test
+    void shouldRequireRulePackResultsBeforeArtifactGeneration() {
+        Map<String, Object> data = ExtractionState.initial(42L, "/tmp/x.pdf");
+        ExtractionState state = new ExtractionState(data);
+
+        assertThatThrownBy(() -> node.apply(state))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("Rule pack results are required");
+    }
+
+    @Test
+    void shouldGenerateArtifactsWhenRulePackResultsExist() {
+        Map<String, Object> data = ExtractionState.initial(42L, "/tmp/x.pdf");
+        data.put(
+            ExtractionState.Key.RULE_PACK_RESULTS.value(),
+            RulePackResults.builder()
+                           .packId("bd-govt-ict-v1")
+                           .findings(java.util.List.of())
+                           .build()
+        );
+        ExtractionState state = new ExtractionState(data);
+
+        node.apply(state);
+
+        verify(artifactApplicationService).generateAll(
+            eq(42L),
+            org.mockito.ArgumentMatchers.any(),
+            eq(state),
+            org.mockito.ArgumentMatchers.any()
+        );
     }
 }
