@@ -41,7 +41,7 @@ class FontSizeHeadingStrategyTest {
     @Test
     void shouldDetectLargerFontAsHeading() throws IOException {
         when(loader.getPageCount(any())).thenReturn(1);
-        when(loader.loadPageBoundingBoxes(any(), eq(0))).thenReturn(List.of(
+        when(loader.loadPageBoundingBoxes(any(Path.class), eq(0))).thenReturn(List.of(
             block("Title Text", 18f, 0),
             block("Body text one", 10f, 0),
             block("Body text two", 10f, 0),
@@ -57,7 +57,7 @@ class FontSizeHeadingStrategyTest {
     void shouldNotDetectLongTextAsHeading() throws IOException {
         String longText = "A".repeat(101);
         when(loader.getPageCount(any())).thenReturn(1);
-        when(loader.loadPageBoundingBoxes(any(), eq(0))).thenReturn(List.of(
+        when(loader.loadPageBoundingBoxes(any(Path.class), eq(0))).thenReturn(List.of(
             block(longText, 18f, 0),
             block("Body text", 10f, 0),
             block("Body text two", 10f, 0)
@@ -70,7 +70,7 @@ class FontSizeHeadingStrategyTest {
     @Test
     void shouldReturnEmptyForUniformFontSize() throws IOException {
         when(loader.getPageCount(any())).thenReturn(1);
-        when(loader.loadPageBoundingBoxes(any(), eq(0))).thenReturn(List.of(
+        when(loader.loadPageBoundingBoxes(any(Path.class), eq(0))).thenReturn(List.of(
             block("Line one", 10f, 0),
             block("Line two", 10f, 0),
             block("Line three", 10f, 0)
@@ -83,7 +83,7 @@ class FontSizeHeadingStrategyTest {
     @Test
     void shouldReturnEmptyForEmptyDocument() throws IOException {
         when(loader.getPageCount(any())).thenReturn(1);
-        when(loader.loadPageBoundingBoxes(any(), eq(0))).thenReturn(List.of());
+        when(loader.loadPageBoundingBoxes(any(Path.class), eq(0))).thenReturn(List.of());
 
         List<HeadingCandidate> result = strategy.detectHeadings(pdfPath, loader);
         assertThat(result).isEmpty();

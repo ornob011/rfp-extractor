@@ -18,7 +18,7 @@ public class RfpDocument {
     RfpEntities entities;
 
     @Builder.Default
-    List<Table> tables = List.of();
+    List<TableExtractionResult> tables = List.of();
 
     @Builder.Default
     Map<String, Double> confidenceMap = Map.of();

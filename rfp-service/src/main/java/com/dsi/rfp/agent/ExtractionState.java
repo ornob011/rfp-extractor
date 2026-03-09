@@ -68,10 +68,10 @@ public class ExtractionState extends AgentState {
         );
     }
 
-    public List<Table> tables() {
+    public List<TableExtractionResult> tables() {
         return listValue(
             Key.TABLES,
-            Table.class
+            TableExtractionResult.class
         );
     }
 
