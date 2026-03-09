@@ -1,7 +1,10 @@
 package com.dsi.rfp.adapter.persistence.entity;
 
+import com.dsi.rfp.domain.model.AuditAction;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.*;
 
@@ -18,12 +21,13 @@ import java.time.Instant;
 public class UserAuditEntity extends BaseEntity {
 
     @Column(nullable = false)
-    private String userId;
+    private String username;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String action;
+    private AuditAction action;
 
-    private String documentId;
+    private Long jobId;
 
     @Column(nullable = false)
     private Instant timestamp;
