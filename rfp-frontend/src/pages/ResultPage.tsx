@@ -6,9 +6,12 @@ import { EntityTable } from '@/components/EntityTable';
 import { TableViewer } from '@/components/TableViewer';
 import { PageSummaryTab } from '@/components/PageSummaryTab';
 import { RulePackResultsPanel } from '@/components/RulePackResults';
+import { ArtifactDownload } from '@/components/ArtifactDownload';
+import { AuditReportViewer } from '@/components/AuditReportViewer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { TableExtractionResult } from '@/types/table';
 import type { PageDetail } from '@/types/rfp';
 import type { RulePackResults } from '@/types/rulepack';
@@ -19,7 +22,7 @@ export function ResultPage() {
 
     const { data: result, isLoading, error } = useQuery({
         queryKey: ['rfpResult', jobId],
-        queryFn: () => getRfpResult(jobId!),
+        queryFn: () => getRfpResult(jobId ?? ''),
         enabled: !!jobId,
     });
 
@@ -66,51 +69,75 @@ export function ResultPage() {
                 </Link>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <section className="rounded-lg border bg-card p-4">
-                    <h2 className="mb-3 text-sm font-semibold text-foreground">Sections</h2>
-                    <SectionTree sections={result.sections} />
-                </section>
+            <Tabs
+                defaultValue="overview"
+                className="space-y-4"
+            >
+                <TabsList>
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="artifacts">Artifacts</TabsTrigger>
+                </TabsList>
 
-                <section className="rounded-lg border bg-card p-4">
-                    <h2 className="mb-3 text-sm font-semibold text-foreground">Entities</h2>
-                    <EntityPanel
-                        entities={result.entities}
-                        confidenceMap={result.confidenceMap}
-                        badgeThresholds={result.badgeThresholds}
-                    />
-                </section>
-            </div>
+                <TabsContent value="overview" className="space-y-6">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                        <section className="rounded-lg border bg-card p-4">
+                            <h2 className="mb-3 text-sm font-semibold text-foreground">Sections</h2>
+                            <SectionTree sections={result.sections} />
+                        </section>
 
-            <section className="rounded-lg border bg-card p-4">
-                <h2 className="mb-3 text-sm font-semibold text-foreground">
-                    Tables {result.tables && result.tables.length > 0 && (
-                        <span className="text-xs font-normal text-muted-foreground">
-                            ({result.tables.length})
-                        </span>
-                    )}
-                </h2>
-                <TablesPanel
-                    tables={result.tables}
-                    badgeThresholds={result.badgeThresholds}
-                />
-            </section>
+                        <section className="rounded-lg border bg-card p-4">
+                            <h2 className="mb-3 text-sm font-semibold text-foreground">Entities</h2>
+                            <EntityPanel
+                                entities={result.entities}
+                                confidenceMap={result.confidenceMap}
+                                badgeThresholds={result.badgeThresholds}
+                            />
+                        </section>
+                    </div>
 
-            <section className="rounded-lg border bg-card p-4">
-                <h2 className="mb-3 text-sm font-semibold text-foreground">
-                    Pages {result.pageDetails && result.pageDetails.length > 0 && (
-                        <span className="text-xs font-normal text-muted-foreground">
-                            ({result.pageDetails.length})
-                        </span>
-                    )}
-                </h2>
-                <PagesPanel pageDetails={result.pageDetails} />
-            </section>
+                    <section className="rounded-lg border bg-card p-4">
+                        <h2 className="mb-3 text-sm font-semibold text-foreground">
+                            Tables {result.tables && result.tables.length > 0 && (
+                                <span className="text-xs font-normal text-muted-foreground">
+                                    ({result.tables.length})
+                                </span>
+                            )}
+                        </h2>
+                        <TablesPanel
+                            tables={result.tables}
+                            badgeThresholds={result.badgeThresholds}
+                        />
+                    </section>
 
-            <section className="rounded-lg border bg-card p-4">
-                <h2 className="mb-3 text-sm font-semibold text-foreground">Rule Pack</h2>
-                <RulePackPanel rulePackResults={result.rulePackResults} />
-            </section>
+                    <section className="rounded-lg border bg-card p-4">
+                        <h2 className="mb-3 text-sm font-semibold text-foreground">
+                            Pages {result.pageDetails && result.pageDetails.length > 0 && (
+                                <span className="text-xs font-normal text-muted-foreground">
+                                    ({result.pageDetails.length})
+                                </span>
+                            )}
+                        </h2>
+                        <PagesPanel pageDetails={result.pageDetails} />
+                    </section>
+
+                    <section className="rounded-lg border bg-card p-4">
+                        <h2 className="mb-3 text-sm font-semibold text-foreground">Rule Pack</h2>
+                        <RulePackPanel rulePackResults={result.rulePackResults} />
+                    </section>
+                </TabsContent>
+
+                <TabsContent value="artifacts" className="space-y-6">
+                    <section className="rounded-lg border bg-card p-4">
+                        <h2 className="mb-3 text-sm font-semibold text-foreground">Artifacts</h2>
+                        <ArtifactDownload jobId={jobId ?? ''} />
+                    </section>
+
+                    <section className="rounded-lg border bg-card p-4">
+                        <h2 className="mb-3 text-sm font-semibold text-foreground">Audit Report</h2>
+                        <AuditReportViewer jobId={jobId ?? ''} />
+                    </section>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

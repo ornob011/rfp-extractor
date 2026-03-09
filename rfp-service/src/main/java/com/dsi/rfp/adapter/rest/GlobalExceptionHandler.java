@@ -103,7 +103,8 @@ class GlobalExceptionHandler {
     ProblemDetail handleEncrypted(DocumentEncryptedException ex) {
         log.warn(
             "event=document.encrypted component=GlobalExceptionHandler status=422 message={}",
-            ex.getMessage()
+            ex.getMessage(),
+            ex
         );
 
         return ProblemDetail.forStatusAndDetail(
@@ -116,7 +117,8 @@ class GlobalExceptionHandler {
     ProblemDetail handleXfa(DocumentXfaException ex) {
         log.warn(
             "event=document.xfa component=GlobalExceptionHandler status=422 message={}",
-            ex.getMessage()
+            ex.getMessage(),
+            ex
         );
 
         return ProblemDetail.forStatusAndDetail(
@@ -129,7 +131,8 @@ class GlobalExceptionHandler {
     ProblemDetail handleUnsupportedType(DocumentUnsupportedTypeException ex) {
         log.warn(
             "event=document.unsupported component=GlobalExceptionHandler status=415 message={}",
-            ex.getMessage()
+            ex.getMessage(),
+            ex
         );
 
         return ProblemDetail.forStatusAndDetail(
@@ -156,7 +159,8 @@ class GlobalExceptionHandler {
     ProblemDetail handleFileSizeLimit(FileSizeLimitExceededException ex) {
         log.warn(
             "event=file.too.large component=GlobalExceptionHandler status=413 message={}",
-            ex.getMessage()
+            ex.getMessage(),
+            ex
         );
 
         return ProblemDetail.forStatusAndDetail(
@@ -169,7 +173,8 @@ class GlobalExceptionHandler {
     ProblemDetail handleCorrupt(DocumentCorruptException ex) {
         log.warn(
             "event=document.corrupt component=GlobalExceptionHandler status=422 message={}",
-            ex.getMessage()
+            ex.getMessage(),
+            ex
         );
 
         return ProblemDetail.forStatusAndDetail(
@@ -182,7 +187,8 @@ class GlobalExceptionHandler {
     ProblemDetail handleNoSuchFile(NoSuchFileException ex) {
         log.warn(
             "event=file.not.found component=GlobalExceptionHandler status=404 file={}",
-            ex.getMessage()
+            ex.getMessage(),
+            ex
         );
 
         return ProblemDetail.forStatusAndDetail(
@@ -205,11 +211,26 @@ class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    ProblemDetail handleResourceNotFound(ResourceNotFoundException ex) {
+        log.warn(
+            "event=resource.not.found component=GlobalExceptionHandler status=404 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.NOT_FOUND,
+            ex.getMessage()
+        );
+    }
+
     @ExceptionHandler(EntityNotFoundException.class)
     ProblemDetail handleEntityNotFound(EntityNotFoundException ex) {
         log.warn(
             "event=entity.not.found component=GlobalExceptionHandler status=404 message={}",
-            ex.getMessage()
+            ex.getMessage(),
+            ex
         );
 
         return ProblemDetail.forStatusAndDetail(

@@ -1,7 +1,9 @@
 package com.dsi.rfp.agent.node;
 
 import com.dsi.rfp.agent.ExtractionState;
+import com.dsi.rfp.application.service.ArtifactApplicationService;
 import com.dsi.rfp.domain.model.RfpDocument;
+import com.dsi.rfp.domain.model.RulePackResults;
 import com.dsi.rfp.domain.port.out.JobStatePort;
 import com.dsi.rfp.domain.port.out.ResultPersistencePort;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,6 +22,7 @@ public class FinalizeNode implements NodeAction<ExtractionState> {
 
     private final ResultPersistencePort resultPersistencePort;
     private final JobStatePort jobStatePort;
+    private final ArtifactApplicationService artifactApplicationService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -32,6 +35,8 @@ public class FinalizeNode implements NodeAction<ExtractionState> {
         JsonNode sectionsJson = objectMapper.valueToTree(state.sections());
         jobStatePort.updateSectionsJson(state.jobId(), sectionsJson);
 
+        generateArtifacts(state, document);
+
         log.info(
             "event=finalize.complete component=FinalizeNode jobId={} sections={} entities={}",
             state.jobId(),
@@ -40,6 +45,29 @@ public class FinalizeNode implements NodeAction<ExtractionState> {
         );
 
         return Map.of();
+    }
+
+    private void generateArtifacts(
+        ExtractionState state,
+        RfpDocument document
+    ) {
+        RulePackResults results = state.rulePackResults();
+
+        if (results == null) {
+            throw new IllegalStateException(
+                String.format(
+                    "Rule pack results are required before artifact generation: jobId=%d",
+                    state.jobId()
+                )
+            );
+        }
+
+        artifactApplicationService.generateAll(
+            state.jobId(),
+            document,
+            state,
+            results
+        );
     }
 
     private RfpDocument assembleDocument(ExtractionState state) {
