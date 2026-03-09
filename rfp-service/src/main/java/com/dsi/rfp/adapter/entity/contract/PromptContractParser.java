@@ -10,6 +10,7 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
 import com.vladsch.flexmark.util.ast.TextCollectingVisitor;
 import com.vladsch.flexmark.util.data.MutableDataSet;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
@@ -72,6 +73,7 @@ public class PromptContractParser {
 
     private Node parse(Resource resource) {
         String markdown = read(resource);
+
         return parser.parse(markdown);
     }
 
@@ -188,7 +190,7 @@ public class PromptContractParser {
                                   .map(TableCell.class::cast)
                                   .findFirst()
                                   .map(this::text)
-                                  .orElse("");
+                                  .orElse(StringUtils.EMPTY);
     }
 
     private String text(Node node) {

@@ -1,13 +1,193 @@
-class PageOcrResult:
-    def __init__(self, page_number: int, text: str, confidence: float) -> None:
-        self.page_number = page_number
-        self.text = text
-        self.confidence = confidence
+import logging
+
+import numpy as np
+import pytesseract
+from PIL import Image
+from pydantic import BaseModel
+from pytesseract import Output
+
+from image_utils import bytes_to_pil
+from layout_detector import (
+    BoundingBox,
+    LayoutDetectionResult,
+    detect_layout,
+)
+from reading_order import ReadingOrderResult, resolve_reading_order
+from sidecar_config import load_sidecar_config
+from table_service import ExtractedTable, TableService
+
+logger = logging.getLogger(__name__)
+CONFIG = load_sidecar_config()
+
+
+class OcrWord(BaseModel):
+    text: str
+    confidence: float
+    bbox: BoundingBox
+
+
+class OcrResult(BaseModel):
+    text: str
+    word_confidences: list[OcrWord]
+    page_confidence: float
+    word_count: int
+    extraction_method: str
 
 
 class OcrService:
-    def extract_page(self, page_image_bytes: bytes, page_number: int) -> PageOcrResult:
-        raise NotImplementedError("OCR not yet implemented, coming Sprint 6")
 
-    def extract_pages_batch(self, pdf_bytes: bytes) -> list[PageOcrResult]:
-        raise NotImplementedError("OCR not yet implemented, coming Sprint 6")
+    def __init__(
+        self,
+        reader: object,
+        table_service: TableService,
+    ) -> None:
+        self._reader = reader
+        self._table_service = table_service
+
+    def extract_page(
+        self,
+        image_bytes: bytes,
+        lang: str = "eng+ben",
+    ) -> OcrResult:
+        image = bytes_to_pil(image_bytes)
+        result = self._extract_with_easyocr(image)
+
+        if result.page_confidence >= CONFIG.ocr.confidence_threshold:
+            return result
+
+        logger.info(
+            "event=ocr.fallback component=OcrService status=INFO"
+            " easyocr_confidence=%.2f threshold=%.2f"
+            " message=Falling back to Tesseract",
+            result.page_confidence,
+            CONFIG.ocr.confidence_threshold,
+        )
+
+        return self._extract_with_tesseract(image, lang)
+
+    def extract_page_with_layout(
+        self,
+        image_bytes: bytes,
+        document_path: str | None,
+        page_number: int | None,
+    ) -> tuple[OcrResult, LayoutDetectionResult, ReadingOrderResult, list[ExtractedTable]]:
+        ocr_result = self.extract_page(image_bytes)
+        image = bytes_to_pil(image_bytes)
+        scanned_tables = self._extract_scanned_tables(
+            document_path,
+            page_number,
+        )
+        layout = detect_layout(
+            image,
+            scanned_tables,
+            self._reader,
+        )
+        reading_order = resolve_reading_order(
+            ocr_result.text,
+            document_path,
+            page_number,
+        )
+
+        return ocr_result, layout, reading_order, scanned_tables
+
+    def _extract_scanned_tables(
+        self,
+        document_path: str | None,
+        page_number: int | None,
+    ) -> list[ExtractedTable]:
+        if document_path is None:
+            return []
+
+        if page_number is None:
+            return []
+
+        return self._table_service.extract_page_with_strategies(
+            document_path,
+            page_number,
+            CONFIG.scanned_tables.strategies,
+        )
+
+    def _extract_with_easyocr(
+        self,
+        image: Image.Image,
+    ) -> OcrResult:
+        img_array = np.array(image)
+        results = self._reader.readtext(img_array, detail=1)
+        height, width = img_array.shape[:2]
+
+        words = [
+            OcrWord(
+                text=text,
+                confidence=float(conf),
+                bbox=BoundingBox(
+                    x=bbox[0][0] / width,
+                    y=bbox[0][1] / height,
+                    width=(bbox[1][0] - bbox[0][0]) / width,
+                    height=(bbox[2][1] - bbox[0][1]) / height,
+                ),
+            )
+            for bbox, text, conf in results
+        ]
+
+        joined_text = " ".join(word.text for word in words)
+        mean_conf = self._mean_confidence(words)
+
+        return OcrResult(
+            text=joined_text,
+            word_confidences=words,
+            page_confidence=mean_conf,
+            word_count=len(words),
+            extraction_method="easyocr",
+        )
+
+    def _extract_with_tesseract(
+        self,
+        image: Image.Image,
+        lang: str,
+    ) -> OcrResult:
+        data = pytesseract.image_to_data(
+            image,
+            lang=lang,
+            output_type=Output.DICT,
+        )
+
+        height, width = np.array(image).shape[:2]
+        words: list[OcrWord] = []
+
+        for i in range(len(data["text"])):
+            conf = int(data["conf"][i])
+            text = data["text"][i].strip()
+
+            if conf < CONFIG.ocr.tesseract_min_confidence or not text:
+                continue
+
+            words.append(
+                OcrWord(
+                    text=text,
+                    confidence=conf / 100.0,
+                    bbox=BoundingBox(
+                        x=data["left"][i] / width,
+                        y=data["top"][i] / height,
+                        width=data["width"][i] / width,
+                        height=data["height"][i] / height,
+                    ),
+                )
+            )
+
+        joined_text = " ".join(word.text for word in words)
+        mean_conf = self._mean_confidence(words)
+
+        return OcrResult(
+            text=joined_text,
+            word_confidences=words,
+            page_confidence=mean_conf,
+            word_count=len(words),
+            extraction_method="tesseract",
+        )
+
+    @staticmethod
+    def _mean_confidence(words: list[OcrWord]) -> float:
+        if not words:
+            return 0.0
+
+        return sum(w.confidence for w in words) / len(words)

@@ -1,0 +1,14 @@
+version: 1
+render:
+  max_dpi: 400
+ocr:
+  confidence_threshold: 0.5
+  tesseract_min_confidence: 0
+layout:
+  detector: camelot
+reading_order:
+  pdf_layout: true
+scanned_tables:
+  strategies:
+    - lattice
+    - stream

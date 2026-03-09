@@ -50,6 +50,9 @@ public class FinalizeNode implements NodeAction<ExtractionState> {
                           .tables(state.tables())
                           .confidenceMap(state.confidenceMap())
                           .clauses(state.clauses())
+                          .pageClassifications(state.pageClassifications())
+                          .pageConfidences(state.pageConfidences())
+                          .pageExtractionMethods(state.pageExtractionMethods())
                           .build();
     }
 }

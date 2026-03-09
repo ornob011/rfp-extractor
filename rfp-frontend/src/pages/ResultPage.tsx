@@ -4,9 +4,11 @@ import { getRfpResult } from '@/api/rfpClient';
 import { SectionTree } from '@/components/SectionTree';
 import { EntityTable } from '@/components/EntityTable';
 import { TableViewer } from '@/components/TableViewer';
+import { PageSummaryTab } from '@/components/PageSummaryTab';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { TableExtractionResult } from '@/types/table';
+import type { PageDetail } from '@/types/rfp';
 
 export function ResultPage() {
     const { jobId } = useParams<{ jobId: string }>();
@@ -86,6 +88,17 @@ export function ResultPage() {
                     badgeThresholds={result.badgeThresholds}
                 />
             </section>
+
+            <section className="rounded-lg border bg-card p-4">
+                <h2 className="mb-3 text-sm font-semibold text-foreground">
+                    Pages {result.pageDetails && result.pageDetails.length > 0 && (
+                        <span className="text-xs font-normal text-muted-foreground">
+                            ({result.pageDetails.length})
+                        </span>
+                    )}
+                </h2>
+                <PagesPanel pageDetails={result.pageDetails} />
+            </section>
         </div>
     );
 }
@@ -155,4 +168,18 @@ function TablesPanel(
             ))}
         </div>
     );
+}
+
+function PagesPanel(
+    { pageDetails }: { pageDetails: PageDetail[] | undefined },
+) {
+    if (!pageDetails || pageDetails.length === 0) {
+        return (
+            <p className="text-muted-foreground text-sm italic">
+                No page details available.
+            </p>
+        );
+    }
+
+    return <PageSummaryTab pageDetails={pageDetails} />;
 }

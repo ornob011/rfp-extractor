@@ -114,6 +114,22 @@ export const ENTITY_CATEGORY_LABELS: Record<EntityCategory, string> = {
     evaluation: 'Evaluation',
 };
 
+export type PageClassification = 'DIGITAL' | 'SCANNED' | 'MIXED';
+
+export type PageExtractionMethod =
+    | 'TEXT_LAYER'
+    | 'OCR'
+    | 'TEXT_PLUS_OCR'
+    | 'OCR_LLM_RECONSTRUCT'
+    | 'OCR_FAILED';
+
+export interface PageDetail {
+    pageNum: number;
+    classification: PageClassification;
+    extractionMethod: PageExtractionMethod;
+    confidence: number;
+}
+
 export interface BadgeThresholds {
     high: number;
     medium: number;
@@ -126,5 +142,6 @@ export interface RfpResultResponse {
     entities?: Record<string, unknown>;
     confidenceMap?: Record<string, number>;
     tables?: TableExtractionResult[];
+    pageDetails?: PageDetail[];
     badgeThresholds?: BadgeThresholds;
 }

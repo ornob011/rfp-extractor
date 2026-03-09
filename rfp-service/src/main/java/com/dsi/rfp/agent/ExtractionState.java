@@ -29,6 +29,9 @@ public class ExtractionState extends AgentState {
         data.put(Key.TABLES.value(), List.of());
         data.put(Key.CLAUSES.value(), List.of());
         data.put(Key.CONFIDENCE_MAP.value(), Map.of());
+        data.put(Key.PAGE_TEXTS.value(), Map.of());
+        data.put(Key.PAGE_CONFIDENCES.value(), Map.of());
+        data.put(Key.PAGE_EXTRACTION_METHODS.value(), Map.of());
         data.put(Key.REPAIR_LOG.value(), List.of());
         data.put(Key.LOW_CONFIDENCE_QUEUE.value(), List.of());
         data.put(Key.MANUAL_REVIEW_REQUIRED.value(), List.of());
@@ -97,6 +100,48 @@ public class ExtractionState extends AgentState {
                     .collect(Collectors.toMap(
                         entry -> (String) entry.getKey(),
                         entry -> ((Number) entry.getValue()).doubleValue()
+                    ));
+    }
+
+    public Map<Integer, String> pageTexts() {
+        Map<?, ?> value = readMapOrDefault(Key.PAGE_TEXTS, Map.of());
+
+        return value.entrySet()
+                    .stream()
+                    .filter(entry -> entry.getKey() instanceof Integer)
+                    .filter(entry -> entry.getValue() instanceof String)
+                    .collect(Collectors.toMap(
+                        entry -> (Integer) entry.getKey(),
+                        entry -> (String) entry.getValue()
+                    ));
+    }
+
+    public Map<Integer, Double> pageConfidences() {
+        Map<?, ?> value = readMapOrDefault(Key.PAGE_CONFIDENCES, Map.of());
+
+        return value.entrySet()
+                    .stream()
+                    .filter(entry -> entry.getKey() instanceof Integer)
+                    .filter(entry -> entry.getValue() instanceof Number)
+                    .collect(Collectors.toMap(
+                        entry -> (Integer) entry.getKey(),
+                        entry -> ((Number) entry.getValue()).doubleValue()
+                    ));
+    }
+
+    public Map<Integer, PageExtractionMethod> pageExtractionMethods() {
+        Map<?, ?> value = readMapOrDefault(
+            Key.PAGE_EXTRACTION_METHODS,
+            Map.of()
+        );
+
+        return value.entrySet()
+                    .stream()
+                    .filter(entry -> entry.getKey() instanceof Integer)
+                    .filter(entry -> entry.getValue() instanceof PageExtractionMethod)
+                    .collect(Collectors.toMap(
+                        entry -> (Integer) entry.getKey(),
+                        entry -> (PageExtractionMethod) entry.getValue()
                     ));
     }
 
@@ -207,6 +252,9 @@ public class ExtractionState extends AgentState {
         LOW_CONFIDENCE_QUEUE("lowConfidenceQueue"),
         MANUAL_REVIEW_REQUIRED("manualReviewRequired"),
         TOTAL_REPAIR_ITERATIONS("totalRepairIterations"),
+        PAGE_TEXTS("pageTexts"),
+        PAGE_CONFIDENCES("pageConfidences"),
+        PAGE_EXTRACTION_METHODS("pageExtractionMethods"),
         REPAIR_EXHAUSTED("repairExhausted"),
         RULE_PACK_RESULTS("rulePackResults");
 

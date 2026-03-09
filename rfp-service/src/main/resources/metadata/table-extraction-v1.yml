@@ -23,3 +23,8 @@ continuation:
     - sub total
     - subtotal
     - grand total
+scanned:
+  promptResourcePath: prompts/scanned-table-reconstruction-v1.md
+  maxOcrTextLength: 3000
+  confidenceFactor: 0.8
+  llmMethod: ocr_llm_reconstruct

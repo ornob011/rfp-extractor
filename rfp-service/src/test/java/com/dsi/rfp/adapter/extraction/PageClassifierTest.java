@@ -3,6 +3,7 @@ package com.dsi.rfp.adapter.extraction;
 import com.dsi.rfp.domain.model.EmbeddedImageInfo;
 import com.dsi.rfp.domain.model.PageClassification;
 import com.dsi.rfp.domain.model.PageSummary;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,7 @@ class PageClassifierTest {
                                                         .height((float) Math.sqrt(pageArea * 0.85))
                                                         .build();
         PageSummary result = classifier.classify(
-            1, "", dims, List.of(largeImage)
+            1, StringUtils.EMPTY, dims, List.of(largeImage)
         );
         assertThat(result.getClassification()).isEqualTo(PageClassification.SCANNED);
     }
@@ -62,7 +63,7 @@ class PageClassifierTest {
     void shouldClassifyBlankPageAsScanned() {
         PDRectangle dims = new PDRectangle(612, 792);
         PageSummary result = classifier.classify(
-            1, "", dims, Collections.emptyList()
+            1, StringUtils.EMPTY, dims, Collections.emptyList()
         );
         assertThat(result.getClassification()).isEqualTo(PageClassification.SCANNED);
     }
