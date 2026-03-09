@@ -1,0 +1,51 @@
+version: 1
+prompts:
+  clarificationQuestionResourcePath: prompts/clarification-question-gen-v1.md
+  riskMitigationResourcePath: prompts/risk-mitigation-suggestion-v1.md
+templates:
+  clarificationQuestionsResourcePath: clarification-questions.ftl
+  auditReportResourcePath: audit-report.ftl
+clarificationDocument:
+  title: REQUEST FOR INFORMATION (RFI)
+  projectLabel: Project
+  referenceLabel: Reference
+  dateLabel: Date
+  sourceLabel: Source
+  sourceSectionFallback: N/A
+  closingInstruction: Please respond by [date] to the Procuring Entity.
+complianceChecklist:
+  sheetName: Compliance Checklist
+  mandatoryTrueLabel: Yes
+  mandatoryFalseLabel: No
+  emptyStatusLabel: ""
+  failTintColor: CORAL
+  clauseMatchThreshold: 0.82
+riskLog:
+  sheetName: Risk & Assumptions Log
+  emptySourceLabel: ""
+  emptyMitigationLabel: ""
+generation:
+  maxQuestions: 30
+  maxTriggers: 50
+  lowConfidenceThreshold: 0.5
+  maxLlmMitigations: 10
+  auditValueTruncateLength: 50
+  defaultRiskOwner: Bid Team
+artifacts:
+  clarificationQuestionsFilename: clarification-questions.docx
+  ambiguityRegisterFilename: ambiguity-register.xlsx
+  complianceChecklistFilename: compliance-checklist.xlsx
+  riskLogFilename: risk-log.xlsx
+  auditReportFilename: audit-report.html
+audit:
+  untitledDocumentLabel: Untitled RFP
+  missingValueLabel: N/A
+  confidenceBands:
+    0.0: LOW
+    0.5: MEDIUM
+    0.8: HIGH
+dateFormats:
+  - yyyy-MM-dd
+  - dd/MM/yyyy
+  - dd-MM-yyyy
+  - yyyy/MM/dd
