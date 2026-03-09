@@ -49,6 +49,17 @@ class LocalFileStorageAdapterTest {
         assertThat(dir.toString()).contains("42");
     }
 
+
+    @Test
+    void shouldDeleteJobDirectory() {
+        Long jobId = 7L;
+        adapter.store(jobId, "content".getBytes(), "test.pdf");
+
+        adapter.deleteJobDirectory(jobId);
+
+        assertThat(adapter.jobDirectory(jobId)).doesNotExist();
+    }
+
     @Test
     void shouldSanitizePathTraversal() {
         Long jobId = 3L;

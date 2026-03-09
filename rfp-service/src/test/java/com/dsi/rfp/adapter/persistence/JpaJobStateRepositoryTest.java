@@ -4,6 +4,7 @@ import com.dsi.rfp.adapter.persistence.entity.AnalysisJobEntity;
 import com.dsi.rfp.adapter.persistence.entity.DocumentEntity;
 import com.dsi.rfp.adapter.persistence.repository.AnalysisJobRepository;
 import com.dsi.rfp.adapter.persistence.repository.DocumentRepository;
+import com.dsi.rfp.adapter.persistence.repository.UserRepository;
 import com.dsi.rfp.domain.model.AnalysisStatus;
 import com.dsi.rfp.domain.model.ExtractionJob;
 import jakarta.persistence.EntityNotFoundException;
@@ -33,6 +34,9 @@ class JpaJobStateRepositoryTest {
     private DocumentRepository documentRepository;
 
     @Mock
+    private UserRepository userRepository;
+
+    @Mock
     private AnalysisJobMapper mapper;
 
     private JpaJobStateRepository repository;
@@ -40,7 +44,7 @@ class JpaJobStateRepositoryTest {
     @BeforeEach
     void setUp() {
         repository = new JpaJobStateRepository(
-            analysisJobRepository, documentRepository, mapper
+            analysisJobRepository, documentRepository, userRepository, mapper
         );
     }
 

@@ -1,5 +1,7 @@
 package com.dsi.rfp.adapter.llm;
 
+import com.dsi.rfp.adapter.security.PromptInjectionFilter;
+import com.dsi.rfp.config.PromptInjectionProperties;
 import com.dsi.rfp.domain.exception.LlmUnavailableException;
 import com.dsi.rfp.domain.model.LlmJudgmentResult;
 import com.dsi.rfp.domain.model.RuleStatus;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -31,7 +34,18 @@ class LlmAdapterTest {
 
     @BeforeEach
     void setUp() {
-        llmAdapter = new LlmAdapter(caller, new ObjectMapper());
+        llmAdapter = new LlmAdapter(
+            caller,
+            new ObjectMapper(),
+            new PromptInjectionFilter(
+                new PromptInjectionProperties(
+                    List.of("ignore all previous instructions", "system: you are", "jailbreak"),
+                    "<document_content>",
+                    "</document_content>",
+                    "[FILTERED]"
+                )
+            )
+        );
     }
 
     @Test

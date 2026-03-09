@@ -15,12 +15,12 @@ class RfpTypeClassifierTest {
     private final EntitySignalReader entitySignalReader = new EntitySignalReader();
     private final RulePackConfig config = new RulePackConfig(entitySignalReader);
     private final PackSignalScorer packSignalScorer = new PackSignalScorer(entitySignalReader);
+    private final CandidatePackResolver candidatePackResolver = new CandidatePackResolver();
     private final RfpTypeClassifier classifier = new RfpTypeClassifier(
         config,
         packSignalScorer,
         candidatePackResolver
     );
-    private final CandidatePackResolver candidatePackResolver = new CandidatePackResolver();
 
     @Test
     void shouldClassifyAsIctWhenEntitySignalsExist() {
