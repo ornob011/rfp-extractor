@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { JobStatus, JobStatusResponse, RfpResultResponse } from '../types/rfp';
 import type { RulePackSummary, ReloadResult } from '../types/rulepack';
+import type { ArtifactMetadata } from '../types/artifact';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
 
@@ -44,4 +45,15 @@ export async function listRulePacks(): Promise<RulePackSummary[]> {
 export async function reloadRulePacks(): Promise<ReloadResult> {
     const response = await rfpClient.post<ReloadResult>('/api/v1/admin/rule-packs/reload');
     return response.data;
+}
+
+export async function listArtifacts(jobId: string): Promise<ArtifactMetadata[]> {
+    const response = await rfpClient.get<ArtifactMetadata[]>(
+        `/api/v1/rfp/artifacts/${jobId}`,
+    );
+    return response.data;
+}
+
+export function artifactDownloadUrl(jobId: string, filename: string): string {
+    return `${BASE_URL}/api/v1/rfp/artifacts/${jobId}/${filename}`;
 }
