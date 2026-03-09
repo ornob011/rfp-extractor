@@ -7,10 +7,12 @@ import { TableViewer } from '@/components/TableViewer';
 import { PageSummaryTab } from '@/components/PageSummaryTab';
 import { RulePackResultsPanel } from '@/components/RulePackResults';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { TableExtractionResult } from '@/types/table';
 import type { PageDetail } from '@/types/rfp';
 import type { RulePackResults } from '@/types/rulepack';
+import type { RfpType } from '@/types/rfpType';
 
 export function ResultPage() {
     const { jobId } = useParams<{ jobId: string }>();
@@ -53,9 +55,12 @@ export function ResultPage() {
     return (
         <div className="max-w-5xl space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-xl font-bold text-foreground">
-                    Result: Job #{result.jobId}
-                </h1>
+                <div className="flex items-center gap-3">
+                    <h1 className="text-xl font-bold text-foreground">
+                        Result: Job #{result.jobId}
+                    </h1>
+                    <RfpTypeBadge rfpType={result.rfpType ?? result.rulePackResults?.rfpType} />
+                </div>
                 <Link to="/jobs" className="text-sm text-primary hover:underline">
                     Back to Jobs
                 </Link>
@@ -108,6 +113,16 @@ export function ResultPage() {
             </section>
         </div>
     );
+}
+
+function RfpTypeBadge(
+    { rfpType }: { rfpType: RfpType | null | undefined },
+) {
+    if (!rfpType) {
+        return null;
+    }
+
+    return <Badge variant="outline">{rfpType}</Badge>;
 }
 
 function resolveErrorMessage(error: unknown): string {

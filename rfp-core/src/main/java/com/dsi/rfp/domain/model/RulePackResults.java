@@ -19,6 +19,8 @@ public class RulePackResults {
 
     private String packVersion;
 
+    private RfpType rfpType;
+
     private Instant runTimestamp;
 
     @Builder.Default

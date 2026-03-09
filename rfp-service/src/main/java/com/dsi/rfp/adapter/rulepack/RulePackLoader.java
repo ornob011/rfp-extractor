@@ -2,6 +2,7 @@ package com.dsi.rfp.adapter.rulepack;
 
 import com.dsi.rfp.domain.exception.RulePackLoadException;
 import com.dsi.rfp.domain.model.RulePackDefinition;
+import com.dsi.rfp.domain.port.out.RulePackManagementPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonSchema;
@@ -18,21 +19,18 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
-public class RulePackLoader {
+public class RulePackLoader implements RulePackManagementPort {
 
     private final RulePackConfig config;
     private final ResourcePatternResolver resourcePatternResolver;
     private final ObjectMapper yamlMapper = Jackson2ObjectMapperBuilder.yaml().build();
-    private final ConcurrentHashMap<String, RulePackDefinition> cache = new ConcurrentHashMap<>();
     private final JsonSchema rulePackSchema;
+    private volatile Map<String, RulePackDefinition> cache = Map.of();
 
     public RulePackLoader(
         RulePackConfig config,
@@ -49,56 +47,36 @@ public class RulePackLoader {
     }
 
     public Map<String, RulePackDefinition> loadAll() {
-        Resource[] resources = scanResources();
+        Map<String, RulePackDefinition> loadedPacks = loadPackIndex(scanResources());
 
-        cache.clear();
+        cache = loadedPacks;
 
-        for (Resource resource : resources) {
-            loadResource(resource);
-        }
-
-        return Collections.unmodifiableMap(cache);
+        return loadedPacks;
     }
 
     public Optional<RulePackDefinition> load(String packId) {
         return Optional.ofNullable(cache.get(packId));
     }
 
+    @Override
     public List<RulePackDefinition> listPacks() {
         return List.copyOf(cache.values());
     }
 
-    public void reload(String packId) {
-        for (Resource resource : scanResources()) {
-            RulePackDefinition pack = parseAndValidate(resource);
-
-            if (pack.getPackId().equals(packId)) {
-                cache.put(packId, pack);
-                log.info(
-                    "Rule pack reloaded: packId={}, version={}, ruleCount={}",
-                    pack.getPackId(),
-                    pack.getPackVersion(),
-                    pack.getRules().size()
-                );
-                return;
-            }
-        }
-
-        throw new RulePackLoadException(
-            String.format("Rule pack not found for reload: %s", packId)
-        );
+    @Override
+    public List<String> reloadAll() {
+        return List.copyOf(loadAll().keySet());
     }
 
-    private void loadResource(Resource resource) {
-        RulePackDefinition pack = parseAndValidate(resource);
-        cache.put(pack.getPackId(), pack);
-
-        log.info(
-            "Rule pack loaded: packId={}, version={}, ruleCount={}",
-            pack.getPackId(),
-            pack.getPackVersion(),
-            pack.getRules().size()
+    public void reload(String packId) {
+        RulePackDefinition reloadedPack = loadPackFromResources(
+            packId,
+            scanResources()
         );
+
+        Map<String, RulePackDefinition> reloadedCache = new LinkedHashMap<>(cache);
+        reloadedCache.put(packId, reloadedPack);
+        cache = Collections.unmodifiableMap(reloadedCache);
     }
 
     private RulePackDefinition parseAndValidate(Resource resource) {
@@ -155,5 +133,73 @@ public class RulePackLoader {
         } catch (IOException exception) {
             throw new RulePackLoadException("Failed to load rule schema", exception);
         }
+    }
+
+    private Map<String, RulePackDefinition> loadPackIndex(Resource[] resources) {
+        Map<String, RulePackDefinition> loadedPacks = new LinkedHashMap<>();
+
+        resourcesToPacks(resources).forEach(pack -> putUniquePack(
+            loadedPacks,
+            pack
+        ));
+
+        return Collections.unmodifiableMap(loadedPacks);
+    }
+
+    private List<RulePackDefinition> resourcesToPacks(Resource[] resources) {
+        return Stream.of(resources)
+                     .map(this::parseAndValidate)
+                     .sorted(Comparator.comparing(RulePackDefinition::getPackId))
+                     .peek(this::logPackLoaded)
+                     .toList();
+    }
+
+    private RulePackDefinition loadPackFromResources(
+        String packId,
+        Resource[] resources
+    ) {
+        return resourcesToPacks(resources).stream()
+                                          .filter(pack -> pack.getPackId().equals(packId))
+                                          .findFirst()
+                                          .map(this::logPackReloaded)
+                                          .orElseThrow(() -> new RulePackLoadException(
+                                              String.format("Rule pack not found for reload: %s", packId)
+                                          ));
+    }
+
+    private void logPackLoaded(RulePackDefinition pack) {
+        log.info(
+            "Rule pack loaded: packId={}, version={}, ruleCount={}",
+            pack.getPackId(),
+            pack.getPackVersion(),
+            pack.getRules().size()
+        );
+    }
+
+    private RulePackDefinition logPackReloaded(RulePackDefinition pack) {
+        log.info(
+            "Rule pack reloaded: packId={}, version={}, ruleCount={}",
+            pack.getPackId(),
+            pack.getPackVersion(),
+            pack.getRules().size()
+        );
+
+        return pack;
+    }
+
+    private void putUniquePack(
+        Map<String, RulePackDefinition> loadedPacks,
+        RulePackDefinition pack
+    ) {
+        if (loadedPacks.containsKey(pack.getPackId())) {
+            throw new RulePackLoadException(
+                String.format("Duplicate rule pack id detected: %s", pack.getPackId())
+            );
+        }
+
+        loadedPacks.put(
+            pack.getPackId(),
+            pack
+        );
     }
 }

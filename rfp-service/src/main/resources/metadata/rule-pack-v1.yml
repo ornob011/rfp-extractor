@@ -79,3 +79,151 @@ packs:
             - integration
             - interoperability
             - sso
+  - packId: bd-govt-works-v1
+    rfpType: WORKS
+    enabled: true
+    priority: 90
+    minimumApplicabilityScore: 4
+    exclusiveThreshold: 8
+    signals:
+      sectionTitleKeywords:
+        weight: 2
+        values:
+          - construction
+          - civil works
+          - building
+          - infrastructure
+          - bill of quantities
+          - boq
+          - road
+          - bridge
+          - renovation
+      scopeSummaryKeywords:
+        weight: 2
+        values:
+          - construction
+          - civil
+          - building
+          - infrastructure
+          - road
+          - bridge
+          - site
+          - foundation
+          - structural
+      entityPresence:
+        weight: 3
+        fields:
+          - scopeOfWork
+          - performanceSecurity
+          - paymentTerms
+          - projectDuration
+          - bankGuarantee
+          - keyPersonnel
+          - eligibilitySummary
+      entityValueKeywords:
+        weight: 2
+        fields:
+          scopeOfWork:
+            - construction
+            - building
+            - civil
+            - site
+            - foundation
+            - structural
+            - road
+            - bridge
+  - packId: bd-govt-consultancy-v1
+    rfpType: CONSULTANCY
+    enabled: true
+    priority: 90
+    minimumApplicabilityScore: 4
+    exclusiveThreshold: 8
+    signals:
+      sectionTitleKeywords:
+        weight: 2
+        values:
+          - terms of reference
+          - tor
+          - consultancy
+          - consulting
+          - methodology
+          - technical approach
+          - advisory
+          - feasibility
+      scopeSummaryKeywords:
+        weight: 2
+        values:
+          - consultant
+          - advisory
+          - feasibility
+          - study
+          - technical assistance
+          - methodology
+          - terms of reference
+          - consulting
+      entityPresence:
+        weight: 3
+        fields:
+          - scopeOfWork
+          - staffMonths
+          - keyPersonnel
+          - cvRequirements
+          - methodOfSelection
+          - technicalFinancialSplit
+          - eligibilitySummary
+      entityValueKeywords:
+        weight: 2
+        fields:
+          scopeOfWork:
+            - consultant
+            - advisory
+            - feasibility
+            - study
+            - technical assistance
+  - packId: bd-govt-goods-v1
+    rfpType: GOODS
+    enabled: true
+    priority: 80
+    minimumApplicabilityScore: 4
+    exclusiveThreshold: 8
+    signals:
+      sectionTitleKeywords:
+        weight: 2
+        values:
+          - supply
+          - goods
+          - equipment
+          - procurement of goods
+          - vehicle
+          - furniture
+          - machinery
+      scopeSummaryKeywords:
+        weight: 2
+        values:
+          - supply
+          - goods
+          - equipment
+          - delivery
+          - procurement
+          - purchase
+          - vehicle
+          - furniture
+      entityPresence:
+        weight: 3
+        fields:
+          - scopeOfWork
+          - performanceSecurity
+          - paymentTerms
+          - bankGuarantee
+          - eligibilitySummary
+          - warrantyPeriod
+      entityValueKeywords:
+        weight: 2
+        fields:
+          scopeOfWork:
+            - supply
+            - goods
+            - equipment
+            - delivery
+            - procurement
+            - purchase

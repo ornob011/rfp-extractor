@@ -3,10 +3,7 @@ package com.dsi.rfp.adapter.rest;
 import com.dsi.rfp.agent.ConfidenceScoringConfig;
 import com.dsi.rfp.application.service.RfpJobService;
 import com.dsi.rfp.application.service.RfpSubmissionService;
-import com.dsi.rfp.domain.model.AnalysisStatus;
-import com.dsi.rfp.domain.model.PageExtractionMethod;
-import com.dsi.rfp.domain.model.PageSummary;
-import com.dsi.rfp.domain.model.RfpDocument;
+import com.dsi.rfp.domain.model.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -99,6 +96,7 @@ public class RfpController {
                                                       .tables(parsedResult.tables())
                                                       .pageDetails(parsedResult.pageDetails())
                                                       .rulePackResults(parsedResult.rulePackResults())
+                                                      .rfpType(parsedResult.rfpType())
                                                       .badgeThresholds(buildBadgeThresholds())
                                                       .build();
 
@@ -107,7 +105,7 @@ public class RfpController {
 
     private ParsedResult parseResult(JsonNode resultJson) {
         if (resultJson == null) {
-            return new ParsedResult(null, null, null, null, null);
+            return new ParsedResult(null, null, null, null, null, null);
         }
 
         RfpDocument result = objectMapper.convertValue(
@@ -120,8 +118,15 @@ public class RfpController {
             objectMapper.valueToTree(result.getConfidenceMap()),
             objectMapper.valueToTree(result.getTables()),
             objectMapper.valueToTree(buildPageDetails(result)),
-            objectMapper.valueToTree(result.getRulePackResults())
+            objectMapper.valueToTree(result.getRulePackResults()),
+            resolveRfpType(result)
         );
+    }
+
+    private RfpType resolveRfpType(RfpDocument result) {
+        return Optional.ofNullable(result.getRulePackResults())
+                       .map(RulePackResults::getRfpType)
+                       .orElse(null);
     }
 
     private List<PageDetailDto> buildPageDetails(RfpDocument result) {
@@ -187,7 +192,8 @@ public class RfpController {
         JsonNode confidenceMap,
         JsonNode tables,
         JsonNode pageDetails,
-        JsonNode rulePackResults
+        JsonNode rulePackResults,
+        RfpType rfpType
     ) {
     }
 }

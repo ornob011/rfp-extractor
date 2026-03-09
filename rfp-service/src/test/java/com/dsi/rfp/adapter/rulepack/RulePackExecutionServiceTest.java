@@ -43,6 +43,7 @@ class RulePackExecutionServiceTest {
         RulePackDefinition pack = RulePackDefinition.builder()
                                                     .packId("bd-govt-ict-v1")
                                                     .packVersion("1.0.0")
+                                                    .rfpType(RfpType.ICT)
                                                     .build();
         RulePackResults results = singleResult("bd-govt-ict-v1");
 
@@ -57,6 +58,7 @@ class RulePackExecutionServiceTest {
         RulePackResults result = rulePackExecutionService.execute(RfpDocument.builder().build());
 
         assertThat(result.getPackId()).isEqualTo("bd-govt-ict-v1");
+        assertThat(result.getRfpType()).isEqualTo(RfpType.ICT);
     }
 
     @Test
@@ -64,10 +66,12 @@ class RulePackExecutionServiceTest {
         RulePackDefinition ictPack = RulePackDefinition.builder()
                                                        .packId("bd-govt-ict-v1")
                                                        .packVersion("1.0.0")
+                                                       .rfpType(RfpType.ICT)
                                                        .build();
         RulePackDefinition goodsPack = RulePackDefinition.builder()
                                                          .packId("bd-govt-goods-v1")
                                                          .packVersion("1.0.0")
+                                                         .rfpType(RfpType.GOODS)
                                                          .build();
 
         when(rfpTypeClassifier.classify(any())).thenReturn(classification(
@@ -86,6 +90,7 @@ class RulePackExecutionServiceTest {
         assertThat(result.getPackId()).isEqualTo("all-applicable");
         assertThat(result.getFindings()).hasSize(2);
         assertThat(result.getSummary().get(RuleSeverity.HIGH)).isEqualTo(2);
+        assertThat(result.getRfpType()).isEqualTo(RfpType.UNKNOWN);
     }
 
     @Test
@@ -104,6 +109,7 @@ class RulePackExecutionServiceTest {
 
         assertThat(result.getFindings()).isEmpty();
         assertThat(result.getPackId()).isEqualTo("all-applicable");
+        assertThat(result.getRfpType()).isEqualTo(RfpType.UNKNOWN);
     }
 
     @Test
@@ -111,6 +117,7 @@ class RulePackExecutionServiceTest {
         RulePackDefinition ictPack = RulePackDefinition.builder()
                                                        .packId("bd-govt-ict-v1")
                                                        .packVersion("1.0.0")
+                                                       .rfpType(RfpType.ICT)
                                                        .build();
 
         when(rfpTypeClassifier.classify(any())).thenReturn(classification(
@@ -127,6 +134,7 @@ class RulePackExecutionServiceTest {
 
         assertThat(result.getFindings()).hasSize(1);
         assertThat(result.getPackId()).isEqualTo("bd-govt-ict-v1");
+        assertThat(result.getRfpType()).isEqualTo(RfpType.ICT);
     }
 
     private RulePackClassification classification(
@@ -147,6 +155,7 @@ class RulePackExecutionServiceTest {
         return RulePackResults.builder()
                               .packId(packId)
                               .packVersion("1.0.0")
+                              .rfpType(resultType(packId))
                               .runTimestamp(Instant.now())
                               .summary(Map.of(RuleSeverity.HIGH, 1))
                               .findings(List.of(
@@ -158,5 +167,12 @@ class RulePackExecutionServiceTest {
                                              .build()
                               ))
                               .build();
+    }
+
+    private RfpType resultType(String packId) {
+        return switch (packId) {
+            case "bd-govt-goods-v1" -> RfpType.GOODS;
+            default -> RfpType.ICT;
+        };
     }
 }

@@ -1,0 +1,229 @@
+pack_id: bd-govt-goods-v1
+pack_version: "1.0.0"
+rfp_type: GOODS
+rules:
+  # ── FATAL (6 rules) ──────────────────────────────────────────────────────
+
+  - id: BD-G-001
+    name: RFP Title Present
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "sections[?title] | length(@) > `0`"
+    evidence_path: "sections[0].title"
+    message: "RFP title is missing from the document"
+
+  - id: BD-G-002
+    name: Procurement Reference Present
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.procurementReference != null"
+    evidence_path: "entities.procurementReference"
+    message: "Procurement reference number is missing"
+
+  - id: BD-G-003
+    name: Client Name Present
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.clientName != null"
+    evidence_path: "entities.clientName"
+    message: "Client / Procuring Entity name is missing"
+
+  - id: BD-G-004
+    name: Submission Deadline Present
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.submissionDeadline != null"
+    evidence_path: "entities.submissionDeadline"
+    message: "Submission deadline is missing"
+
+  - id: BD-G-005
+    name: Technical Specifications Present
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.technicalSpecifications != null"
+    evidence_path: "entities.technicalSpecifications"
+    message: "Technical specifications are missing. Goods RFPs must include measurable technical specifications referencing ISO/BDS standards."
+
+  - id: BD-G-006
+    name: Delivery Schedule Stated
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.deliverySchedule != null"
+    evidence_path: "entities.deliverySchedule"
+    message: "Delivery schedule is not stated. Delivery timeline is mandatory for goods procurement."
+
+  # ── HIGH (9 structural + 1 semantic = 10 rules) ──────────────────────────
+
+  - id: BD-G-007
+    name: Inspection and Acceptance Criteria Stated
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.inspectionCriteria != null"
+    evidence_path: "entities.inspectionCriteria"
+    message: "Inspection and acceptance criteria are not specified. PPR 2008 requires a Technical Inspection and Acceptance Committee (TIAC)."
+
+  - id: BD-G-008
+    name: Warranty Period Stated
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.warrantyPeriod != null"
+    evidence_path: "entities.warrantyPeriod"
+    message: "Warranty period is not stated (typically 1-3 years for goods)"
+
+  - id: BD-G-009
+    name: Incoterms Specified
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.incoterms != null"
+    evidence_path: "entities.incoterms"
+    message: "Incoterms (CIF/FOB/DDP) are not specified. Delivery terms determine freight and insurance responsibility."
+
+  - id: BD-G-010
+    name: Performance Security Requirement Stated
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.performanceSecurity != null"
+    evidence_path: "entities.performanceSecurity"
+    message: "Performance security requirement is not stated (typically 5-10% of contract price for goods)"
+
+  - id: BD-G-011
+    name: Payment Terms Stated
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.paymentTerms != null"
+    evidence_path: "entities.paymentTerms"
+    message: "Payment terms are not specified"
+
+  - id: BD-G-012
+    name: Delivery Address Stated
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.deliveryAddress != null"
+    evidence_path: "entities.deliveryAddress"
+    message: "Delivery address / destination is not specified"
+
+  - id: BD-G-013
+    name: Bid Validity Period Stated
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.bidValidityPeriod != null"
+    evidence_path: "entities.bidValidityPeriod"
+    message: "Bid validity period is not stated"
+
+  - id: BD-G-014
+    name: Bank Guarantee / Bid Bond Requirement Mentioned
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.bankGuarantee != null"
+    evidence_path: "entities.bankGuarantee"
+    message: "Bank guarantee or bid bond requirement not found (typically 2-3% of estimated contract value)"
+
+  - id: BD-G-015
+    name: After-Sales Service / Spare Parts Stated
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.afterSalesService != null"
+    evidence_path: "entities.afterSalesService"
+    message: "After-sales service and spare parts availability requirements are not specified. Spare parts should be available for 5-10 years."
+
+  - id: BD-G-021
+    name: Technical Specifications Are Unambiguous
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.scopeOfWork"
+    llm_prompt: "Assess whether the technical specifications are unambiguous and objectively measurable. They must use specific values (dimensions, tolerances, standards references like ISO/BIS/BNBC) rather than subjective language like 'good quality' or 'suitable grade'. Proprietary brand-only specifications without 'or equivalent' are also a concern."
+    message: "Technical specifications contain ambiguous or subjective language that may lead to disputes or non-comparable bids"
+
+  # ── MEDIUM (5 structural + 1 semantic = 6 rules) ─────────────────────────
+
+  - id: BD-G-016
+    name: Packaging Requirements Specified
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.packagingRequirements != null"
+    evidence_path: "entities.packagingRequirements"
+    message: "Packaging requirements are not specified. Goods must be packed to prevent damage during transit with proper marking."
+
+  - id: BD-G-017
+    name: Pre-Shipment Inspection Requirement Stated
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.preShipmentInspection != null"
+    evidence_path: "entities.preShipmentInspection"
+    message: "Pre-shipment inspection requirement not found. Factory acceptance testing may be required at manufacturer premises."
+
+  - id: BD-G-018
+    name: Country of Origin Requirements Stated
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.countryOfOrigin != null"
+    evidence_path: "entities.countryOfOrigin"
+    message: "Country of origin requirements or restrictions are not stated. Domestic preference margin (7.5-15%) may apply."
+
+  - id: BD-G-019
+    name: Insurance Requirements Stated
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.insuranceRequirements != null"
+    evidence_path: "entities.insuranceRequirements"
+    message: "Insurance requirements for transport and delivery are not specified"
+
+  - id: BD-G-020
+    name: Submission Format Stated
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.numberOfCopies != null"
+    evidence_path: "entities.numberOfCopies"
+    message: "Number of bid copies or submission format is not stated"
+
+  - id: BD-G-022
+    name: Warranty Terms Clearly Define Scope of Coverage
+    pack: bd-govt-goods-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.warrantyPeriod"
+    llm_prompt: "Determine whether warranty terms clearly define: duration, what is covered (parts, labor, defects), exclusions, response time for warranty claims, and who bears transport costs for warranty repairs. Vague 'standard warranty' without specifics is insufficient."
+    message: "Warranty terms do not clearly define scope of coverage; warranty obligations may be disputed"

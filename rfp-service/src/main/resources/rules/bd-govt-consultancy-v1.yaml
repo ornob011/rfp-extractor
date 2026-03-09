@@ -1,0 +1,339 @@
+pack_id: bd-govt-consultancy-v1
+pack_version: "1.0.0"
+rfp_type: CONSULTANCY
+rules:
+  # ── FATAL (10 rules) ─────────────────────────────────────────────────────
+
+  - id: BD-C-001
+    name: RFP Title Present
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "sections[?title] | length(@) > `0`"
+    evidence_path: "sections[0].title"
+    message: "RFP / ToR title is missing from the document"
+
+  - id: BD-C-002
+    name: Procurement Reference Present
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.procurementReference != null"
+    evidence_path: "entities.procurementReference"
+    message: "Procurement reference number is missing"
+
+  - id: BD-C-003
+    name: Client Name Present
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.clientName != null"
+    evidence_path: "entities.clientName"
+    message: "Client / Agency name is missing"
+
+  - id: BD-C-004
+    name: Submission Deadline Present
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.submissionDeadline != null"
+    evidence_path: "entities.submissionDeadline"
+    message: "Submission deadline is missing"
+
+  - id: BD-C-005
+    name: Method of Selection Specified
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.methodOfSelection != null"
+    evidence_path: "entities.methodOfSelection"
+    message: "Method of selection (QCBS/QBS/LCS/CQS/SSS) is not specified"
+
+  - id: BD-C-006
+    name: Staff Months Requirement Stated
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.staffMonths != null"
+    evidence_path: "entities.staffMonths"
+    message: "Total staff months or person-days required are not stated"
+
+  - id: BD-C-007
+    name: Team Composition / Key Expert Roles Specified
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.keyPersonnel != null"
+    evidence_path: "entities.keyPersonnel"
+    message: "Key expert roles and team composition are not specified in the ToR"
+
+  - id: BD-C-008
+    name: Methodology / Approach Requirement Present
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "sections[?title && (contains(title, 'methodology') || contains(title, 'Methodology') || contains(title, 'approach') || contains(title, 'Approach') || contains(title, 'Technical Approach'))] | length(@) > `0`"
+    evidence_path: "sections[0].title"
+    message: "No section requiring a methodology or technical approach was found. QCBS evaluations require firms to submit a technical approach."
+
+  - id: BD-C-009
+    name: Reporting Requirements Specified
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.reportingRequirements != null"
+    evidence_path: "entities.reportingRequirements"
+    message: "Reporting requirements (inception report, progress reports, draft/final reports) are not specified"
+
+  - id: BD-C-010
+    name: Eligibility Criteria Present
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: FATAL
+    check_type: structural
+    condition: "entities.eligibilitySummary != null"
+    evidence_path: "entities.eligibilitySummary"
+    message: "Firm eligibility criteria are missing. Must include firm registration and similar project experience requirements."
+
+  # ── HIGH (12 structural + 2 semantic = 14 rules) ─────────────────────────
+
+  - id: BD-C-011
+    name: Key Expert CV Requirements Stated
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.cvRequirements != null"
+    evidence_path: "entities.cvRequirements"
+    message: "Key expert CV requirements including minimum years of experience and qualification level are not stated"
+
+  - id: BD-C-012
+    name: Work Plan Required
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.workPlanRequired != null"
+    evidence_path: "entities.workPlanRequired"
+    message: "Requirement for a work plan / schedule from the firm is not mentioned"
+
+  - id: BD-C-013
+    name: Inception Report Delivery Specified
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.inceptionReport != null"
+    evidence_path: "entities.inceptionReport"
+    message: "Inception report delivery requirements not found. Consultancy contracts should specify inception report within 30 days of commencement."
+
+  - id: BD-C-014
+    name: Final Report Delivery Specified
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.finalReport != null"
+    evidence_path: "entities.finalReport"
+    message: "Final report delivery requirement not found. Final report incorporating comments is required before final payment."
+
+  - id: BD-C-015
+    name: Payment Terms Stated
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.paymentTerms != null"
+    evidence_path: "entities.paymentTerms"
+    message: "Payment terms are absent. Consultancy payments should be milestone-linked."
+
+  - id: BD-C-016
+    name: Performance Security Requirement Stated
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.performanceSecurity != null"
+    evidence_path: "entities.performanceSecurity"
+    message: "Performance security requirement is not stated"
+
+  - id: BD-C-017
+    name: Bank Guarantee Requirement Mentioned
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.bankGuarantee != null"
+    evidence_path: "entities.bankGuarantee"
+    message: "Bank guarantee requirement not found"
+
+  - id: BD-C-018
+    name: Bid Validity Period Stated
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.bidValidityPeriod != null"
+    evidence_path: "entities.bidValidityPeriod"
+    message: "Bid / proposal validity period is not stated"
+
+  - id: BD-C-019
+    name: Technical-Financial Split Specified
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.technicalFinancialSplit != null"
+    evidence_path: "entities.technicalFinancialSplit"
+    message: "Technical / financial evaluation split is not specified (e.g. 80/20 for QCBS)"
+
+  - id: BD-C-020
+    name: Counterpart Support Described
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.counterpartSupport != null"
+    evidence_path: "entities.counterpartSupport"
+    message: "Client counterpart support and inputs to be provided (office space, data, local staff) are not described"
+
+  - id: BD-C-021
+    name: Intellectual Property / Data Rights Clause Present
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.ipRights != null"
+    evidence_path: "entities.ipRights"
+    message: "Intellectual property and data rights clause not found. All outputs should be property of the client per standard GOB contract."
+
+  - id: BD-C-022
+    name: Conflict of Interest Clause Present
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: structural
+    condition: "entities.conflictOfInterest != null"
+    evidence_path: "entities.conflictOfInterest"
+    message: "Conflict of interest declaration requirement not found. PPR 2008 requires CoI disclosure for consultancy services."
+
+  - id: BD-C-031
+    name: Scope of ToR Is Clear Enough to Propose Methodology
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.scopeOfWork"
+    llm_prompt: "Evaluate whether the Terms of Reference scope is sufficiently clear for a consulting firm to propose a relevant methodology. The ToR must describe: background context, specific objectives, key activities or tasks expected, geographic scope, and any constraints. Vague objectives without measurable outcomes are insufficient."
+    message: "Scope of ToR is insufficiently defined for firms to propose a credible methodology"
+
+  - id: BD-C-032
+    name: Deliverables Have Clear Acceptance Criteria
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: HIGH
+    check_type: semantic
+    evidence_path: "entities.scopeOfWork"
+    llm_prompt: "Determine whether the stated deliverables (reports, studies, plans) include clear acceptance criteria: format requirements, minimum content specifications, review and approval timelines, and who approves each deliverable. Generic statements like 'satisfactory final report' without criteria are insufficient."
+    message: "Deliverable acceptance criteria are vague; disputes over deliverable approval are likely"
+
+  # ── MEDIUM (8 structural + 1 semantic = 9 rules) ─────────────────────────
+
+  - id: BD-C-023
+    name: Data Collection Methods Described
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.dataCollectionMethods != null"
+    evidence_path: "entities.dataCollectionMethods"
+    message: "Data collection methods are not described in the ToR"
+
+  - id: BD-C-024
+    name: Submission Copies Requirement Stated
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.numberOfCopies != null"
+    evidence_path: "entities.numberOfCopies"
+    message: "Number of proposal copies required is not stated"
+
+  - id: BD-C-025
+    name: Pre-Bid Meeting Details Present
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.preBidMeeting != null"
+    evidence_path: "entities.preBidMeeting"
+    message: "Pre-bid / pre-proposal meeting details are not specified"
+
+  - id: BD-C-026
+    name: Similar Project Experience Requirement Quantified
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.similarProjectExperience != null"
+    evidence_path: "entities.similarProjectExperience"
+    message: "Similar project experience requirement is not quantified (e.g. minimum 3 similar projects in past 10 years)"
+
+  - id: BD-C-027
+    name: Reimbursable Expenses Policy Defined
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.reimbursableExpenses != null"
+    evidence_path: "entities.reimbursableExpenses"
+    message: "Reimbursable expenses policy is not defined"
+
+  - id: BD-C-028
+    name: Training / Capacity Building Requirement Stated
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.training != null"
+    evidence_path: "entities.training"
+    message: "Training / capacity building requirement is not addressed"
+
+  - id: BD-C-029
+    name: Progress Report Frequency Stated
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.progressReports != null"
+    evidence_path: "entities.progressReports"
+    message: "Progress report frequency not mentioned. Consultancy contracts typically require monthly or quarterly progress reports."
+
+  - id: BD-C-030
+    name: Submission Address Stated
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: structural
+    condition: "entities.submissionAddress != null"
+    evidence_path: "entities.submissionAddress"
+    message: "Submission address or contact details are missing"
+
+  - id: BD-C-033
+    name: Team Composition Is Justified for Scope
+    pack: bd-govt-consultancy-v1
+    version: "1.0.0"
+    severity: MEDIUM
+    check_type: semantic
+    evidence_path: "entities.keyPersonnel"
+    llm_prompt: "Assess whether the proposed team composition (roles, number of experts, staff months) is logically justified by the scope of the ToR. An over-specified team (e.g. 15 senior experts for a 3-month assignment) or under-specified team (e.g. 1 expert for a complex 2-year assignment) is a concern."
+    message: "Team composition appears misaligned with the scope and complexity of the assignment"

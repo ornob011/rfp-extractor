@@ -72,7 +72,7 @@ class PackSignalScorer {
                                                ))
                                                .filter(this::hasSignalValue)
                                                .count()
-                                 * pack.signals().entityPresence().weight();
+                                  * pack.signals().entityPresence().weight();
 
         int entityValueScore = runtime.entityValueKeywordTries()
                                       .entrySet()

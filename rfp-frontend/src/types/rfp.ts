@@ -1,5 +1,6 @@
 import type { TableExtractionResult } from '@/types/table';
 import type { RulePackResults } from '@/types/rulepack';
+import type { RfpType } from '@/types/rfpType';
 
 export type JobStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'PARTIAL';
 
@@ -7,7 +8,7 @@ export interface DocMeta {
     title: string | null;
     procurementRef: string | null;
     issueDate: string | null;
-    rfpType: string | null;
+    rfpType: RfpType | null;
     sourceLanguage: string | null;
     extractionModel: string | null;
     extractionTimestamp: string | null;
@@ -157,5 +158,6 @@ export interface RfpResultResponse {
     tables?: TableExtractionResult[];
     pageDetails?: PageDetail[];
     rulePackResults?: RulePackResults;
+    rfpType?: RfpType | null;
     badgeThresholds?: BadgeThresholds;
 }

@@ -79,7 +79,7 @@ class LlmSectionSegmentFallbackTest {
 
         Map<String, Object> result = createFallback().execute(new ExtractionState(data));
 
-        List<Section> sections = (List<Section>) result.get(ExtractionState.Key.SECTIONS.value());
+        List<Section> sections = sectionsFrom(result);
         assertThat(sections).hasSize(4);
     }
 
@@ -100,8 +100,9 @@ class LlmSectionSegmentFallbackTest {
                    .build()
         )));
 
-        List<Section> sections = (List<Section>) createFallback().execute(new ExtractionState(data))
-                                                                 .get(ExtractionState.Key.SECTIONS.value());
+        List<Section> sections = sectionsFrom(
+            createFallback().execute(new ExtractionState(data))
+        );
 
         assertThat(sections).hasSize(1);
     }
@@ -147,5 +148,16 @@ class LlmSectionSegmentFallbackTest {
                                                   .classification(PageClassification.DIGITAL)
                                                   .build())
                         .toList();
+    }
+
+    private List<Section> sectionsFrom(Map<String, Object> state) {
+        return Optional.ofNullable(state.get(ExtractionState.Key.SECTIONS.value()))
+                       .filter(List.class::isInstance)
+                       .map(List.class::cast)
+                       .stream()
+                       .flatMap(List::stream)
+                       .filter(Section.class::isInstance)
+                       .map(Section.class::cast)
+                       .toList();
     }
 }

@@ -44,6 +44,7 @@ public class RulePackRunner {
         return RulePackResults.builder()
                               .packId(pack.getPackId())
                               .packVersion(pack.getPackVersion())
+                              .rfpType(pack.getRfpType())
                               .runTimestamp(Instant.now())
                               .summary(summary)
                               .findings(findings)

@@ -22,6 +22,25 @@ public record RulePackMetadata(
         require(Objects.nonNull(packs) && !packs.isEmpty(), "Rule pack config must define packs");
     }
 
+    private static void require(
+        boolean condition,
+        String message
+    ) {
+        if (!condition) {
+            throw new EntityMetadataContractException(message);
+        }
+    }
+
+    private static void requireText(
+        String value,
+        String message
+    ) {
+        require(
+            StringUtils.isNotBlank(value),
+            message
+        );
+    }
+
     public record ResourceConfig(
         String schemaResourcePath,
         String rulesPattern,
@@ -133,24 +152,5 @@ public record RulePackMetadata(
             require(weight != null, "Rule pack field keyword signals must define weight");
             require(fields != null && !fields.isEmpty(), "Rule pack field keyword signals must define fields");
         }
-    }
-
-    private static void require(
-        boolean condition,
-        String message
-    ) {
-        if (!condition) {
-            throw new EntityMetadataContractException(message);
-        }
-    }
-
-    private static void requireText(
-        String value,
-        String message
-    ) {
-        require(
-            StringUtils.isNotBlank(value),
-            message
-        );
     }
 }
