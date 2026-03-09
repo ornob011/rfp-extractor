@@ -1754,8 +1754,12 @@ And the table refreshes with updated Last Loaded timestamps
 File: `rfp-extractor/rfp-frontend/src/pages/AdminPage.tsx`
 
 ```tsx
-import React, {useEffect, useState} from 'react';
-import {rfpClient} from '../api/rfpClient';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {toast} from 'sonner';
+import {Button} from '@/components/ui/button';
+import {Skeleton} from '@/components/ui/skeleton';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {listRulePacks, reloadRulePacks} from '../api/rfpClient';
 
 interface RulePackSummary {
     packId: string;
@@ -1765,93 +1769,66 @@ interface RulePackSummary {
     filePath: string;
 }
 
-interface ReloadResult {
-    reloadedPacks: string[];
-    timestamp: string;
-}
+export function AdminPage() {
+    const queryClient = useQueryClient();
+    const {data: packs, isLoading} = useQuery({
+        queryKey: ['rulePacks'],
+        queryFn: listRulePacks,
+    });
 
-export const AdminPage: React.FC = () => {
-    const [packs, setPacks] = useState<RulePackSummary[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [reloading, setReloading] = useState(false);
-    const [toast, setToast] = useState<string | null>(null);
-
-    const fetchPacks = async () => {
-        setLoading(true);
-        try {
-            const response = await rfpClient.get<RulePackSummary[]>('/admin/rule-packs');
-            setPacks(response.data);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleReloadAll = async () => {
-        setReloading(true);
-        try {
-            const response = await rfpClient.post<ReloadResult>('/admin/rule-packs/reload');
-            setToast(`Rule packs reloaded successfully. Packs: ${response.data.reloadedPacks.join(', ')}`);
-            await fetchPacks();
-        } catch {
-            setToast('Reload failed. Check server logs.');
-        } finally {
-            setReloading(false);
-            setTimeout(() => setToast(null), 5000);
-        }
-    };
-
-    useEffect(() => {
-        fetchPacks();
-    }, []);
+    const reloadMutation = useMutation({
+        mutationFn: reloadRulePacks,
+        onSuccess: (data) => {
+            toast.success(`Rule packs reloaded successfully. Packs: ${data.reloadedPacks.join(', ')}`);
+            queryClient.invalidateQueries({queryKey: ['rulePacks']});
+        },
+        onError: () => {
+            toast.error('Reload failed. Check server logs.');
+        },
+    });
 
     return (
-        <div className="p-6 max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Admin — Rule Pack Management</h1>
-                <button
-                    onClick={handleReloadAll}
-                    disabled={reloading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                <h1 className="text-2xl font-bold">Admin — Rule Pack Management</h1>
+                <Button
+                    onClick={() => reloadMutation.mutate()}
+                    disabled={reloadMutation.isPending}
                 >
-                    {reloading ? 'Reloading…' : 'Reload All'}
-                </button>
+                    {reloadMutation.isPending ? 'Reloading…' : 'Reload All'}
+                </Button>
             </div>
 
-            {toast && (
-                <div className="mb-4 p-3 bg-green-100 text-green-800 rounded border border-green-300">
-                    {toast}
-                </div>
-            )}
-
-            {loading ? (
-                <p className="text-gray-500">Loading rule packs…</p>
+            {isLoading ? (
+                <Skeleton className="h-48 w-full"/>
             ) : (
-                <table className="w-full border-collapse border border-gray-200 text-sm">
-                    <thead className="bg-gray-50">
-                    <tr>
-                        <th className="p-3 text-left border border-gray-200">Pack ID</th>
-                        <th className="p-3 text-left border border-gray-200">Version</th>
-                        <th className="p-3 text-right border border-gray-200">Rule Count</th>
-                        <th className="p-3 text-left border border-gray-200">Last Loaded</th>
-                        <th className="p-3 text-left border border-gray-200">File Path</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {packs.map((pack) => (
-                        <tr key={pack.packId} className="hover:bg-gray-50">
-                            <td className="p-3 border border-gray-200 font-mono text-blue-700">{pack.packId}</td>
-                            <td className="p-3 border border-gray-200">{pack.version}</td>
-                            <td className="p-3 border border-gray-200 text-right">{pack.ruleCount}</td>
-                            <td className="p-3 border border-gray-200">{new Date(pack.lastLoadedAt).toLocaleString()}</td>
-                            <td className="p-3 border border-gray-200 font-mono text-xs text-gray-500">{pack.filePath}</td>
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Pack ID</TableHead>
+                            <TableHead>Version</TableHead>
+                            <TableHead className="text-right">Rule Count</TableHead>
+                            <TableHead>Last Loaded</TableHead>
+                            <TableHead>File Path</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {packs?.map((pack) => (
+                            <TableRow key={pack.packId}>
+                                <TableCell className="font-mono text-blue-700">{pack.packId}</TableCell>
+                                <TableCell>{pack.version}</TableCell>
+                                <TableCell className="text-right">{pack.ruleCount}</TableCell>
+                                <TableCell>{new Date(pack.lastLoadedAt).toLocaleString()}</TableCell>
+                                <TableCell
+                                    className="font-mono text-xs text-muted-foreground">{pack.filePath}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             )}
         </div>
     );
-};
+}
 ```
 
 Add route in `App.tsx`:
@@ -1860,11 +1837,15 @@ Add route in `App.tsx`:
 <Route path="/admin" element={<AdminPage/>}/>
 ```
 
-Add nav link in `Navbar.tsx` or equivalent header component:
+Navigation to `/admin` is provided by the `AppLayout` sidebar (introduced in Sprint 3, see `docs/002_plan.md` §6.3).
+No separate `Navbar.tsx` or `<a>` link is needed.
 
-```tsx
-<a href="/admin" className="text-sm text-gray-600 hover:text-gray-900">Admin</a>
-```
+Add `<Toaster />` from `sonner` in `main.tsx` (render once at the app root). All future toasts use `toast()` from
+`sonner` — no `useState(toast)` pattern.
+
+Add `listRulePacks()` and `reloadRulePacks()` functions to `rfpClient.ts`:
+- `listRulePacks()` → `GET /api/v1/admin/rule-packs`
+- `reloadRulePacks()` → `POST /api/v1/admin/rule-packs/reload`
 
 **Dependencies:** `rfpClient` axios instance (Sprint 2). `rfpClient` base URL is `/api/v1`.
 
@@ -1895,31 +1876,31 @@ Then a yellow warning banner appears reading "RFP type could not be detected. Ru
 File: `rfp-extractor/rfp-frontend/src/pages/ResultPage.tsx` — add the following in the Quality Gate tab section:
 
 ```tsx
-// RFP Type badge component
-const RFP_TYPE_COLORS: Record<string, string> = {
-    ICT: 'bg-blue-100 text-blue-800',
-    WORKS: 'bg-orange-100 text-orange-800',
-    CONSULTANCY: 'bg-purple-100 text-purple-800',
-    GOODS: 'bg-green-100 text-green-800',
-    UNKNOWN: 'bg-gray-100 text-gray-700',
-};
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const RfpTypeBadge: React.FC<{ rfpType: string }> = ({rfpType}) => (
-    <span
-        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${RFP_TYPE_COLORS[rfpType] ?? 'bg-gray-100 text-gray-700'}`}>
-    {rfpType}
-  </span>
-);
+// RFP Type badge — uses shadcn Badge with variant="outline" and className overrides
+const RFP_TYPE_BADGE_CLASS: Record<string, string> = {
+    ICT: 'text-blue-700 border-blue-300',
+    WORKS: 'text-orange-700 border-orange-300',
+    CONSULTANCY: 'text-purple-700 border-purple-300',
+    GOODS: 'text-green-700 border-green-300',
+    UNKNOWN: 'text-gray-600',
+};
 
 // In the Quality Gate tab render:
 <div className="mb-4 flex items-center gap-3">
-    <span className="text-sm text-gray-500 font-medium">Detected RFP Type:</span>
-    <RfpTypeBadge rfpType={doc.rfpType}/>
+    <span className="text-sm text-muted-foreground font-medium">Detected RFP Type:</span>
+    <Badge variant="outline" className={RFP_TYPE_BADGE_CLASS[doc.rfpType] ?? ''}>
+        {doc.rfpType}
+    </Badge>
     {doc.rfpType === 'UNKNOWN' && (
-        <div className="ml-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-            RFP type could not be detected. Rule pack selection defaulted to ICT. Review document classification and
-            resubmit if incorrect.
-        </div>
+        <Alert className="ml-4 border-yellow-200 bg-yellow-50 text-yellow-800">
+            <AlertDescription>
+                RFP type could not be detected. Rule pack selection defaulted to ICT. Review document
+                classification and resubmit if incorrect.
+            </AlertDescription>
+        </Alert>
     )}
 </div>
 ```

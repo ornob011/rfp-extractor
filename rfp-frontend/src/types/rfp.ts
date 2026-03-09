@@ -24,16 +24,18 @@ export interface Section {
 }
 
 export interface JobStatusResponse {
-    jobId: string;
+    jobId: number;
     status: JobStatus;
     progress: number;
     submittedAt: string;
     completedAt?: string;
     errorMessage?: string;
+    originalFilename?: string;
+    pageCount?: number;
 }
 
 export interface RfpResultResponse {
-    jobId: string;
+    jobId: number;
     docMeta: DocMeta;
     sections: Section[];
 }

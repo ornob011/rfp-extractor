@@ -50,7 +50,8 @@
 - `SectionExtractionEvaluator` + `FixtureExpectationLoader` — deterministic evaluation harness (non-blocking benchmark
   support for ground-truth profile remains optional).
 - `ResultPage.tsx` with `SectionTree.tsx` rendering the section hierarchy.
-- Integration of segmentation into the async pipeline (section tree stored in PostgreSQL-backed job state by Sprint 3 end).
+- Integration of segmentation into the async pipeline (section tree stored in PostgreSQL-backed job state by Sprint 3
+  end).
 - At least 40 unit tests covering all strategies, the segmenter orchestrator, the ID assigner, and the schema validator.
 
 ---
@@ -2557,11 +2558,14 @@ ground-truth compatibility remains supported but is not part of Sprint 3 exit cr
 # Ground Truth Dataset
 
 ## Directory Structure
-- testdata/pdfs/         — raw PDF files (gitignored)
+
+- testdata/pdfs/ — raw PDF files (gitignored)
 - testdata/ground-truth/ — JSON annotations (committed)
 
 ## Sourcing PDFs
+
 PDFs must be obtained from:
+
 1. CPTU (Central Procurement Technical Unit) Bangladesh: https://cptu.gov.bd/
 2. Client-provided RFP archives.
 3. IMED (Implementation Monitoring and Evaluation Division): https://imed.gov.bd/
@@ -2570,9 +2574,11 @@ Store PDFs as testdata/pdfs/{doc-id}.pdf (e.g., cptu-2024-ict-001.pdf).
 PDFs are gitignored — annotators must share via Google Drive or S3.
 
 ## Annotation Format
+
 See sample-annotation-template.json for the schema.
 
 ## Target
+
 - 15 PDF documents total
 - 5 fully annotated (sections + entities)
 - 10 partially annotated (sections only)
@@ -2582,51 +2588,66 @@ See sample-annotation-template.json for the schema.
 
 ```json
 {
-  "doc_id": "cptu-2024-ict-001",
-  "pdf_filename": "cptu-2024-ict-001.pdf",
-  "annotator": "name@example.com",
-  "annotation_date": "2025-06-01",
-  "sections": [
-    {
-      "title": "1. Background",
-      "level": 1,
-      "page_start": 1,
-      "page_end": 3,
-      "children": []
-    },
-    {
-      "title": "2. Scope of Work",
-      "level": 1,
-      "page_start": 4,
-      "page_end": 12,
-      "children": [
+    "doc_id": "cptu-2024-ict-001",
+    "pdf_filename": "cptu-2024-ict-001.pdf",
+    "annotator": "name@example.com",
+    "annotation_date": "2025-06-01",
+    "sections": [
         {
-          "title": "2.1 Technical Requirements",
-          "level": 2,
-          "page_start": 4,
-          "page_end": 8,
-          "children": []
+            "title": "1. Background",
+            "level": 1,
+            "page_start": 1,
+            "page_end": 3,
+            "children": []
+        },
+        {
+            "title": "2. Scope of Work",
+            "level": 1,
+            "page_start": 4,
+            "page_end": 12,
+            "children": [
+                {
+                    "title": "2.1 Technical Requirements",
+                    "level": 2,
+                    "page_start": 4,
+                    "page_end": 8,
+                    "children": []
+                }
+            ]
         }
-      ]
-    }
-  ],
-  "entities": {
-    "submission_deadline": "2025-08-15T17:00:00+06:00",
-    "client_name": "Ministry of ICT, Bangladesh",
-    "procurement_ref": "CPTU-2024-ICT-001"
-  },
-  "tables": [
-    {
-      "page": 7,
-      "headers": ["Item", "Quantity", "Unit Price (BDT)"],
-      "rows": [
-        ["Laptop", "10", "85000"],
-        ["Server", "2", "450000"]
-      ]
-    }
-  ],
-  "expected_rule_failures": ["BD-ICT-001", "BD-ICT-014"],
-  "notes": "Add any annotator notes here. Use null (not omit) for entity fields absent from this document."
+    ],
+    "entities": {
+        "submission_deadline": "2025-08-15T17:00:00+06:00",
+        "client_name": "Ministry of ICT, Bangladesh",
+        "procurement_ref": "CPTU-2024-ICT-001"
+    },
+    "tables": [
+        {
+            "page": 7,
+            "headers": [
+                "Item",
+                "Quantity",
+                "Unit Price (BDT)"
+            ],
+            "rows": [
+                [
+                    "Laptop",
+                    "10",
+                    "85000"
+                ],
+                [
+                    "Server",
+                    "2",
+                    "450000"
+                ]
+            ]
+        }
+    ],
+    "expected_rule_failures": [
+        "BD-ICT-001",
+        "BD-ICT-014"
+    ],
+    "notes": "Add any annotator notes here. Use null (not omit) for entity fields absent from this document."
 }
 ```
 
@@ -2644,6 +2665,7 @@ package com.dsi.rfp.adapter.extraction.evaluation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -2685,6 +2707,7 @@ public class GroundTruthLoader {
 **File: `rfp-core/src/main/java/com/dsi/rfp/domain/model/GroundTruthAnnotation.java`** (or in evaluation package):
 
 ```java
+
 @Data
 public class GroundTruthAnnotation {
     @JsonProperty("doc_id")
@@ -2699,8 +2722,10 @@ public class GroundTruthAnnotation {
 class AnnotatedSection {
     private String title;
     private int level;
-    @JsonProperty("page_start") private int pageStart;
-    @JsonProperty("page_end") private int pageEnd;
+    @JsonProperty("page_start")
+    private int pageStart;
+    @JsonProperty("page_end")
+    private int pageEnd;
     private final List<AnnotatedSection> children = new ArrayList<>();
 }
 ```
@@ -2715,6 +2740,7 @@ import com.dsi.rfp.domain.model.GroundTruthAnnotation;
 import com.dsi.rfp.domain.model.Section;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 
 @Slf4j
@@ -2864,14 +2890,16 @@ Then sections[] in job state has confidence.method = "BookmarkHeadingStrategy"
 
 ---
 
-### Epic 8 — Frontend Section Tree
+### Epic 8 — Frontend Section Tree, Layout & Error Pages
 
-#### Story 8.1 — ResultPage with SectionTree Component
+#### Story 8.1 — AppLayout, ConfidenceBadge, Error Pages, ResultPage with SectionTree
 
 **Description:**
-Create `SectionTree.tsx` — a recursive collapsible tree component. Integrate it into `ResultPage.tsx` under the "
-Sections" tab. Data comes from `GET /api/v1/rfp/result/{jobId}` (stub endpoint added in this sprint returning the stored
-sections).
+Introduce the shared `AppLayout` (sidebar + top nav), `ConfidenceBadge` component, error pages (`NotFoundPage`,
+`ServerErrorPage`), and `SectionTree.tsx` — a recursive collapsible tree component. Integrate into `ResultPage.tsx`
+under the "Sections" tab using shadcn/ui `Tabs`. Data comes from `GET /api/v1/rfp/result/{jobId}` (stub endpoint added
+in this sprint). All pages from this sprint onward must be wrapped with `AppLayout`. See `docs/002_plan.md` §6.3–6.9
+for the full frontend UI spec.
 
 **Acceptance Criteria:**
 
@@ -2885,11 +2913,20 @@ And level-2+ sections are collapsed by default
 Given a section with children
 When the expand/collapse icon is clicked
 Then children are shown/hidden
+
+Given any authenticated page
+When rendered
+Then the AppLayout sidebar and top nav are visible
+
+Given a URL that does not match any route
+When loaded
+Then the NotFoundPage (404) is shown
 ```
 
 Update `GET /api/v1/rfp/result/{jobId}` in `RfpController`:
 
 ```java
+
 @GetMapping("/result/{jobId}")
 public ResponseEntity<Map<String, Object>> getResult(@PathVariable UUID jobId) {
     // Sprint 3: return sections from job state
@@ -2902,124 +2939,144 @@ public ResponseEntity<Map<String, Object>> getResult(@PathVariable UUID jobId) {
 }
 ```
 
+**New deliverables (this sprint):**
+
+| File                                              | Purpose                                                                      |
+|---------------------------------------------------|------------------------------------------------------------------------------|
+| `rfp-frontend/src/layouts/AppLayout.tsx`          | Sidebar + top nav layout (see §6.3). Uses shadcn `Sheet` for mobile sidebar. |
+| `rfp-frontend/src/components/ConfidenceBadge.tsx` | Shared badge using shadcn `Badge` (see §6.6). Reused in Sprints 4, 5, 6.     |
+| `rfp-frontend/src/pages/NotFoundPage.tsx`         | 404 error page using `AuthLayout`.                                           |
+| `rfp-frontend/src/pages/ServerErrorPage.tsx`      | 500 error page using `AuthLayout`.                                           |
+| `rfp-frontend/src/components/SectionTree.tsx`     | Recursive collapsible section tree.                                          |
+
+File: `rfp-frontend/src/components/ConfidenceBadge.tsx`:
+
+```tsx
+import {Badge} from '@/components/ui/badge';
+
+interface ConfidenceBadgeProps {
+    score: number;
+}
+
+export function ConfidenceBadge({score}: ConfidenceBadgeProps) {
+    if (score >= 0.8) return <Badge variant="outline" className="text-green-700 border-green-300">HIGH</Badge>;
+    if (score >= 0.5) return <Badge variant="outline" className="text-yellow-700 border-yellow-300">MED</Badge>;
+    return <Badge variant="destructive">LOW</Badge>;
+}
+```
+
 File: `rfp-frontend/src/components/SectionTree.tsx`:
 
 ```tsx
-import { useState } from 'react';
-import { Section } from '../types/rfp';
+import {useState} from 'react';
+import {ChevronDown, ChevronRight, Minus} from 'lucide-react';
+import {Section} from '../types/rfp';
+import {ConfidenceBadge} from './ConfidenceBadge';
 
 interface SectionTreeProps {
     sections: Section[];
     depth?: number;
 }
 
-export function SectionTree({ sections, depth = 0 }: SectionTreeProps) {
+export function SectionTree({sections, depth = 0}: SectionTreeProps) {
     return (
         <ul className={`space-y-1 ${depth > 0 ? 'ml-4 mt-1' : ''}`}>
             {sections.map((section) => (
-                <SectionNode key={section.id} section={section} depth={depth} />
+                <SectionNode key={section.id} section={section} depth={depth}/>
             ))}
         </ul>
     );
 }
 
-function SectionNode({ section, depth }: { section: Section; depth: number }) {
+function SectionNode({section, depth}: { section: Section; depth: number }) {
     const [expanded, setExpanded] = useState(depth === 0);
     const hasChildren = section.children && section.children.length > 0;
     const confidence = section.confidence?.score ?? 0;
-    const confidenceColor = confidence >= 0.8 ? 'text-green-600'
-        : confidence >= 0.5 ? 'text-yellow-600' : 'text-red-600';
 
     return (
         <li>
             <div
-                className="flex items-center gap-2 py-1 px-2 rounded hover:bg-gray-50 cursor-pointer"
+                className="flex items-center gap-2 py-1 px-2 rounded hover:bg-muted cursor-pointer"
                 onClick={() => hasChildren && setExpanded(!expanded)}
             >
-                <span className="text-gray-400 w-4 text-center">
-                    {hasChildren ? (expanded ? '▼' : '▶') : '•'}
+                <span className="w-4 text-muted-foreground">
+                    {hasChildren
+                        ? (expanded ? <ChevronDown size={14}/> : <ChevronRight size={14}/>)
+                        : <Minus size={14}/>}
                 </span>
-                <span className={`font-medium text-sm text-gray-700 ${
-                    depth === 0 ? 'font-semibold' : ''}`}>
+                <span className={`font-medium text-sm ${depth === 0 ? 'font-semibold' : ''}`}>
                     {section.title}
                 </span>
-                <span className="ml-auto text-xs text-gray-400">
+                <span className="ml-auto text-xs text-muted-foreground">
                     p.{section.pageStart}–{section.pageEnd}
                 </span>
-                <span className={`text-xs ${confidenceColor}`}>
-                    {(confidence * 100).toFixed(0)}%
-                </span>
+                <ConfidenceBadge score={confidence}/>
             </div>
             {expanded && hasChildren && (
-                <SectionTree sections={section.children} depth={depth + 1} />
+                <SectionTree sections={section.children} depth={depth + 1}/>
             )}
         </li>
     );
 }
 ```
 
-File: `rfp-frontend/src/pages/ResultPage.tsx` (updated):
+File: `rfp-frontend/src/pages/ResultPage.tsx` (updated — uses shadcn `Tabs`):
 
 ```tsx
-import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { SectionTree } from '../components/SectionTree';
-import { getRfpResult } from '../api/rfpClient';
+import {useParams} from 'react-router-dom';
+import {useQuery} from '@tanstack/react-query';
+import {Tabs, TabsList, TabsTrigger, TabsContent} from '@/components/ui/tabs';
+import {Skeleton} from '@/components/ui/skeleton';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {SectionTree} from '../components/SectionTree';
+import {getRfpResult} from '../api/rfpClient';
 
 export function ResultPage() {
-    const { jobId } = useParams<{ jobId: string }>();
-    const [activeTab, setActiveTab] = useState<'sections' | 'entities' | 'tables'>('sections');
-    const { data } = useQuery({
+    const {jobId} = useParams<{ jobId: string }>();
+    const {data, isLoading, isError} = useQuery({
         queryKey: ['rfpResult', jobId],
         queryFn: () => getRfpResult(jobId!),
         enabled: !!jobId,
     });
 
-    const tabs = [
-        { key: 'sections', label: 'Sections' },
-        { key: 'entities', label: 'Entities' },
-        { key: 'tables', label: 'Tables' },
-    ] as const;
+    if (isLoading) return <Skeleton className="h-64 w-full"/>;
+    if (isError) return <Alert variant="destructive"><AlertDescription>Failed to load
+        result.</AlertDescription></Alert>;
 
     return (
         <div className="max-w-4xl mx-auto p-8">
             <h1 className="text-2xl font-bold mb-2">Extraction Result</h1>
-            <p className="text-sm text-gray-500 mb-6 font-mono">{jobId}</p>
+            <p className="text-sm text-muted-foreground mb-6 font-mono">{jobId}</p>
 
-            <div className="border-b border-gray-200 mb-6">
-                <nav className="flex gap-4">
-                    {tabs.map(tab => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setActiveTab(tab.key)}
-                            className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
-                                activeTab === tab.key
-                                    ? 'border-blue-500 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                            }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </nav>
-            </div>
+            <Tabs defaultValue="sections">
+                <TabsList>
+                    <TabsTrigger value="sections">Sections</TabsTrigger>
+                    <TabsTrigger value="entities">Entities</TabsTrigger>
+                    <TabsTrigger value="tables">Tables</TabsTrigger>
+                </TabsList>
 
-            {activeTab === 'sections' && data?.sections && (
-                <SectionTree sections={data.sections} />
-            )}
-            {activeTab === 'entities' && (
-                <p className="text-gray-500">Entity extraction — implemented in Sprint 4.</p>
-            )}
-            {activeTab === 'tables' && (
-                <p className="text-gray-500">Table extraction — implemented in Sprint 5.</p>
-            )}
+                <TabsContent value="sections">
+                    {data?.sections && <SectionTree sections={data.sections}/>}
+                </TabsContent>
+                <TabsContent value="entities">
+                    <p className="text-muted-foreground">Entity extraction — implemented in Sprint 4.</p>
+                </TabsContent>
+                <TabsContent value="tables">
+                    <p className="text-muted-foreground">Table extraction — implemented in Sprint 5.</p>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
 ```
 
-**Estimation:** 3 SP
+File: `rfp-frontend/src/App.tsx` — add catch-all route:
+
+```tsx
+<Route path="*" element={<NotFoundPage/>}/>
+```
+
+**Estimation:** 5 SP
 
 ---
 
@@ -3156,16 +3213,16 @@ Expected output:
 
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "title": "1. Background",
-  "level": 1,
-  "pageStart": 1,
-  "pageEnd": 4,
-  "children": [],
-  "confidence": {
-    "score": 0.95,
-    "method": "BookmarkHeadingStrategy"
-  }
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "title": "1. Background",
+    "level": 1,
+    "pageStart": 1,
+    "pageEnd": 4,
+    "children": [],
+    "confidence": {
+        "score": 0.95,
+        "method": "BookmarkHeadingStrategy"
+    }
 }
 ```
 
@@ -3260,7 +3317,8 @@ or `PDPageDestination` — implement in Sprint 5 if needed.
 acceptance baseline.
 
 **Decision:** `SectionSegmenter` does not merge adjacent identical-level short sections in Sprint 3. Keep deterministic
-one-heading-per-section behavior now; revisit merge heuristics in Sprint 5 if table-to-section linking quality requires it.
+one-heading-per-section behavior now; revisit merge heuristics in Sprint 5 if table-to-section linking quality requires
+it.
 
 **Decision:** Bundle `rfp-schema-v1.json` as a Spring Boot classpath resource in
 `rfp-service/src/main/resources/schema/` and load via `ClassPathResource` first, then fallback to filesystem path.

@@ -850,18 +850,20 @@ interface AuditReportViewerProps {
 
 **Implementation Plan:**
 
-1. `ArtifactDownload.tsx`:
+1. `ArtifactDownload.tsx` — uses shadcn `Card` and `Button`, lucide-react icons:
     - Use `useQuery` to fetch `GET /api/v1/rfp/artifacts/{jobId}`.
-    - Render a card grid (2 columns). Each card: file type icon (DOCX → blue doc icon, XLSX → green grid icon, HTML →
-      orange code icon), filename, size formatted as KB/MB, generated-at relative time.
-    - "Download" button: `<a href={downloadUrl} download>` pattern. `downloadUrl` =
-      `/api/v1/rfp/artifacts/{jobId}/{filename}`.
-2. `AuditReportViewer.tsx`:
-    - Render
-      `<iframe src="/api/v1/rfp/artifacts/{jobId}/audit-report.html" className="w-full h-[600px] border rounded">`.
+    - Render a responsive card grid: `<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">`.
+    - Each card uses shadcn `<Card>`, `<CardContent>`, `<CardFooter>`:
+        - File type icon from `lucide-react`: `FileText` for DOCX, `Sheet` for XLSX, `FileCode` for HTML.
+        - Filename, size formatted as KB/MB, generated-at relative time.
+    - "Download" button: `<Button asChild variant="outline" size="sm"><a href={downloadUrl} download>Download</a></Button>`.
+      `downloadUrl` = `/api/v1/rfp/artifacts/{jobId}/{filename}`.
+2. `AuditReportViewer.tsx` — wraps iframe in shadcn `Card`:
+    - `<Card><CardContent className="p-0"><iframe src="/api/v1/rfp/artifacts/{jobId}/audit-report.html" className="w-full h-[600px] border-0 rounded-md" title="Audit Report" /></CardContent></Card>`.
 3. `ResultPage.tsx`:
-    - Add "Artifacts" tab → renders `<ArtifactDownload jobId={jobId} />`.
-    - Add "Audit Report" tab → renders `<AuditReportViewer jobId={jobId} />`.
+    - Add "Artifacts" and "Audit Report" `<TabsTrigger>` and `<TabsContent>` to the existing shadcn `<Tabs>`.
+    - Artifacts tab renders `<ArtifactDownload jobId={jobId} />`.
+    - Audit Report tab renders `<AuditReportViewer jobId={jobId} />`.
 
 **Test Plan:** Backend unit tests only (artifact writer tests + artifact service/controller mapping tests) with fixture
 assertions.

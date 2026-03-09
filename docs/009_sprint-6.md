@@ -659,11 +659,11 @@ public class OcrResilienceConfig {
     @Bean
     public RetryConfig ocrRetryConfig() {
         return RetryConfig.custom()
-                          .maxAttempts(2)
-                          .waitDuration(Duration.ofSeconds(2))
-                          .retryExceptions(OcrUnavailableException.class, ResourceAccessException.class)
-                          .ignoreExceptions(IllegalArgumentException.class)
-                          .build();
+            .maxAttempts(2)
+            .waitDuration(Duration.ofSeconds(2))
+            .retryExceptions(OcrUnavailableException.class, ResourceAccessException.class)
+            .ignoreExceptions(IllegalArgumentException.class)
+            .build();
     }
 
     @Bean
@@ -1297,11 +1297,14 @@ Scenario: Confidence bar for each page
    `PageExtractionMethod = TEXT_LAYER | OCR | TEXT_PLUS_OCR | OCR_LLM_RECONSTRUCT | OCR_FAILED`.
 2. Java: add `pageDetails` field to the result DTO in `RfpController`/response mapper. Populate from
    `state.pageClassifications` and `state.pageConfidences`.
-3. Frontend: add `PageSummaryTab.tsx` component. Render a `<table>` with columns: Page, Type, Method, Confidence.
-4. Badge colors: `DIGITAL=bg-green-100 text-green-800`, `SCANNED=bg-red-100 text-red-800`,
-   `MIXED=bg-yellow-100 text-yellow-800`.
-5. Confidence bar: same Tailwind pattern as Sprint 5 table confidence.
-6. Add "Pages" tab to `ResultPage.tsx` tab list.
+3. Frontend: add `PageSummaryTab.tsx` component. Render using shadcn `<Table>` with columns: Page, Type, Method,
+   Confidence.
+4. Classification badges using shadcn `<Badge variant="outline">` with className overrides:
+    - `DIGITAL` → `className="text-green-700 border-green-300"`
+    - `SCANNED` → `className="text-red-700 border-red-300"`
+    - `MIXED` → `className="text-yellow-700 border-yellow-300"`
+5. Confidence bar: shadcn `<Progress value={confidence * 100} className="h-1.5" />` (same as Sprint 5).
+6. Add "Pages" `<TabsTrigger>` and `<TabsContent>` to the existing shadcn `<Tabs>` in `ResultPage.tsx`.
 
 **Story Points:** 5
 

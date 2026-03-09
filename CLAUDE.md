@@ -67,16 +67,16 @@ rfp-service: .adapter.rest.*        controllers, DTOs, mappers
 
 ## Technology Stack
 
-| Concern    | Choice                                                                 |
-|------------|------------------------------------------------------------------------|
-| Language   | Java 21, Spring Boot 3.5.11, Maven multi-module                        |
-| Agent      | LangGraph4J `StateGraph`                                               |
-| LLM        | Spring AI `ChatClient` via OpenRouter or Ollama                        |
-| Database   | PostgreSQL + Spring Data JPA + Hibernate DDL auto; no Redis            |
-| Resilience | Resilience4j retries, circuit breaker, rate limiter, timeout           |
-| Frontend   | React 18, TypeScript strict, Tailwind v4, Vite, React Query            |
-| OCR        | Python FastAPI sidecar (`easyOCR` + Tesseract) via Spring `RestClient` |
-| Artifacts  | Apache POI + Freemarker                                                |
+| Concern    | Choice                                                                                           |
+|------------|--------------------------------------------------------------------------------------------------|
+| Language   | Java 21, Spring Boot 3.5.11, Maven multi-module                                                  |
+| Agent      | LangGraph4J `StateGraph`                                                                         |
+| LLM        | Spring AI `ChatClient` via OpenRouter or Ollama                                                  |
+| Database   | PostgreSQL + Spring Data JPA + Hibernate DDL auto; no Redis                                      |
+| Resilience | Resilience4j retries, circuit breaker, rate limiter, timeout                                     |
+| Frontend   | React 19, TypeScript strict, Tailwind v4, Vite 7, shadcn/ui, lucide-react, sonner, React Query 5 |
+| OCR        | Python FastAPI sidecar (`easyOCR` + Tesseract) via Spring `RestClient`                           |
+| Artifacts  | Apache POI + Freemarker                                                                          |
 
 ## Non-Negotiable Engineering Defaults
 
@@ -93,7 +93,9 @@ rfp-service: .adapter.rest.*        controllers, DTOs, mappers
 - No `if/else` blocks or ternary operators. Guard clauses (single `if` with early
   return/throw) are permitted. Prefer `switch` expressions (Java 21), functional
   composition, or polymorphism.
-- Use String.format for string concatenation in Java; template literals in TypeScript; f-strings in Python.
+- Use String.format() for string concatenation in Java (except for log statements); template literals in TypeScript;
+  f-strings in Python.
+- Use proper spacing and line breaks for readability.
 
 ## Prompt Governance (Hard Rule, Merge-Blocking)
 
