@@ -1,5 +1,6 @@
 package com.dsi.rfp.adapter.extraction;
 
+import com.dsi.rfp.config.BanglaEncodingProperties;
 import com.dsi.rfp.domain.exception.DocumentCorruptException;
 import com.dsi.rfp.domain.exception.DocumentEncryptedException;
 import com.dsi.rfp.domain.model.ValidationErrorCode;
@@ -51,7 +52,20 @@ class DocumentValidationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DocumentValidationService(mimeTypePort, 100);
+        BanglaEncodingProperties properties = defaultProperties();
+
+        BanglaEncodingDetector encodingDetector = new BanglaEncodingDetector(
+            new BanglaScriptAnalyzer(),
+            new LegacyBanglaPatternMatcher(properties),
+            new BanglaEncodingDecisionPolicy(properties)
+        );
+
+        service = new DocumentValidationService(
+            mimeTypePort,
+            encodingDetector,
+            properties,
+            100
+        );
     }
 
     @Test
@@ -94,13 +108,9 @@ class DocumentValidationServiceTest {
     }
 
     @Test
-    void shouldThrowForCorruptFile() {
+    void shouldThrowForCorruptFile() throws IOException {
         Path corrupt = tempDir.resolve("corrupt.pdf");
-        try {
-            Files.writeString(corrupt, "this is not a pdf");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        Files.writeString(corrupt, "this is not a pdf");
         when(mimeTypePort.detect(any())).thenReturn("application/pdf");
         assertThatThrownBy(() -> service.validate(corrupt, 100))
             .isInstanceOf(DocumentCorruptException.class);
@@ -116,5 +126,26 @@ class DocumentValidationServiceTest {
         ValidationResult result = service.validate(zeroPdf, zeroPdf.toFile().length());
         assertThat(result.isValid()).isFalse();
         assertThat(result.getErrorCode()).isEqualTo(ValidationErrorCode.EMPTY_PDF);
+    }
+
+    private BanglaEncodingProperties defaultProperties() {
+        return new BanglaEncodingProperties(
+            3,
+            0.8,
+            10,
+            0.30,
+            0.60,
+            1,
+            3,
+            0.60,
+            0.85,
+            "No legacy encoding detected",
+            "Detected %d Bangla Unicode characters with mix ratio %.2f and %d suspicious legacy patterns; possible SutonnyMJ/Bijoy legacy encoding",
+            java.util.List.of(
+                "cÖ",
+                "wK",
+                "‡h"
+            )
+        );
     }
 }

@@ -5,6 +5,10 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -243,6 +247,118 @@ class GlobalExceptionHandler {
     ProblemDetail handleCompletionException(CompletionException ex) {
         log.warn(
             "event=async.fail component=GlobalExceptionHandler status=500 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ProblemDetail handleAccessDenied(AccessDeniedException ex) {
+        log.warn(
+            "event=access.denied component=GlobalExceptionHandler status=403 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.FORBIDDEN,
+            ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler({AuthenticationException.class, BadCredentialsException.class})
+    ProblemDetail handleAuthentication(AuthenticationException ex) {
+        log.warn(
+            "event=auth.failed component=GlobalExceptionHandler status=401 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.UNAUTHORIZED,
+            ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(UsernameAlreadyExistsException.class)
+    ProblemDetail handleUsernameExists(UsernameAlreadyExistsException ex) {
+        log.warn(
+            "event=username.conflict component=GlobalExceptionHandler status=409 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.CONFLICT,
+            ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(JwtValidationException.class)
+    ProblemDetail handleJwtValidation(JwtValidationException ex) {
+        log.warn(
+            "event=jwt.invalid component=GlobalExceptionHandler status=401 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.UNAUTHORIZED,
+            ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    ProblemDetail handleValidationErrors(MethodArgumentNotValidException ex) {
+        log.warn(
+            "event=validation.failed component=GlobalExceptionHandler status=400 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST,
+            "Validation failed"
+        );
+    }
+
+    @ExceptionHandler(SystemIoException.class)
+    ProblemDetail handleSystemIo(SystemIoException ex) {
+        log.error(
+            "event=system.io component=GlobalExceptionHandler status=500 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(DataIntegrityException.class)
+    ProblemDetail handleDataIntegrity(DataIntegrityException ex) {
+        log.error(
+            "event=data.integrity component=GlobalExceptionHandler status=500 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(Exception.class)
+    ProblemDetail handleException(Exception ex) {
+        log.error(
+            "event=exception component=GlobalExceptionHandler status=500 message={}",
             ex.getMessage(),
             ex
         );

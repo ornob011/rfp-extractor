@@ -2,8 +2,10 @@ package com.dsi.rfp.adapter.persistence;
 
 import com.dsi.rfp.adapter.persistence.entity.AnalysisJobEntity;
 import com.dsi.rfp.adapter.persistence.entity.DocumentEntity;
+import com.dsi.rfp.adapter.persistence.entity.UserEntity;
 import com.dsi.rfp.adapter.persistence.repository.AnalysisJobRepository;
 import com.dsi.rfp.adapter.persistence.repository.DocumentRepository;
+import com.dsi.rfp.adapter.persistence.repository.UserRepository;
 import com.dsi.rfp.domain.model.AnalysisStatus;
 import com.dsi.rfp.domain.model.ExtractionJob;
 import com.dsi.rfp.domain.port.out.JobStatePort;
@@ -24,15 +26,18 @@ public class JpaJobStateRepository implements JobStatePort {
 
     private final AnalysisJobRepository analysisJobRepository;
     private final DocumentRepository documentRepository;
+    private final UserRepository userRepository;
     private final AnalysisJobMapper mapper;
 
     public JpaJobStateRepository(
         AnalysisJobRepository analysisJobRepository,
         DocumentRepository documentRepository,
+        UserRepository userRepository,
         AnalysisJobMapper mapper
     ) {
         this.analysisJobRepository = analysisJobRepository;
         this.documentRepository = documentRepository;
+        this.userRepository = userRepository;
         this.mapper = mapper;
     }
 
@@ -114,6 +119,13 @@ public class JpaJobStateRepository implements JobStatePort {
                     "Document not found: %s", job.getDocumentId()
                 )
             ));
-        return mapper.toEntity(job, document);
+
+        AnalysisJobEntity entity = mapper.toEntity(job, document);
+
+        Optional.ofNullable(job.getSubmittedByUsername())
+                .flatMap(userRepository::findByUsername)
+                .ifPresent(entity::setSubmittedBy);
+
+        return entity;
     }
 }

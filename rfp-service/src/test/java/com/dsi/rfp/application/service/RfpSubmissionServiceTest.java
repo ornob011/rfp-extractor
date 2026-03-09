@@ -3,6 +3,7 @@ package com.dsi.rfp.application.service;
 import com.dsi.rfp.adapter.extraction.DocumentValidationService;
 import com.dsi.rfp.adapter.persistence.entity.DocumentEntity;
 import com.dsi.rfp.adapter.persistence.repository.DocumentRepository;
+import com.dsi.rfp.adapter.persistence.repository.UserRepository;
 import com.dsi.rfp.domain.exception.DocumentEncryptedException;
 import com.dsi.rfp.domain.exception.DocumentUnsupportedTypeException;
 import com.dsi.rfp.domain.model.AnalysisStatus;
@@ -37,6 +38,8 @@ class RfpSubmissionServiceTest {
     @Mock
     private DocumentRepository documentRepository;
     @Mock
+    private UserRepository userRepository;
+    @Mock
     private ExtractionOrchestrationService orchestrationService;
 
     private RfpSubmissionService service;
@@ -45,7 +48,7 @@ class RfpSubmissionServiceTest {
     void setUp() {
         service = new RfpSubmissionService(
             validationService, fileStoragePort, jobStatePort,
-            documentRepository, orchestrationService
+            documentRepository, userRepository, orchestrationService
         );
     }
 

@@ -9,4 +9,6 @@ public interface FileStoragePort {
     Path retrieve(Long jobId, String filename);
 
     Path jobDirectory(Long jobId);
+
+    void deleteJobDirectory(Long jobId);
 }

@@ -1,9 +1,9 @@
 package com.dsi.rfp.adapter.llm;
 
+import com.dsi.rfp.adapter.security.PromptInjectionFilter;
 import com.dsi.rfp.domain.model.LlmJudgmentResult;
 import com.dsi.rfp.domain.model.RuleStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.converter.*;
 import org.springframework.stereotype.Component;
@@ -14,7 +14,6 @@ import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class LlmAdapter {
 
     private static final ResponseTextCleaner JSON_RESPONSE_CLEANER = CompositeResponseTextCleaner.builder()
@@ -24,6 +23,17 @@ public class LlmAdapter {
 
     private final LlmResilientCaller caller;
     private final ObjectMapper objectMapper;
+    private final PromptInjectionFilter injectionFilter;
+
+    LlmAdapter(
+        LlmResilientCaller caller,
+        ObjectMapper objectMapper,
+        PromptInjectionFilter injectionFilter
+    ) {
+        this.caller = caller;
+        this.objectMapper = objectMapper;
+        this.injectionFilter = injectionFilter;
+    }
 
     private static String joinAndUnwrap(CompletableFuture<String> future) {
         return future.join();
@@ -40,11 +50,13 @@ public class LlmAdapter {
         String userContent,
         Class<T> responseType
     ) {
+        String sanitized = injectionFilter.sanitize(userContent);
+
         return parseResponse(
             joinAndUnwrap(
                 caller.call(
                     systemPrompt,
-                    userContent
+                    sanitized
                 )
             ),
             responseType
@@ -55,8 +67,10 @@ public class LlmAdapter {
         String systemPrompt,
         String userContent
     ) {
+        String sanitized = injectionFilter.sanitize(userContent);
+
         String raw = joinAndUnwrap(
-            caller.call(systemPrompt, userContent)
+            caller.call(systemPrompt, sanitized)
         );
 
         if (!StringUtils.hasText(raw)) {
@@ -72,9 +86,11 @@ public class LlmAdapter {
         String prompt,
         String snippet
     ) {
+        String sanitized = injectionFilter.sanitize(snippet);
+
         String raw = joinAndUnwrap(
             caller.callJudge(
-                String.format("%s%n%n%s", prompt, snippet)
+                String.format("%s%n%n%s", prompt, sanitized)
             )
         );
 

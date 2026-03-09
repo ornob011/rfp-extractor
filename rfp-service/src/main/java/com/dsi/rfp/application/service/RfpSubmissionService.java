@@ -2,7 +2,9 @@ package com.dsi.rfp.application.service;
 
 import com.dsi.rfp.adapter.extraction.DocumentValidationService;
 import com.dsi.rfp.adapter.persistence.entity.DocumentEntity;
+import com.dsi.rfp.adapter.persistence.entity.UserEntity;
 import com.dsi.rfp.adapter.persistence.repository.DocumentRepository;
+import com.dsi.rfp.adapter.persistence.repository.UserRepository;
 import com.dsi.rfp.domain.exception.DocumentUnsupportedTypeException;
 import com.dsi.rfp.domain.exception.DocumentValidationException;
 import com.dsi.rfp.domain.exception.FileSizeLimitExceededException;
@@ -24,6 +26,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -33,6 +36,7 @@ public class RfpSubmissionService {
     private final FileStoragePort fileStoragePort;
     private final JobStatePort jobStatePort;
     private final DocumentRepository documentRepository;
+    private final UserRepository userRepository;
     private final ExtractionOrchestrationService orchestrationService;
 
     public RfpSubmissionService(
@@ -40,12 +44,14 @@ public class RfpSubmissionService {
         FileStoragePort fileStoragePort,
         JobStatePort jobStatePort,
         DocumentRepository documentRepository,
+        UserRepository userRepository,
         ExtractionOrchestrationService orchestrationService
     ) {
         this.validationService = validationService;
         this.fileStoragePort = fileStoragePort;
         this.jobStatePort = jobStatePort;
         this.documentRepository = documentRepository;
+        this.userRepository = userRepository;
         this.orchestrationService = orchestrationService;
     }
 
@@ -54,27 +60,41 @@ public class RfpSubmissionService {
         String originalFilename,
         byte[] fileContent
     ) {
-        Path tempFile = writeTempFile(fileContent);
+        return submit(
+            originalFilename,
+            fileContent,
+            null
+        );
+    }
 
-        ValidationResult result = validationService.validate(
-            tempFile, fileContent.length
+    @Transactional
+    public Long submit(
+        String originalFilename,
+        byte[] fileContent,
+        String username
+    ) {
+        Path tempFile = writeTempFile(fileContent);
+        ValidationResult validationResult = validationService.validate(
+            tempFile,
+            fileContent.length
         );
 
-        handleValidationResult(result);
+        handleValidationResult(validationResult);
 
         String checksum = computeSha256(fileContent);
-
         DocumentEntity document = createDocument(
             originalFilename,
             fileContent.length,
-            checksum
+            checksum,
+            username
         );
 
         ExtractionJob job = ExtractionJob.builder()
-                                         .status(AnalysisStatus.QUEUED)
-                                         .documentId(document.getId())
-                                         .originalFilename(originalFilename)
-                                         .build();
+            .status(AnalysisStatus.QUEUED)
+            .documentId(document.getId())
+            .originalFilename(originalFilename)
+            .submittedByUsername(username)
+            .build();
 
         ExtractionJob saved = jobStatePort.save(job);
         Long jobId = saved.getJobId();
@@ -91,9 +111,10 @@ public class RfpSubmissionService {
         );
 
         log.info(
-            "event=rfp.submitted component=RfpSubmissionService jobId={} filename={}",
+            "event=rfp.submitted component=RfpSubmissionService jobId={} filename={} user={}",
             jobId,
-            originalFilename
+            originalFilename,
+            username
         );
 
         return jobId;
@@ -103,10 +124,9 @@ public class RfpSubmissionService {
         if (result.isValid()) {
             return;
         }
+
         switch (result.getErrorCode()) {
-            case FILE_TOO_LARGE -> throw new FileSizeLimitExceededException(
-                0, 0
-            );
+            case FILE_TOO_LARGE -> throw new FileSizeLimitExceededException(0, 0);
             case UNSUPPORTED_TYPE -> throw new DocumentUnsupportedTypeException(
                 result.getErrorMessage()
             );
@@ -120,19 +140,25 @@ public class RfpSubmissionService {
     private DocumentEntity createDocument(
         String filename,
         long size,
-        String checksum
+        String checksum,
+        String username
     ) {
         return documentRepository.findBySha256Checksum(checksum)
-                                 .orElseGet(() -> {
-                                     DocumentEntity doc = DocumentEntity.builder()
-                                                                        .originalFilename(filename)
-                                                                        .contentType(MediaType.APPLICATION_PDF_VALUE)
-                                                                        .fileSizeBytes(size)
-                                                                        .storagePath(StringUtils.EMPTY)
-                                                                        .sha256Checksum(checksum)
-                                                                        .build();
-                                     return documentRepository.save(doc);
-                                 });
+            .orElseGet(() -> documentRepository.save(
+                DocumentEntity.builder()
+                    .originalFilename(filename)
+                    .contentType(MediaType.APPLICATION_PDF_VALUE)
+                    .fileSizeBytes(size)
+                    .storagePath(StringUtils.EMPTY)
+                    .sha256Checksum(checksum)
+                    .uploadedBy(resolveUser(username).orElse(null))
+                    .build()
+            ));
+    }
+
+    private Optional<UserEntity> resolveUser(String username) {
+        return Optional.ofNullable(username)
+            .flatMap(userRepository::findByUsername);
     }
 
     private Path writeTempFile(byte[] content) {
@@ -141,10 +167,10 @@ public class RfpSubmissionService {
                 Files.createTempFile("rfp-upload-", ".tmp"),
                 content
             );
-        } catch (IOException e) {
+        } catch (IOException exception) {
             throw new UncheckedIOException(
                 "Failed to write temp file for validation",
-                e
+                exception
             );
         }
     }
@@ -154,8 +180,8 @@ public class RfpSubmissionService {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(content);
             return HexFormat.of().formatHex(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 not available", e);
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 not available", exception);
         }
     }
 }

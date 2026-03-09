@@ -1,9 +1,11 @@
 package com.dsi.rfp.adapter.rest;
 
 import com.dsi.rfp.adapter.artifact.ArtifactTypeResolver;
+import com.dsi.rfp.adapter.security.Auditable;
 import com.dsi.rfp.application.service.ArtifactApplicationService;
 import com.dsi.rfp.domain.model.ArtifactFileType;
 import com.dsi.rfp.domain.model.ArtifactMetadata;
+import com.dsi.rfp.domain.model.AuditAction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -37,6 +39,7 @@ public class ArtifactController {
         );
     }
 
+    @Auditable(action = AuditAction.DOWNLOAD_ARTIFACT)
     @GetMapping("/{jobId}/{filename}")
     public ResponseEntity<Resource> downloadArtifact(
         @PathVariable Long jobId,
