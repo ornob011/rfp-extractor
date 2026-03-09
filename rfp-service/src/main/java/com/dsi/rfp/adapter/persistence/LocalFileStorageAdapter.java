@@ -1,5 +1,6 @@
 package com.dsi.rfp.adapter.persistence;
 
+import com.dsi.rfp.domain.exception.SystemIoException;
 import com.dsi.rfp.domain.port.out.FileStoragePort;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
@@ -8,9 +9,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -31,12 +33,13 @@ public class LocalFileStorageAdapter implements FileStoragePort {
         String filename
     ) {
         Path dir = jobDirectory(jobId);
-
         createDirectories(dir);
 
         Path target = dir.resolve(sanitizeFilename(filename));
-
-        writeBytes(target, content);
+        writeBytes(
+            target,
+            content
+        );
 
         log.info(
             "event=file.stored component=LocalFileStorageAdapter jobId={} file={} bytes={}",
@@ -59,6 +62,25 @@ public class LocalFileStorageAdapter implements FileStoragePort {
         return basePath.resolve(jobId.toString());
     }
 
+    @Override
+    public void deleteJobDirectory(Long jobId) {
+        Path directory = jobDirectory(jobId);
+
+        if (!Files.exists(directory)) {
+            return;
+        }
+
+        try (Stream<Path> paths = Files.walk(directory)) {
+            paths.sorted(Comparator.reverseOrder())
+                .forEach(this::deletePath);
+        } catch (IOException exception) {
+            throw new SystemIoException(
+                String.format("Failed to delete job directory: %s", directory),
+                exception
+            );
+        }
+    }
+
     private String sanitizeFilename(String filename) {
         String cleaned = StringUtils.cleanPath(filename);
         String name = FilenameUtils.getName(cleaned);
@@ -68,10 +90,10 @@ public class LocalFileStorageAdapter implements FileStoragePort {
     private void createDirectories(Path dir) {
         try {
             Files.createDirectories(dir);
-        } catch (IOException e) {
-            throw new UncheckedIOException(
+        } catch (IOException exception) {
+            throw new SystemIoException(
                 String.format("Failed to create directory: %s", dir),
-                e
+                exception
             );
         }
     }
@@ -79,10 +101,21 @@ public class LocalFileStorageAdapter implements FileStoragePort {
     private void writeBytes(Path target, byte[] content) {
         try {
             Files.write(target, content);
-        } catch (IOException e) {
-            throw new UncheckedIOException(
+        } catch (IOException exception) {
+            throw new SystemIoException(
                 String.format("Failed to write file: %s", target),
-                e
+                exception
+            );
+        }
+    }
+
+    private void deletePath(Path path) {
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException exception) {
+            throw new SystemIoException(
+                String.format("Failed to delete path: %s", path),
+                exception
             );
         }
     }
