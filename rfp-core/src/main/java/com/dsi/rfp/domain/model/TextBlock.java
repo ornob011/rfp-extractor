@@ -14,4 +14,5 @@ public class TextBlock {
     private final String text;
     private final float fontSize;
     private final String fontName;
+    private final int pageNumber;
 }

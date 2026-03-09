@@ -3,6 +3,7 @@ package com.dsi.rfp.adapter.rest;
 import com.dsi.rfp.application.service.RfpJobService;
 import com.dsi.rfp.application.service.RfpSubmissionService;
 import com.dsi.rfp.domain.model.AnalysisStatus;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -59,5 +60,25 @@ public class RfpController {
     @GetMapping("/jobs")
     public ResponseEntity<List<JobStatusResponse>> listJobs() {
         return ResponseEntity.ok(jobService.findAll());
+    }
+
+    @GetMapping("/result/{jobId}")
+    public ResponseEntity<RfpResultResponse> getResult(
+        @PathVariable Long jobId
+    ) {
+        return jobService.findById(jobId)
+                         .map(job -> buildResultResponse(job.getJobId()))
+                         .orElse(ResponseEntity.notFound().build());
+    }
+
+    private ResponseEntity<RfpResultResponse> buildResultResponse(Long jobId) {
+        JsonNode sectionsJson = jobService.getSectionsJson(jobId);
+
+        RfpResultResponse response = RfpResultResponse.builder()
+                                                      .jobId(jobId)
+                                                      .sections(sectionsJson)
+                                                      .build();
+
+        return ResponseEntity.ok(response);
     }
 }

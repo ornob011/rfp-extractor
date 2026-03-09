@@ -1,6 +1,7 @@
 package com.dsi.rfp.adapter.rest;
 
 import com.dsi.rfp.domain.exception.*;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -131,6 +132,33 @@ class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(
             HttpStatus.NOT_FOUND,
             String.format("File not found: %s", ex.getMessage())
+        );
+    }
+
+    @ExceptionHandler(RfpSchemaLoadException.class)
+    ProblemDetail handleSchemaLoad(RfpSchemaLoadException ex) {
+        log.error(
+            "event=schema.load.failed component=GlobalExceptionHandler status=500 message={}",
+            ex.getMessage(),
+            ex
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    ProblemDetail handleEntityNotFound(EntityNotFoundException ex) {
+        log.warn(
+            "event=entity.not.found component=GlobalExceptionHandler status=404 message={}",
+            ex.getMessage()
+        );
+
+        return ProblemDetail.forStatusAndDetail(
+            HttpStatus.NOT_FOUND,
+            ex.getMessage()
         );
     }
 

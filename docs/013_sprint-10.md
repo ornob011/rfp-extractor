@@ -856,10 +856,12 @@ interface AuditReportViewerProps {
     - Each card uses shadcn `<Card>`, `<CardContent>`, `<CardFooter>`:
         - File type icon from `lucide-react`: `FileText` for DOCX, `Sheet` for XLSX, `FileCode` for HTML.
         - Filename, size formatted as KB/MB, generated-at relative time.
-    - "Download" button: `<Button asChild variant="outline" size="sm"><a href={downloadUrl} download>Download</a></Button>`.
+    - "Download" button:
+      `<Button asChild variant="outline" size="sm"><a href={downloadUrl} download>Download</a></Button>`.
       `downloadUrl` = `/api/v1/rfp/artifacts/{jobId}/{filename}`.
 2. `AuditReportViewer.tsx` — wraps iframe in shadcn `Card`:
-    - `<Card><CardContent className="p-0"><iframe src="/api/v1/rfp/artifacts/{jobId}/audit-report.html" className="w-full h-[600px] border-0 rounded-md" title="Audit Report" /></CardContent></Card>`.
+    -
+    `<Card><CardContent className="p-0"><iframe src="/api/v1/rfp/artifacts/{jobId}/audit-report.html" className="w-full h-[600px] border-0 rounded-md" title="Audit Report" /></CardContent></Card>`.
 3. `ResultPage.tsx`:
     - Add "Artifacts" and "Audit Report" `<TabsTrigger>` and `<TabsContent>` to the existing shadcn `<Tabs>`.
     - Artifacts tab renders `<ArtifactDownload jobId={jobId} />`.

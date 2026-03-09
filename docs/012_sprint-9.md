@@ -1844,6 +1844,7 @@ Add `<Toaster />` from `sonner` in `main.tsx` (render once at the app root). All
 `sonner` — no `useState(toast)` pattern.
 
 Add `listRulePacks()` and `reloadRulePacks()` functions to `rfpClient.ts`:
+
 - `listRulePacks()` → `GET /api/v1/admin/rule-packs`
 - `reloadRulePacks()` → `POST /api/v1/admin/rule-packs/reload`
 

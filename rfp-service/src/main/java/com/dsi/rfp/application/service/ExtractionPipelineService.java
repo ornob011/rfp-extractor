@@ -1,16 +1,21 @@
 package com.dsi.rfp.application.service;
 
 import com.dsi.rfp.adapter.extraction.PdfDocumentLoader;
+import com.dsi.rfp.adapter.extraction.SectionSegmenter;
 import com.dsi.rfp.domain.exception.SystemIoException;
 import com.dsi.rfp.domain.model.AnalysisStatus;
 import com.dsi.rfp.domain.model.ExtractionJob;
+import com.dsi.rfp.domain.model.Section;
 import com.dsi.rfp.domain.port.out.JobStatePort;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -19,15 +24,21 @@ public class ExtractionPipelineService {
     private final PageClassificationService classificationService;
     private final JobStatePort jobStatePort;
     private final PdfDocumentLoader pdfLoader;
+    private final SectionSegmenter sectionSegmenter;
+    private final ObjectMapper objectMapper;
 
     public ExtractionPipelineService(
         PageClassificationService classificationService,
         JobStatePort jobStatePort,
-        PdfDocumentLoader pdfLoader
+        PdfDocumentLoader pdfLoader,
+        SectionSegmenter sectionSegmenter,
+        ObjectMapper objectMapper
     ) {
         this.classificationService = classificationService;
         this.jobStatePort = jobStatePort;
         this.pdfLoader = pdfLoader;
+        this.sectionSegmenter = sectionSegmenter;
+        this.objectMapper = objectMapper;
     }
 
     @Async("rfpTaskExecutor")
@@ -37,12 +48,14 @@ public class ExtractionPipelineService {
             jobId
         );
 
-        jobStatePort.updateStatus(
-            jobId,
-            AnalysisStatus.RUNNING
-        );
+        jobStatePort.updateStatus(jobId, AnalysisStatus.RUNNING);
 
         classifyPages(
+            jobId,
+            pdfPath
+        );
+
+        segmentSections(
             jobId,
             pdfPath
         );
@@ -63,10 +76,7 @@ public class ExtractionPipelineService {
         );
     }
 
-    private void classifyPages(
-        Long jobId,
-        Path pdfPath
-    ) {
+    private void classifyPages(Long jobId, Path pdfPath) {
         try {
             classificationService.classifyPages(
                 jobId,
@@ -83,6 +93,39 @@ public class ExtractionPipelineService {
         }
     }
 
+    private void segmentSections(Long jobId, Path pdfPath) {
+        try {
+            int pageCount = pdfLoader.getPageCount(pdfPath);
+
+            List<Section> sections = sectionSegmenter.segment(
+                pdfPath,
+                pdfLoader,
+                pageCount
+            );
+
+            JsonNode sectionsJson = objectMapper.valueToTree(sections);
+
+            jobStatePort.updateSectionsJson(
+                jobId,
+                sectionsJson
+            );
+
+            log.info(
+                "event=sections.segmented component=ExtractionPipelineService jobId={} sectionCount={}",
+                jobId,
+                sections.size()
+            );
+        } catch (IOException exception) {
+            throw new SystemIoException(
+                String.format(
+                    "Section segmentation failed for job %s",
+                    jobId
+                ),
+                exception
+            );
+        }
+    }
+
     private void updatePageCount(Long jobId, Path pdfPath) {
         try {
             int pageCount = pdfLoader.getPageCount(pdfPath);
@@ -91,23 +134,27 @@ public class ExtractionPipelineService {
 
             var job = jobStatePort.findById(jobId);
 
-            job.ifPresent(j -> {
+            job.ifPresent(extractionJob -> {
                 var updated = ExtractionJob.builder()
-                                           .jobId(j.getJobId())
-                                           .status(j.getStatus())
-                                           .submittedAt(j.getSubmittedAt())
-                                           .completedAt(j.getCompletedAt())
-                                           .documentId(j.getDocumentId())
+                                           .jobId(extractionJob.getJobId())
+                                           .status(extractionJob.getStatus())
+                                           .submittedAt(extractionJob.getSubmittedAt())
+                                           .completedAt(extractionJob.getCompletedAt())
+                                           .documentId(extractionJob.getDocumentId())
                                            .progress(100)
-                                           .errorMessage(j.getErrorMessage())
+                                           .errorMessage(extractionJob.getErrorMessage())
                                            .pageCount(pageCount)
-                                           .originalFilename(j.getOriginalFilename())
+                                           .originalFilename(extractionJob.getOriginalFilename())
+                                           .sectionsJson(extractionJob.getSectionsJson())
                                            .build();
                 jobStatePort.save(updated);
             });
         } catch (IOException exception) {
             throw new SystemIoException(
-                String.format("Failed to get page count for job %s", jobId),
+                String.format(
+                    "Failed to get page count for job %s",
+                    jobId
+                ),
                 exception
             );
         }

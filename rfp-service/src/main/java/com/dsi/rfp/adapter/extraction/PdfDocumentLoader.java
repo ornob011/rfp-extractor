@@ -1,6 +1,7 @@
 package com.dsi.rfp.adapter.extraction;
 
 import com.dsi.rfp.domain.model.EmbeddedImageInfo;
+import com.dsi.rfp.domain.model.FontInfo;
 import com.dsi.rfp.domain.model.TextBlock;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.Loader;
@@ -16,7 +17,9 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -71,6 +74,26 @@ public class PdfDocumentLoader {
         }
     }
 
+    public Map<String, FontInfo> loadFontMetadata(Path filePath) throws IOException {
+        Map<String, FontInfo> fontMap = new HashMap<>();
+
+        int pageCount = getPageCount(filePath);
+
+        for (int i = 0; i < pageCount; i++) {
+            List<TextBlock> blocks = loadPageBoundingBoxes(
+                filePath,
+                i
+            );
+
+            aggregateFontInfo(
+                blocks,
+                fontMap
+            );
+        }
+
+        return fontMap;
+    }
+
     public List<EmbeddedImageInfo> loadPageImages(
         Path filePath,
         int pageNumber
@@ -79,6 +102,46 @@ public class PdfDocumentLoader {
             PDPage page = doc.getPage(pageNumber - 1);
             return extractImages(page, pageNumber);
         }
+    }
+
+    private void aggregateFontInfo(
+        List<TextBlock> blocks,
+        Map<String, FontInfo> fontMap
+    ) {
+        for (TextBlock block : blocks) {
+            String name = block.getFontName();
+
+            float size = block.getFontSize();
+
+            fontMap.merge(
+                name, FontInfo.builder()
+                              .fontName(name)
+                              .minFontSize(size)
+                              .maxFontSize(size)
+                              .averageFontSize(size)
+                              .occurrenceCount(1)
+                              .build(),
+                this::mergeFontInfo
+            );
+        }
+    }
+
+    private FontInfo mergeFontInfo(
+        FontInfo existing,
+        FontInfo incoming
+    ) {
+        int newCount = existing.getOccurrenceCount() + 1;
+
+        float newAvg = (existing.getAverageFontSize() * existing.getOccurrenceCount()
+                        + incoming.getAverageFontSize()) / newCount;
+
+        return FontInfo.builder()
+                       .fontName(existing.getFontName())
+                       .minFontSize(Math.min(existing.getMinFontSize(), incoming.getMinFontSize()))
+                       .maxFontSize(Math.max(existing.getMaxFontSize(), incoming.getMaxFontSize()))
+                       .averageFontSize(newAvg)
+                       .occurrenceCount(newCount)
+                       .build();
     }
 
     private List<EmbeddedImageInfo> extractImages(

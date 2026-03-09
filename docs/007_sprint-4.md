@@ -191,9 +191,9 @@ public class ExtractionState {
 
     public static ExtractionState initial(String jobId, String documentPath) {
         return ExtractionState.builder()
-            .jobId(jobId)
-            .documentPath(documentPath)
-            .build();
+                              .jobId(jobId)
+                              .documentPath(documentPath)
+                              .build();
     }
 }
 ```
@@ -324,7 +324,7 @@ public final class ConfidenceRouter {
 
     public static boolean anyFieldBelowThreshold(ExtractionState state) {
         return state.getConfidenceMap().values().stream()
-            .anyMatch(score -> score < LOW_CONFIDENCE_THRESHOLD);
+                    .anyMatch(score -> score < LOW_CONFIDENCE_THRESHOLD);
     }
 }
 ```
@@ -466,7 +466,7 @@ on success
 `log.error("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=ERROR extraction.failed jobId={} error={}", jobId, e.getMessage())`
 on failure
 
-- Deferred to wishlist (unit-test-only baseline; no Actuator). Use logs + persisted state transitions.
+- Deferred to future backlog (unit-test-only baseline; no Actuator). Use logs + persisted state transitions.
 
 **Story Points:** 5
 
@@ -896,8 +896,8 @@ public class GeneralEntityExtractor extends BaseEntityExtractor {
     @Override
     protected void validateFields(Map<String, Object> parsed) {
         REQUIRED_FIELDS.stream()
-            .filter(f -> !parsed.containsKey(f))
-            .forEach(f -> log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN entity.field.missing extractor=General field={}", f));
+                       .filter(f -> !parsed.containsKey(f))
+                       .forEach(f -> log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN entity.field.missing extractor=General field={}", f));
     }
 
     @Override
@@ -1186,7 +1186,7 @@ public class EntityExtractor {
 -
 `log.info("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=INFO entity.extractAll.done jobId={} fields={}", state.getJobId(), merged.size())`
 
-- Deferred to wishlist (unit-test-only baseline; no Actuator). Validate latency behavior in unit tests.
+- Deferred to future backlog (unit-test-only baseline; no Actuator). Validate latency behavior in unit tests.
 
 **Story Points:** 5
 
@@ -1281,8 +1281,8 @@ public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
 
     private double computeCompleteness(Map<String, Double> scores) {
         long nonNull = CRITICAL_FIELDS.stream()
-            .filter(f -> scores.getOrDefault(f, 0.0) > 0.0)
-            .count();
+                                      .filter(f -> scores.getOrDefault(f, 0.0) > 0.0)
+                                      .count();
         return (double) nonNull / CRITICAL_FIELDS.size();
     }
 }

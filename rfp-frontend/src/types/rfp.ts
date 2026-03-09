@@ -36,6 +36,6 @@ export interface JobStatusResponse {
 
 export interface RfpResultResponse {
     jobId: number;
-    docMeta: DocMeta;
+    docMeta?: DocMeta;
     sections: Section[];
 }

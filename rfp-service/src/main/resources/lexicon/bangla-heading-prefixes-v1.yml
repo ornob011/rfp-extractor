@@ -1,0 +1,331 @@
+rules:
+
+  # ── Level 1: Chapter / Part / Volume ──────────────────────
+
+  - prefix: "অধ্যায়"
+    level: 1
+    numberRequired: false
+
+  # Ordinal chapter forms (প্রথম through দ্বাদশ)
+  - prefix: "প্রথম অধ্যায়"
+    level: 1
+    numberRequired: false
+  - prefix: "দ্বিতীয় অধ্যায়"
+    level: 1
+    numberRequired: false
+  - prefix: "তৃতীয় অধ্যায়"
+    level: 1
+    numberRequired: false
+  - prefix: "চতুর্থ অধ্যায়"
+    level: 1
+    numberRequired: false
+  - prefix: "পঞ্চম অধ্যায়"
+    level: 1
+    numberRequired: false
+  - prefix: "ষষ্ঠ অধ্যায়"
+    level: 1
+    numberRequired: false
+  - prefix: "সপ্তম অধ্যায়"
+    level: 1
+    numberRequired: false
+  - prefix: "অষ্টম অধ্যায়"
+    level: 1
+    numberRequired: false
+  - prefix: "নবম অধ্যায়"
+    level: 1
+    numberRequired: false
+  - prefix: "দশম অধ্যায়"
+    level: 1
+    numberRequired: false
+  - prefix: "একাদশ অধ্যায়"
+    level: 1
+    numberRequired: false
+  - prefix: "দ্বাদশ অধ্যায়"
+    level: 1
+    numberRequired: false
+
+  # খণ্ড (Part/Volume — PPR, PPA structure)
+  - prefix: "খণ্ড"
+    level: 1
+    numberRequired: false
+  - prefix: "প্রথম খণ্ড"
+    level: 1
+    numberRequired: false
+  - prefix: "দ্বিতীয় খণ্ড"
+    level: 1
+    numberRequired: false
+  - prefix: "তৃতীয় খণ্ড"
+    level: 1
+    numberRequired: false
+  - prefix: "চতুর্থ খণ্ড"
+    level: 1
+    numberRequired: false
+  - prefix: "পঞ্চম খণ্ড"
+    level: 1
+    numberRequired: false
+
+  # পরিচ্ছেদ (Part/Section — formal govt docs)
+  - prefix: "পরিচ্ছেদ"
+    level: 1
+    numberRequired: false
+  - prefix: "প্রথম পরিচ্ছেদ"
+    level: 1
+    numberRequired: false
+  - prefix: "দ্বিতীয় পরিচ্ছেদ"
+    level: 1
+    numberRequired: false
+  - prefix: "তৃতীয় পরিচ্ছেদ"
+    level: 1
+    numberRequired: false
+  - prefix: "চতুর্থ পরিচ্ছেদ"
+    level: 1
+    numberRequired: false
+  - prefix: "পঞ্চম পরিচ্ছেদ"
+    level: 1
+    numberRequired: false
+  - prefix: "ষষ্ঠ পরিচ্ছেদ"
+    level: 1
+    numberRequired: false
+  - prefix: "সপ্তম পরিচ্ছেদ"
+    level: 1
+    numberRequired: false
+  - prefix: "অষ্টম পরিচ্ছেদ"
+    level: 1
+    numberRequired: false
+
+  # অংশ / ভাগ (Part/Division)
+  - prefix: "অংশ"
+    level: 1
+    numberRequired: false
+  - prefix: "ভাগ"
+    level: 1
+    numberRequired: false
+
+  # ── Level 2: Section / Clause / Rule ──────────────────────
+
+  - prefix: "ধারা"
+    level: 2
+    numberRequired: true
+
+  # দফা (Clause — very common in PPA/PPR procurement law)
+  - prefix: "দফা"
+    level: 2
+    numberRequired: true
+
+  # বিধি (Rule — PPR terminology)
+  - prefix: "বিধি"
+    level: 2
+    numberRequired: true
+
+  # নিয়ম (Rule/Regulation)
+  - prefix: "নিয়ম"
+    level: 2
+    numberRequired: true
+
+  # তফসিল (Schedule — common in GoB procurement)
+  - prefix: "তফসিল"
+    level: 2
+    numberRequired: false
+  - prefix: "তপশিল"
+    level: 2
+    numberRequired: false
+
+  # পরিশিষ্ট (Appendix/Annex)
+  - prefix: "পরিশিষ্ট"
+    level: 2
+    numberRequired: false
+
+  # সংযোজনী (Annexure/Attachment)
+  - prefix: "সংযোজনী"
+    level: 2
+    numberRequired: false
+
+  # সারণি / সারণী (Table/Schedule)
+  - prefix: "সারণি"
+    level: 2
+    numberRequired: false
+  - prefix: "সারণী"
+    level: 2
+    numberRequired: false
+
+  # ছক (Form/Format — commonly numbered in tender docs)
+  - prefix: "ছক"
+    level: 2
+    numberRequired: false
+
+  # ── GoB STD structural headings ──────────────────────────
+
+  # নির্দেশনা / নির্দেশাবলী (Instruction/Instructions — STD Chapter 1)
+  - prefix: "নির্দেশনা"
+    level: 2
+    numberRequired: false
+  - prefix: "নির্দেশাবলী"
+    level: 2
+    numberRequired: false
+
+  # শর্তাবলী (Terms/Conditions)
+  - prefix: "শর্তাবলী"
+    level: 2
+    numberRequired: false
+
+  # প্রস্তাবনা (Preamble/Introduction)
+  - prefix: "প্রস্তাবনা"
+    level: 2
+    numberRequired: false
+
+  # সংজ্ঞা (Definitions — PPR 2008 Chapter 1)
+  - prefix: "সংজ্ঞা"
+    level: 2
+    numberRequired: false
+
+  # বিনির্দেশ (Specification)
+  - prefix: "বিনির্দেশ"
+    level: 2
+    numberRequired: false
+
+  # ── RFP/ToR standalone topic headings ────────────────────
+
+  # কার্যপরিধি (Scope of Work/TOR)
+  - prefix: "কার্যপরিধি"
+    level: 2
+    numberRequired: false
+
+  # পটভূমি (Background)
+  - prefix: "পটভূমি"
+    level: 2
+    numberRequired: false
+
+  # উদ্দেশ্য (Objective)
+  - prefix: "উদ্দেশ্য"
+    level: 2
+    numberRequired: false
+
+  # যোগ্যতা (Qualification/Eligibility)
+  - prefix: "যোগ্যতা"
+    level: 2
+    numberRequired: false
+
+  # মূল্যায়ন (Evaluation)
+  - prefix: "মূল্যায়ন"
+    level: 2
+    numberRequired: false
+
+  # দায়িত্ব (Responsibilities)
+  - prefix: "দায়িত্ব"
+    level: 2
+    numberRequired: false
+
+  # প্রয়োজনীয়তা (Requirements)
+  - prefix: "প্রয়োজনীয়তা"
+    level: 2
+    numberRequired: false
+
+  # কর্মপরিকল্পনা (Work Plan)
+  - prefix: "কর্মপরিকল্পনা"
+    level: 2
+    numberRequired: false
+
+  # সময়সূচি (Timeline/Schedule)
+  - prefix: "সময়সূচি"
+    level: 2
+    numberRequired: false
+
+  # ── Multi-word compound headings (GoB procurement STDs) ──
+
+  # সাধারণ শর্তাবলী (General Conditions of Contract — GCC)
+  - prefix: "সাধারণ শর্তাবলী"
+    level: 2
+    numberRequired: false
+
+  # বিশেষ শর্তাবলী (Special/Particular Conditions — SCC/PCC)
+  - prefix: "বিশেষ শর্তাবলী"
+    level: 2
+    numberRequired: false
+
+  # প্রযুক্তিগত বিনির্দেশ (Technical Specifications)
+  - prefix: "প্রযুক্তিগত বিনির্দেশ"
+    level: 2
+    numberRequired: false
+
+  # কারিগরি বিনির্দেশ (Technical Specifications — alternate form)
+  - prefix: "কারিগরি বিনির্দেশ"
+    level: 2
+    numberRequired: false
+
+  # কারিগরি প্রস্তাব (Technical Proposal)
+  - prefix: "কারিগরি প্রস্তাব"
+    level: 2
+    numberRequired: false
+
+  # আর্থিক প্রস্তাব (Financial Proposal)
+  - prefix: "আর্থিক প্রস্তাব"
+    level: 2
+    numberRequired: false
+
+  # দরপত্রদাতার প্রতি নির্দেশাবলী (Instructions to Tenderers — ITT)
+  - prefix: "দরপত্রদাতার প্রতি নির্দেশাবলী"
+    level: 2
+    numberRequired: false
+
+  # যোগ্যতার মানদণ্ড (Qualification Criteria)
+  - prefix: "যোগ্যতার মানদণ্ড"
+    level: 2
+    numberRequired: false
+
+  # মূল্যায়ন পদ্ধতি (Evaluation Method/Methodology)
+  - prefix: "মূল্যায়ন পদ্ধতি"
+    level: 2
+    numberRequired: false
+
+  # কার্য-সম্পাদন জামানত (Performance Security)
+  - prefix: "কার্য-সম্পাদন জামানত"
+    level: 2
+    numberRequired: false
+
+  # দরপত্র জামানত (Tender Security/Bid Security)
+  - prefix: "দরপত্র জামানত"
+    level: 2
+    numberRequired: false
+
+  # ── Level 3: Sub-section / Article / Sub-clause ───────────
+
+  - prefix: "অনুচ্ছেদ"
+    level: 3
+    numberRequired: true
+
+  # উপ-ধারা / উপধারা (Sub-section — PPA structure)
+  - prefix: "উপ-ধারা"
+    level: 3
+    numberRequired: true
+  - prefix: "উপধারা"
+    level: 3
+    numberRequired: true
+
+  # উপ-বিধি / উপবিধি (Sub-rule — PPR structure)
+  - prefix: "উপ-বিধি"
+    level: 3
+    numberRequired: true
+  - prefix: "উপবিধি"
+    level: 3
+    numberRequired: true
+
+  # উপ-দফা (Sub-clause)
+  - prefix: "উপ-দফা"
+    level: 3
+    numberRequired: true
+  - prefix: "উপদফা"
+    level: 3
+    numberRequired: true
+
+  # উপ-অনুচ্ছেদ / উপঅনুচ্ছেদ (Sub-paragraph)
+  - prefix: "উপ-অনুচ্ছেদ"
+    level: 3
+    numberRequired: true
+  - prefix: "উপঅনুচ্ছেদ"
+    level: 3
+    numberRequired: true
+
+  # প্রকরণ (Sub-section/Division)
+  - prefix: "প্রকরণ"
+    level: 3
+    numberRequired: true

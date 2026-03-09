@@ -39,6 +39,12 @@
         <freemarker.version>2.3.34</freemarker.version>
         <commons-text.version>1.15.0</commons-text.version>
         <tika.version>3.2.3</tika.version>
+        <guava.version>33.5.0-jre</guava.version>
+        <opennlp.version>2.5.6</opennlp.version>
+        <icu4j.version>77.1</icu4j.version>
+        <archunit.version>1.4.1</archunit.version>
+        <commons-math3.version>3.6.1</commons-math3.version>
+        <antlr4.version>4.13.2</antlr4.version>
     </properties>
 
     <dependencyManagement>
@@ -130,6 +136,42 @@
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
                 <scope>provided</scope>
+            </dependency>
+            <!-- Guava -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <!-- OpenNLP -->
+            <dependency>
+                <groupId>org.apache.opennlp</groupId>
+                <artifactId>opennlp-tools</artifactId>
+                <version>${opennlp.version}</version>
+            </dependency>
+            <!-- ICU4J -->
+            <dependency>
+                <groupId>com.ibm.icu</groupId>
+                <artifactId>icu4j</artifactId>
+                <version>${icu4j.version}</version>
+            </dependency>
+            <!-- ArchUnit -->
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit-junit5</artifactId>
+                <version>${archunit.version}</version>
+            </dependency>
+            <!-- Commons Math -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-math3</artifactId>
+                <version>${commons-math3.version}</version>
+            </dependency>
+            <!-- ANTLR -->
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-runtime</artifactId>
+                <version>${antlr4.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

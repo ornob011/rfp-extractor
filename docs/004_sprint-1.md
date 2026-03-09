@@ -436,7 +436,7 @@ public class LlmProviderProperties {
     public static class OpenRouterProps {
         private String baseUrl = "https://openrouter.ai/api/v1";
         private String apiKey;                        // required if provider=openrouter
-        private String model = "google/gemini-2.0-flash-001";
+        private final String model = "google/gemini-2.0-flash-001";
         private final String modelJudge = "google/gemini-2.5-pro-preview-06-05";
     }
 
@@ -980,7 +980,7 @@ class LlmResilienceConfigTest {
 }
 ```
 
-**Observability:** Deferred to wishlist (unit-test-only baseline; no Actuator).
+**Observability:** Deferred to future backlog (unit-test-only baseline; no Actuator).
 
 **Estimation:** 5 SP
 
@@ -1251,7 +1251,7 @@ private void logLlmCall(String operation, String model,
         log.warn("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=WARN LLM_CALL op={} model={} provider={} latencyMs={} status=FAIL reason={}",
             operation, model, props.getProvider(), latencyMs, failReason);
     }
-    // Optional future metrics hook (deferred to wishlist; unit-test-only baseline)
+    // Optional future metrics hook (deferred to future backlog; unit-test-only baseline)
     // Metrics.counter("llm.calls",
     //     "operation", operation, "model", model, "status", success ? "success" : "fail")
     //     .increment();
@@ -1326,7 +1326,7 @@ void setUp() {
 **Observability:**
 
 - Log format: `LLM_CALL op={} model={} provider={} latencyMs={} status=SUCCESS|FAIL reason={}`
-- Deferred to wishlist (unit-test-only baseline; no Actuator).
+- Deferred to future backlog (unit-test-only baseline; no Actuator).
 
 **Estimation:** 8 SP
 
@@ -2952,7 +2952,7 @@ correctly. If two `ChatClient` beans are accidentally registered (e.g., autoconf
 
 **Decision:** `GET /api/v1/health` does not make a live LLM API call. It remains a lightweight application health
 endpoint (service status + OCR reachability). LLM key/provider validation is startup-time only. Any deep probe endpoint
-(`GET /api/v1/health/full`) is deferred to wishlist.
+(`GET /api/v1/health/full`) is deferred to the future backlog.
 
 **Decision:** No CORS headers are required in Sprint 1 baseline. In Docker Compose, Nginx proxying keeps calls
 same-origin; in local dev, Vite proxy handles it. CORS policy hardening is deferred to security scope.

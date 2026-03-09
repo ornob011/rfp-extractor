@@ -1,5 +1,6 @@
 package com.dsi.rfp.domain.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
 import lombok.Data;
 
@@ -19,4 +20,5 @@ public class ExtractionJob {
     private final String userId;
     private final int pageCount;
     private final String originalFilename;
+    private final JsonNode sectionsJson;
 }

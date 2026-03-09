@@ -722,7 +722,7 @@ class PdfDocumentLoaderTest {
 **Observability:**
 
 - Log DEBUG: `"PdfDocumentLoader: loading page {} of {} from {}"` (not INFO — too verbose).
-- Deferred to wishlist (unit-test-only baseline; no Actuator). Use unit tests + logs.
+- Deferred to future backlog (unit-test-only baseline; no Actuator). Use unit tests + logs.
 
 **Estimation:** 8 SP
 
@@ -933,7 +933,7 @@ class PageClassifierTest {
 **Observability:**
 
 - Log DEBUG per page: `"Page {} classified as {} (charDensity={}, rasterCoverage={})"`
-- Deferred to wishlist (unit-test-only baseline; no Actuator). Keep classification trace in logs.
+- Deferred to future backlog (unit-test-only baseline; no Actuator). Keep classification trace in logs.
 
 **Estimation:** 5 SP
 
@@ -2157,7 +2157,7 @@ void shouldReturnAllJobsFromPort()
 - Log INFO: `"Pipeline starting: jobId={}"`
 - Log INFO: `"Pipeline completed (page classification only): jobId={} pages={}"`
 - Log ERROR: `"Pipeline failed: jobId={} error={}"`
-- Deferred to wishlist (unit-test-only baseline; no Actuator). Use persisted job rows + unit tests.
+- Deferred to future backlog (unit-test-only baseline; no Actuator). Use persisted job rows + unit tests.
 
 **Estimation:** 8 SP
 
