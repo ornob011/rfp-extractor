@@ -1,0 +1,7 @@
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+Pillow==11.0.0
+pdf2image==1.17.0
+pytesseract==0.3.13
+# easyocr==1.7.2  # Uncomment in Sprint 6 — requires GPU/CPU heavy install

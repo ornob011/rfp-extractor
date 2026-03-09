@@ -40,5 +40,21 @@ build/
 ### Log Files ###
 logs/**
 
-### Test Files ###
-src/test/**
+### Node ###
+node_modules/
+rfp-frontend/dist/
+
+### Python ###
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+### SonarQube ###
+sonar-project.properties
+.scannerwork/
+
+### OS ###
+.DS_Store
+Thumbs.db
