@@ -2,6 +2,7 @@ package com.dsi.rfp.adapter.table;
 
 import com.dsi.rfp.adapter.extraction.PageImageRenderer;
 import com.dsi.rfp.adapter.llm.LlmAdapter;
+import com.dsi.rfp.adapter.llm.PromptTemplateRenderer;
 import com.dsi.rfp.adapter.ocr.*;
 import com.dsi.rfp.domain.model.ReadingOrderMethod;
 import com.dsi.rfp.domain.model.TableExtractionResult;
@@ -49,6 +50,7 @@ class ScannedTableReconstructorTest {
             ocrSidecarClient,
             pageImageRenderer,
             new ScannedTableResultMapper(typeClassifier, config),
+            new PromptTemplateRenderer(),
             config
         );
     }
@@ -124,7 +126,7 @@ class ScannedTableReconstructorTest {
         assertThat(result.getFirst().getHeaders())
             .containsExactly("Name", "Value");
         assertThat(result.getFirst().getConfidence().getScore())
-            .isEqualTo(0.75 * config.scannedConfidenceFactor());
+            .isEqualTo(0.8 * config.scannedConfidenceFactor());
         assertThat(result.getFirst().getConfidence().getMethod())
             .isEqualTo(config.scannedLlmMethod());
     }

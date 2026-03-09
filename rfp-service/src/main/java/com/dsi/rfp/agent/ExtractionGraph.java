@@ -1,5 +1,7 @@
 package com.dsi.rfp.agent;
 
+import com.dsi.rfp.adapter.persistence.ExtractionStateCheckpointRepository;
+import com.dsi.rfp.agent.checkpoint.CheckpointingNodeAction;
 import com.dsi.rfp.agent.node.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,9 +10,8 @@ import org.bsc.langgraph4j.GraphStateException;
 import org.bsc.langgraph4j.StateGraph;
 import org.bsc.langgraph4j.action.AsyncEdgeAction;
 import org.bsc.langgraph4j.action.AsyncNodeAction;
+import org.bsc.langgraph4j.action.NodeAction;
 import org.springframework.stereotype.Component;
-
-import java.util.Map;
 
 import static org.bsc.langgraph4j.StateGraph.END;
 import static org.bsc.langgraph4j.StateGraph.START;
@@ -19,11 +20,6 @@ import static org.bsc.langgraph4j.StateGraph.START;
 @Component
 @RequiredArgsConstructor
 public class ExtractionGraph {
-
-    private static final Map<Boolean, ScoreRoute> SCORE_ROUTES = Map.of(
-        Boolean.TRUE, ScoreRoute.REPAIR_LOOP,
-        Boolean.FALSE, ScoreRoute.RUN_RULE_PACK
-    );
 
     private final ValidateNode validateNode;
     private final ClassifyPagesNode classifyPagesNode;
@@ -35,7 +31,8 @@ public class ExtractionGraph {
     private final RepairLoopNode repairLoopNode;
     private final RunRulePackNode runRulePackNode;
     private final FinalizeNode finalizeNode;
-    private final ConfidenceRouter confidenceRouter;
+    private final RepairRouter repairRouter;
+    private final ExtractionStateCheckpointRepository checkpointRepository;
 
     public CompiledGraph<ExtractionState> compile() throws GraphStateException {
         StateGraph<ExtractionState> graph = new StateGraph<>(ExtractionState::new);
@@ -53,16 +50,16 @@ public class ExtractionGraph {
     private void registerNodes(
         StateGraph<ExtractionState> graph
     ) throws GraphStateException {
-        graph.addNode(NodeId.VALIDATE.code(), AsyncNodeAction.node_async(validateNode));
-        graph.addNode(NodeId.CLASSIFY_PAGES.code(), AsyncNodeAction.node_async(classifyPagesNode));
-        graph.addNode(NodeId.EXTRACT_TEXT.code(), AsyncNodeAction.node_async(extractTextNode));
-        graph.addNode(NodeId.SEGMENT_SECTIONS.code(), AsyncNodeAction.node_async(segmentSectionsNode));
-        graph.addNode(NodeId.EXTRACT_TABLES.code(), AsyncNodeAction.node_async(extractTablesNode));
-        graph.addNode(NodeId.EXTRACT_ENTITIES.code(), AsyncNodeAction.node_async(extractEntitiesNode));
-        graph.addNode(NodeId.SCORE_CONFIDENCE.code(), AsyncNodeAction.node_async(scoreConfidenceNode));
-        graph.addNode(NodeId.REPAIR_LOOP.code(), AsyncNodeAction.node_async(repairLoopNode));
-        graph.addNode(NodeId.RUN_RULE_PACK.code(), AsyncNodeAction.node_async(runRulePackNode));
-        graph.addNode(NodeId.FINALIZE.code(), AsyncNodeAction.node_async(finalizeNode));
+        graph.addNode(NodeId.VALIDATE.code(), async(validateNode));
+        graph.addNode(NodeId.CLASSIFY_PAGES.code(), async(classifyPagesNode));
+        graph.addNode(NodeId.EXTRACT_TEXT.code(), async(extractTextNode));
+        graph.addNode(NodeId.SEGMENT_SECTIONS.code(), async(segmentSectionsNode));
+        graph.addNode(NodeId.EXTRACT_TABLES.code(), async(extractTablesNode));
+        graph.addNode(NodeId.EXTRACT_ENTITIES.code(), async(extractEntitiesNode));
+        graph.addNode(NodeId.SCORE_CONFIDENCE.code(), async(scoreConfidenceNode));
+        graph.addNode(NodeId.REPAIR_LOOP.code(), async(repairLoopNode));
+        graph.addNode(NodeId.RUN_RULE_PACK.code(), async(runRulePackNode));
+        graph.addNode(NodeId.FINALIZE.code(), async(finalizeNode));
     }
 
     private void registerEdges(
@@ -79,37 +76,51 @@ public class ExtractionGraph {
         graph.addConditionalEdges(
             NodeId.SCORE_CONFIDENCE.code(),
             AsyncEdgeAction.edge_async(this::routeAfterScoring),
-            Map.of(
-                NodeId.REPAIR_LOOP.code(), NodeId.REPAIR_LOOP.code(),
-                NodeId.RUN_RULE_PACK.code(), NodeId.RUN_RULE_PACK.code()
-            )
+            routeMap()
         );
 
-        graph.addEdge(NodeId.REPAIR_LOOP.code(), NodeId.RUN_RULE_PACK.code());
+        graph.addConditionalEdges(
+            NodeId.REPAIR_LOOP.code(),
+            AsyncEdgeAction.edge_async(this::routeAfterRepair),
+            routeMap()
+        );
+
         graph.addEdge(NodeId.RUN_RULE_PACK.code(), NodeId.FINALIZE.code());
         graph.addEdge(NodeId.FINALIZE.code(), END);
     }
 
-    private String routeAfterScoring(ExtractionState state) {
-        boolean belowThreshold = confidenceRouter.anyFieldBelowThreshold(state);
-        ScoreRoute route = SCORE_ROUTES.get(belowThreshold);
-
-        return route.targetNode().code();
+    private java.util.Map<String, String> routeMap() {
+        return java.util.Map.of(
+            NodeId.REPAIR_LOOP.code(), NodeId.REPAIR_LOOP.code(),
+            NodeId.RUN_RULE_PACK.code(), NodeId.RUN_RULE_PACK.code()
+        );
     }
 
-    private enum ScoreRoute {
-        REPAIR_LOOP(NodeId.REPAIR_LOOP),
-        RUN_RULE_PACK(NodeId.RUN_RULE_PACK);
+    private String routeAfterScoring(ExtractionState state) {
+        return routeFor(state);
+    }
 
-        private final NodeId targetNode;
+    private String routeAfterRepair(ExtractionState state) {
+        return routeFor(state);
+    }
 
-        ScoreRoute(NodeId targetNode) {
-            this.targetNode = targetNode;
+    private String routeFor(ExtractionState state) {
+        if (repairRouter.shouldRepair(state)) {
+            return NodeId.REPAIR_LOOP.code();
         }
 
-        private NodeId targetNode() {
-            return targetNode;
-        }
+        return NodeId.RUN_RULE_PACK.code();
+    }
+
+    private AsyncNodeAction<ExtractionState> async(
+        NodeAction<ExtractionState> action
+    ) {
+        return AsyncNodeAction.node_async(
+            new CheckpointingNodeAction(
+                action,
+                checkpointRepository
+            )
+        );
     }
 
     private enum NodeId {

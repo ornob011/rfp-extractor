@@ -24,11 +24,23 @@ public class PageImageRenderer {
         String documentPath,
         int pageNum
     ) throws IOException {
+        return renderPage(
+            documentPath,
+            pageNum,
+            config.renderDpi()
+        );
+    }
+
+    public byte[] renderPage(
+        String documentPath,
+        int pageNum,
+        int dpi
+    ) throws IOException {
         try (PDDocument document = Loader.loadPDF(Path.of(documentPath).toFile())) {
             PDFRenderer renderer = new PDFRenderer(document);
             BufferedImage image = renderer.renderImageWithDPI(
                 pageNum - 1,
-                config.renderDpi(),
+                dpi,
                 ImageType.RGB
             );
 

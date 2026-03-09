@@ -37,6 +37,7 @@ public class ExtractionState extends AgentState {
         data.put(Key.MANUAL_REVIEW_REQUIRED.value(), List.of());
         data.put(Key.TOTAL_REPAIR_ITERATIONS.value(), 0);
         data.put(Key.REPAIR_EXHAUSTED.value(), false);
+        data.put(Key.REPAIRABLE_COMPONENTS.value(), Map.of());
 
         return data;
     }
@@ -182,6 +183,22 @@ public class ExtractionState extends AgentState {
         );
     }
 
+    public Map<String, RepairableComponent> repairableComponents() {
+        Map<?, ?> value = readMapOrDefault(
+            Key.REPAIRABLE_COMPONENTS,
+            Map.of()
+        );
+
+        return value.entrySet()
+                    .stream()
+                    .filter(entry -> entry.getKey() instanceof String)
+                    .filter(entry -> entry.getValue() instanceof RepairableComponent)
+                    .collect(Collectors.toMap(
+                        entry -> (String) entry.getKey(),
+                        entry -> (RepairableComponent) entry.getValue()
+                    ));
+    }
+
     public RulePackResults rulePackResults() {
         return this.<RulePackResults>value(Key.RULE_PACK_RESULTS.value())
                    .orElse(null);
@@ -256,6 +273,7 @@ public class ExtractionState extends AgentState {
         PAGE_CONFIDENCES("pageConfidences"),
         PAGE_EXTRACTION_METHODS("pageExtractionMethods"),
         REPAIR_EXHAUSTED("repairExhausted"),
+        REPAIRABLE_COMPONENTS("repairableComponents"),
         RULE_PACK_RESULTS("rulePackResults");
 
         private final String stateKey;

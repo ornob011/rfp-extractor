@@ -1,18 +1,22 @@
 package com.dsi.rfp.agent.node;
 
+import com.dsi.rfp.agent.ConfidenceScorer;
 import com.dsi.rfp.agent.ConfidenceScoringConfig;
+import com.dsi.rfp.agent.EntityFieldReader;
 import com.dsi.rfp.agent.ExtractionState;
+import com.dsi.rfp.domain.model.RepairableComponent;
 import com.dsi.rfp.domain.model.RfpEntities;
+import com.dsi.rfp.domain.model.Section;
+import com.dsi.rfp.domain.model.TableExtractionResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bsc.langgraph4j.action.NodeAction;
 import org.springframework.stereotype.Component;
 
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -20,149 +24,201 @@ import java.util.*;
 public class ScoreConfidenceNode implements NodeAction<ExtractionState> {
 
     private final ConfidenceScoringConfig scoringConfig;
+    private final ConfidenceScorer confidenceScorer;
+    private final EntityFieldReader entityFieldReader;
 
     @Override
     public Map<String, Object> apply(ExtractionState state) {
-        if (state.entities() == null) {
-            return buildEmptyResult();
-        }
-
-        return scoreEntities(state);
-    }
-
-    private Map<String, Object> buildEmptyResult() {
-        return Map.of(
-            ExtractionState.Key.CONFIDENCE_MAP.value(),
-            Map.of(scoringConfig.completenessKey(), 0.0),
-            ExtractionState.Key.LOW_CONFIDENCE_QUEUE.value(),
-            List.of()
-        );
-    }
-
-    private Map<String, Object> scoreEntities(ExtractionState state) {
         Map<String, Double> scores = new LinkedHashMap<>();
         List<String> lowConfQueue = new ArrayList<>();
+        List<String> manualReview = new ArrayList<>();
+        Map<String, RepairableComponent> repairables = new LinkedHashMap<>();
 
-        scoreAllFields(
+        scoreEntities(
             state.entities(),
             scores,
-            lowConfQueue
+            lowConfQueue,
+            manualReview,
+            repairables
+        );
+
+        scoreSections(
+            state.sections(),
+            scores,
+            lowConfQueue,
+            repairables
+        );
+
+        scoreTables(
+            state.tables(),
+            scores,
+            lowConfQueue,
+            repairables
         );
 
         scores.put(
             scoringConfig.completenessKey(),
-            computeCompleteness(scores)
+            confidenceScorer.completeness(scores)
         );
 
         log.info(
-            "event=confidence.scored component=ScoreConfidenceNode jobId={} completeness={} lowConfFields={}",
+            "event=confidence.scored component=ScoreConfidenceNode"
+            + " jobId={} completeness={} lowConf={} manual={}",
             state.jobId(),
             scores.get(scoringConfig.completenessKey()),
-            lowConfQueue.size()
+            lowConfQueue.size(),
+            manualReview.size()
         );
 
         return Map.of(
-            ExtractionState.Key.CONFIDENCE_MAP.value(),
-            scores,
-            ExtractionState.Key.LOW_CONFIDENCE_QUEUE.value(),
-            lowConfQueue
+            ExtractionState.Key.CONFIDENCE_MAP.value(), scores,
+            ExtractionState.Key.LOW_CONFIDENCE_QUEUE.value(), lowConfQueue,
+            ExtractionState.Key.MANUAL_REVIEW_REQUIRED.value(), manualReview,
+            ExtractionState.Key.REPAIRABLE_COMPONENTS.value(), repairables,
+            ExtractionState.Key.REPAIR_EXHAUSTED.value(), false
         );
     }
 
-    private void scoreAllFields(
+    private void scoreEntities(
         RfpEntities entities,
-        Map<String, Double> scores,
-        List<String> queue
-    ) {
-        readAllEntityFields(entities).forEach((key, value) ->
-            scoreField(scores, queue, key, value)
-        );
-    }
-
-    private Map<String, Object> readAllEntityFields(RfpEntities entities) {
-        try {
-            PropertyDescriptor[] descriptors = Introspector.getBeanInfo(
-                RfpEntities.class,
-                Object.class
-            ).getPropertyDescriptors();
-
-            Map<String, Object> fields = new LinkedHashMap<>();
-
-            Arrays.stream(descriptors)
-                  .forEach(descriptor -> fields.put(
-                      descriptor.getName(),
-                      invokeReader(entities, descriptor)
-                  ));
-
-            return fields;
-        } catch (IntrospectionException exception) {
-            throw new IllegalStateException("Failed to inspect RfpEntities properties", exception);
-        }
-    }
-
-    private Object invokeReader(
-        RfpEntities entities,
-        PropertyDescriptor descriptor
-    ) {
-        try {
-            return descriptor.getReadMethod().invoke(entities);
-        } catch (IllegalAccessException | InvocationTargetException exception) {
-            throw new IllegalStateException(
-                String.format("Failed to read property value: %s", descriptor.getName()),
-                exception
-            );
-        }
-    }
-
-    private void scoreField(
         Map<String, Double> scores,
         List<String> queue,
-        String key,
-        Object value
+        List<String> manualReview,
+        Map<String, RepairableComponent> repairables
     ) {
-        double score = scoreValue(value);
+        if (entities == null) {
+            return;
+        }
+
+        entityFieldReader.readAllFields(entities)
+                         .forEach((key, value) -> recordEntity(
+                             key,
+                             value,
+                             scores,
+                             queue,
+                             manualReview,
+                             repairables
+                         ));
+    }
+
+    private void recordEntity(
+        String key,
+        Object value,
+        Map<String, Double> scores,
+        List<String> queue,
+        List<String> manualReview,
+        Map<String, RepairableComponent> repairables
+    ) {
+        double score = confidenceScorer.scoreValue(value);
         scores.put(key, score);
+        repairables.put(
+            key,
+            confidenceScorer.repairableEntity(
+                key,
+                value
+            )
+        );
+        enqueue(
+            key,
+            score,
+            queue,
+            manualReview
+        );
+    }
 
+    private void scoreSections(
+        List<Section> sections,
+        Map<String, Double> scores,
+        List<String> queue,
+        Map<String, RepairableComponent> repairables
+    ) {
+        sections.forEach(section -> recordSection(
+            section,
+            scores,
+            queue,
+            repairables
+        ));
+    }
+
+    private void recordSection(
+        Section section,
+        Map<String, Double> scores,
+        List<String> queue,
+        Map<String, RepairableComponent> repairables
+    ) {
+        String sectionId = section.getId().toString();
+        double score = confidenceScorer.scoreSection(section);
+        scores.put(sectionId, score);
+        repairables.put(
+            sectionId,
+            confidenceScorer.repairableSection(section)
+        );
+        addLowConfidence(
+            sectionId,
+            score,
+            queue
+        );
+    }
+
+    private void scoreTables(
+        List<TableExtractionResult> tables,
+        Map<String, Double> scores,
+        List<String> queue,
+        Map<String, RepairableComponent> repairables
+    ) {
+        tables.forEach(table -> recordTable(
+            table,
+            scores,
+            queue,
+            repairables
+        ));
+    }
+
+    private void recordTable(
+        TableExtractionResult table,
+        Map<String, Double> scores,
+        List<String> queue,
+        Map<String, RepairableComponent> repairables
+    ) {
+        String tableId = table.getTableId().toString();
+        double score = confidenceScorer.scoreTable(table);
+        scores.put(tableId, score);
+        repairables.put(
+            tableId,
+            confidenceScorer.repairableTable(table)
+        );
+        addLowConfidence(
+            tableId,
+            score,
+            queue
+        );
+    }
+
+    private void enqueue(
+        String key,
+        double score,
+        List<String> queue,
+        List<String> manualReview
+    ) {
+        addLowConfidence(
+            key,
+            score,
+            queue
+        );
+
+        if (scoringConfig.criticalFields().contains(key)
+            && score < scoringConfig.manualReviewThreshold()) {
+            manualReview.add(key);
+        }
+    }
+
+    private void addLowConfidence(
+        String componentId,
+        double score,
+        List<String> queue
+    ) {
         if (score < scoringConfig.lowConfidenceThreshold()) {
-            queue.add(key);
+            queue.add(componentId);
         }
-    }
-
-    private double scoreValue(Object value) {
-        if (Objects.isNull(value)) {
-            return 0.0;
-        }
-
-        String str = value.toString().strip();
-
-        if (str.isEmpty()) {
-            return 0.0;
-        }
-
-        return switch (classifyLength(str.length())) {
-            case SHORT -> 0.5;
-            case LONG -> 1.0;
-        };
-    }
-
-    private double computeCompleteness(Map<String, Double> scores) {
-        long nonNull = scoringConfig.criticalFields().stream()
-                                    .filter(f -> scores.getOrDefault(f, 0.0) > 0.0)
-                                    .count();
-
-        return (double) nonNull / scoringConfig.criticalFields().size();
-    }
-
-    private LengthCategory classifyLength(int length) {
-        if (length < scoringConfig.shortTextLengthThreshold()) {
-            return LengthCategory.SHORT;
-        }
-
-        return LengthCategory.LONG;
-    }
-
-    private enum LengthCategory {
-        SHORT,
-        LONG
     }
 }

@@ -1,5 +1,9 @@
+from collections.abc import Iterable
+
 from PIL import Image
 from pydantic import BaseModel
+from shapely import ops
+from shapely.geometry import Polygon, box
 
 from table_service import ExtractedTable, TableBoundingBox
 
@@ -20,15 +24,14 @@ class LayoutDetectionResult(BaseModel):
 def detect_layout(
     image: Image.Image,
     scanned_tables: list[ExtractedTable],
-    reader: object = None,
+    reader: object | None = None,
 ) -> LayoutDetectionResult:
-    """
-    Detect table and text regions in an image using sidecar table extraction
-    for table regions and OCR word boxes for residual text regions.
-    """
     resolved_reader = reader or _create_reader()
-    normalized_boxes = _normalize_boxes(
-        resolved_reader.readtext(_to_array(image), detail=1),
+    word_regions = _word_regions(
+        resolved_reader.readtext(
+            _to_array(image),
+            detail=1,
+        ),
         image.width,
         image.height,
     )
@@ -37,8 +40,8 @@ def detect_layout(
         for table in scanned_tables
         if table.bbox is not None
     ]
-    text_regions = _text_regions(
-        normalized_boxes,
+    text_regions = _non_table_text_regions(
+        word_regions,
         table_regions,
     )
 
@@ -61,7 +64,7 @@ def _to_array(image: Image.Image):
     return np.array(image)
 
 
-def _normalize_boxes(
+def _word_regions(
     results: list,
     width: int,
     height: int,
@@ -88,30 +91,107 @@ def _from_table_bbox(
     )
 
 
-def _text_regions(
-    boxes: list[BoundingBox],
+def _non_table_text_regions(
+    word_regions: list[BoundingBox],
     table_regions: list[BoundingBox],
 ) -> list[BoundingBox]:
-    if not boxes:
+    word_polygons = list(
+        map(
+            _to_polygon,
+            word_regions,
+        )
+    )
+    table_polygons = list(
+        map(
+            _to_polygon,
+            table_regions,
+        )
+    )
+    residual_words = [
+        region
+        for region, polygon in zip(
+            word_regions,
+            word_polygons,
+            strict=False,
+        )
+        if not _intersects_any_table(
+            polygon,
+            table_polygons,
+        )
+    ]
+    residual_polygons = list(
+        map(
+            _to_polygon,
+            residual_words,
+        )
+    )
+
+    return _to_regions(
+        residual_polygons,
+    )
+
+
+def _intersects_any_table(
+    polygon: Polygon,
+    table_polygons: list[Polygon],
+) -> bool:
+    return any(
+        polygon.intersects(table_polygon)
+        for table_polygon in table_polygons
+    )
+
+
+def _to_regions(
+    polygons: list[Polygon],
+) -> list[BoundingBox]:
+    if not polygons:
         return []
 
-    if table_regions:
-        return []
+    merged = _merged_geometry(polygons)
 
-    return [_bounding_region(boxes)]
+    return list(
+        map(
+            _geometry_to_bbox,
+            _geometries(merged),
+        )
+    )
 
 
-def _bounding_region(
-    boxes: list[BoundingBox],
+def _merged_geometry(
+    polygons: list[Polygon],
+):
+    return ops.unary_union(polygons)
+
+
+def _geometries(
+    geometry,
+) -> Iterable:
+    return getattr(
+        geometry,
+        "geoms",
+        [geometry],
+    )
+
+
+def _geometry_to_bbox(
+    geometry,
 ) -> BoundingBox:
-    min_x = min(box.x for box in boxes)
-    min_y = min(box.y for box in boxes)
-    max_x = max(box.x + box.width for box in boxes)
-    max_y = max(box.y + box.height for box in boxes)
+    min_x, min_y, max_x, max_y = geometry.bounds
 
     return BoundingBox(
         x=min_x,
         y=min_y,
         width=max_x - min_x,
         height=max_y - min_y,
+    )
+
+
+def _to_polygon(
+    bbox: BoundingBox,
+) -> Polygon:
+    return box(
+        bbox.x,
+        bbox.y,
+        bbox.x + bbox.width,
+        bbox.y + bbox.height,
     )

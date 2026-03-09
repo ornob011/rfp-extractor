@@ -1,5 +1,6 @@
 package com.dsi.rfp.agent;
 
+import com.dsi.rfp.adapter.persistence.ExtractionStateCheckpointRepository;
 import com.dsi.rfp.agent.node.*;
 import org.bsc.langgraph4j.CompiledGraph;
 import org.bsc.langgraph4j.GraphStateException;
@@ -35,7 +36,9 @@ class ExtractionGraphTest {
     @Mock
     private FinalizeNode finalizeNode;
     @Mock
-    private ConfidenceRouter confidenceRouter;
+    private RepairRouter repairRouter;
+    @Mock
+    private ExtractionStateCheckpointRepository checkpointRepository;
 
     private ExtractionGraph graph;
 
@@ -52,7 +55,8 @@ class ExtractionGraphTest {
             repairLoopNode,
             runRulePackNode,
             finalizeNode,
-            confidenceRouter
+            repairRouter,
+            checkpointRepository
         );
     }
 

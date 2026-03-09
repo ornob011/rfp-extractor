@@ -25,6 +25,15 @@ export interface Section {
     };
 }
 
+export type RepairOutcome = 'IMPROVED' | 'NOT_IMPROVED' | 'MAX_RETRIES';
+
+export interface RepairEvent {
+    componentId: string;
+    attempt: number;
+    strategy: string;
+    result: RepairOutcome;
+}
+
 export interface JobStatusResponse {
     jobId: number;
     status: JobStatus;
@@ -34,6 +43,9 @@ export interface JobStatusResponse {
     errorMessage?: string;
     originalFilename?: string;
     pageCount?: number;
+    repairEvents?: RepairEvent[];
+    totalRepairIterations?: number;
+    lowConfidenceQueueSize?: number;
 }
 
 export interface EntityField {

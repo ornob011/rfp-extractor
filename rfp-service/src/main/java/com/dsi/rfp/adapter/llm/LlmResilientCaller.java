@@ -69,7 +69,6 @@ class LlmResilientCaller {
         );
     }
 
-    @SuppressWarnings("unused")
     public CompletableFuture<String> fallback(
         String systemPrompt,
         String userContent,
@@ -83,7 +82,6 @@ class LlmResilientCaller {
         );
     }
 
-    @SuppressWarnings("unused")
     public CompletableFuture<String> fallback(
         String fullPrompt,
         Throwable cause

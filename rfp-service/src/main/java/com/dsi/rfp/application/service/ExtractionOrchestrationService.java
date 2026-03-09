@@ -1,5 +1,6 @@
 package com.dsi.rfp.application.service;
 
+import com.dsi.rfp.adapter.persistence.ExtractionStateCheckpointRepository;
 import com.dsi.rfp.agent.ExtractionGraph;
 import com.dsi.rfp.agent.ExtractionState;
 import com.dsi.rfp.domain.exception.ExtractionOrchestrationException;
@@ -12,6 +13,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -21,6 +23,7 @@ public class ExtractionOrchestrationService {
 
     private final ExtractionGraph extractionGraph;
     private final JobStatePort jobStatePort;
+    private final ExtractionStateCheckpointRepository checkpointRepository;
 
     @Async("rfpTaskExecutor")
     public void runExtraction(Long jobId, Path documentPath) {
@@ -35,13 +38,11 @@ public class ExtractionOrchestrationService {
             AnalysisStatus.RUNNING
         );
 
-        Map<String, Object> initialState = ExtractionState.initial(
-            jobId,
-            documentPath.toString()
-        );
-
         invokeGraph(
-            initialState,
+            initialState(
+                jobId,
+                documentPath
+            ),
             jobId
         );
 
@@ -54,6 +55,22 @@ public class ExtractionOrchestrationService {
             "event=extraction.complete component=ExtractionOrchestrationService jobId={}",
             jobId
         );
+    }
+
+    private Map<String, Object> initialState(
+        Long jobId,
+        Path documentPath
+    ) {
+        return checkpointRepository.load(jobId)
+                                   .map(this::copyStateData)
+                                   .orElseGet(() -> ExtractionState.initial(
+                                       jobId,
+                                       documentPath.toString()
+                                   ));
+    }
+
+    private Map<String, Object> copyStateData(ExtractionState state) {
+        return new HashMap<>(state.data());
     }
 
     private void invokeGraph(
@@ -69,5 +86,4 @@ public class ExtractionOrchestrationService {
             );
         }
     }
-
 }
