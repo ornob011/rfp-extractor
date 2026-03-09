@@ -1,0 +1,348 @@
+# ============================================================
+# Confidence Scoring Configuration v1
+# Single source of truth for all confidence-related thresholds,
+# entity field metadata, and scoring parameters.
+# ============================================================
+
+# --- Global Thresholds ---
+thresholds:
+  lowConfidence: 0.6
+  manualReview: 0.5
+  shortTextLength: 5
+
+# --- Badge Display Thresholds ---
+badge:
+  high: 0.8
+  medium: 0.5
+
+# --- Completeness ---
+completeness:
+  key: "doc_completeness_score"
+
+# --- Entity Field Definitions ---
+entityFields:
+
+  # General
+  - key: clientName
+    label: "Client Name"
+    category: general
+    type: text
+    critical: true
+
+  - key: submissionDeadline
+    label: "Submission Deadline"
+    category: general
+    type: text
+    critical: true
+
+  - key: issueDate
+    label: "Issue Date"
+    category: general
+    type: text
+    critical: false
+
+  - key: methodOfSelection
+    label: "Method of Selection"
+    category: general
+    type: text
+    critical: false
+
+  - key: procurementMethod
+    label: "Procurement Method"
+    category: general
+    type: text
+    critical: false
+
+  - key: projectDuration
+    label: "Project Duration"
+    category: general
+    type: text
+    critical: false
+
+  - key: preBidMeeting
+    label: "Pre-bid Meeting"
+    category: general
+    type: text
+    critical: false
+
+  - key: contact
+    label: "Contact"
+    category: general
+    type: text
+    critical: false
+
+  # Submission
+  - key: guidelinesSummary
+    label: "Guidelines Summary"
+    category: submission
+    type: text
+    critical: false
+
+  - key: numberOfCopies
+    label: "Number of Copies"
+    category: submission
+    type: text
+    critical: false
+
+  - key: softSubmissionRequired
+    label: "Soft Submission Required"
+    category: submission
+    type: text
+    critical: false
+
+  - key: submissionAddress
+    label: "Submission Address"
+    category: submission
+    type: text
+    critical: false
+
+  # Financial
+  - key: technicalFinancialSplit
+    label: "Technical/Financial Split"
+    category: financial
+    type: text
+    critical: true
+
+  - key: performanceSecurity
+    label: "Performance Security"
+    category: financial
+    type: text
+    critical: false
+
+  - key: bankGuarantee
+    label: "Bank Guarantee"
+    category: financial
+    type: text
+    critical: false
+
+  - key: paymentTerms
+    label: "Payment Terms"
+    category: financial
+    type: text
+    critical: false
+
+  - key: reimbursableExpenses
+    label: "Reimbursable Expenses"
+    category: financial
+    type: text
+    critical: false
+
+  - key: bidValidityPeriod
+    label: "Bid Validity Period"
+    category: financial
+    type: text
+    critical: false
+
+  # ICT
+  - key: totalUsers
+    label: "Total Users"
+    category: ict
+    type: text
+    critical: false
+
+  - key: concurrentUsers
+    label: "Concurrent Users"
+    category: ict
+    type: text
+    critical: false
+
+  - key: programmingLanguagePreference
+    label: "Programming Language Preference"
+    category: ict
+    type: text
+    critical: false
+
+  - key: systemLanguage
+    label: "System Language"
+    category: ict
+    type: text
+    critical: false
+
+  - key: architecture
+    label: "Architecture"
+    category: ict
+    type: text
+    critical: false
+
+  - key: techStack
+    label: "Tech Stack"
+    category: ict
+    type: text
+    critical: false
+
+  - key: database
+    label: "Database"
+    category: ict
+    type: text
+    critical: false
+
+  - key: hosting
+    label: "Hosting"
+    category: ict
+    type: text
+    critical: false
+
+  - key: dataMigrationRequired
+    label: "Data Migration Required"
+    category: ict
+    type: boolean
+    critical: false
+
+  - key: legacySystem
+    label: "Legacy System"
+    category: ict
+    type: text
+    critical: false
+
+  - key: hardwareRequirements
+    label: "Hardware Requirements"
+    category: ict
+    type: text
+    critical: false
+
+  - key: integrations
+    label: "Integrations"
+    category: ict
+    type: text
+    critical: false
+
+  - key: mobileAppRequired
+    label: "Mobile App Required"
+    category: ict
+    type: boolean
+    critical: false
+
+  - key: uiMockRequired
+    label: "UI Mock Required"
+    category: ict
+    type: boolean
+    critical: false
+
+  - key: presentationRequired
+    label: "Presentation Required"
+    category: ict
+    type: boolean
+    critical: false
+
+  - key: ganttChartRequired
+    label: "Gantt Chart Required"
+    category: ict
+    type: boolean
+    critical: false
+
+  - key: eGovernanceCompliance
+    label: "e-Governance Compliance"
+    category: ict
+    type: text
+    critical: false
+
+  # Staffing
+  - key: staffMonths
+    label: "Staff Months"
+    category: staffing
+    type: text
+    critical: false
+
+  - key: onsiteResourceRequirements
+    label: "Onsite Resource Requirements"
+    category: staffing
+    type: text
+    critical: false
+
+  - key: markingCriteria
+    label: "Marking Criteria"
+    category: staffing
+    type: text
+    critical: true
+
+  - key: keyPersonnel
+    label: "Key Personnel"
+    category: staffing
+    type: text
+    critical: false
+
+  - key: cvRequirements
+    label: "CV Requirements"
+    category: staffing
+    type: text
+    critical: false
+
+  # Support
+  - key: training
+    label: "Training"
+    category: support
+    type: text
+    critical: false
+
+  - key: supportMaintenance
+    label: "Support & Maintenance"
+    category: support
+    type: text
+    critical: false
+
+  - key: warrantyPeriod
+    label: "Warranty Period"
+    category: support
+    type: text
+    critical: false
+
+  # Evaluation
+  - key: criteria
+    label: "Criteria"
+    category: evaluation
+    type: object
+    critical: true
+
+  - key: eligibilitySummary
+    label: "Eligibility Summary"
+    category: evaluation
+    type: text
+    critical: true
+
+  - key: scopeSummary
+    label: "Scope Summary"
+    category: evaluation
+    type: text
+    critical: true
+
+  - key: scopeOfWork
+    label: "Scope of Work"
+    category: evaluation
+    type: text
+    critical: false
+
+  - key: similarProjectExperience
+    label: "Similar Project Experience"
+    category: evaluation
+    type: text
+    critical: false
+
+  - key: criteriaTotalWeight
+    label: "Criteria Total Weight"
+    category: evaluation
+    type: text
+    critical: false
+
+# --- Section Strategy Confidence (Sprint 7) ---
+sectionStrategyConfidence:
+  TOC: 1.0
+  BOOKMARK: 0.95
+  HEADING_STYLE: 0.90
+  NUMBERED: 0.85
+  BANGLA: 0.85
+  FONT_SIZE: 0.70
+  ALL_CAPS: 0.55
+  LLM: 0.75
+  DEFAULT: 0.60
+
+# --- Table Provenance Confidence (Sprint 7) ---
+tableProvenanceConfidence:
+  LATTICE: 0.85
+  STREAM: 0.65
+  OCR_LLM_RECONSTRUCT: 0.55
+  DEFAULT: 0.50
+
+# --- Repair Limits (Sprint 7) ---
+repair:
+  maxTotalIterations: 20
+  maxRetriesPerItem: 3

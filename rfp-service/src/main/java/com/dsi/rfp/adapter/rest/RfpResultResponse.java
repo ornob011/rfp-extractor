@@ -10,4 +10,13 @@ public class RfpResultResponse {
 
     private final Long jobId;
     private final JsonNode sections;
+    private final JsonNode entities;
+    private final JsonNode confidenceMap;
+    private final BadgeThresholds badgeThresholds;
+
+    public record BadgeThresholds(
+        double high,
+        double medium
+    ) {
+    }
 }

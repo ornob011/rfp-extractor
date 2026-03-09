@@ -32,20 +32,20 @@ public class RfpSubmissionService {
     private final FileStoragePort fileStoragePort;
     private final JobStatePort jobStatePort;
     private final DocumentRepository documentRepository;
-    private final ExtractionPipelineService pipelineService;
+    private final ExtractionOrchestrationService orchestrationService;
 
     public RfpSubmissionService(
         DocumentValidationService validationService,
         FileStoragePort fileStoragePort,
         JobStatePort jobStatePort,
         DocumentRepository documentRepository,
-        ExtractionPipelineService pipelineService
+        ExtractionOrchestrationService orchestrationService
     ) {
         this.validationService = validationService;
         this.fileStoragePort = fileStoragePort;
         this.jobStatePort = jobStatePort;
         this.documentRepository = documentRepository;
-        this.pipelineService = pipelineService;
+        this.orchestrationService = orchestrationService;
     }
 
     @Transactional
@@ -84,7 +84,10 @@ public class RfpSubmissionService {
             originalFilename
         );
 
-        pipelineService.runAsync(jobId, storedFile);
+        orchestrationService.runExtraction(
+            jobId,
+            storedFile
+        );
 
         log.info(
             "event=rfp.submitted component=RfpSubmissionService jobId={} filename={}",

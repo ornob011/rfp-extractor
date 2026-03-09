@@ -211,12 +211,12 @@ public class BookmarkHeadingStrategy implements HeadingStrategy {
             String title = item.getTitle();
             if (Objects.nonNull(title) && StringUtils.hasText(title)) {
                 results.add(HeadingCandidate.builder()
-                    .text(title.strip())
-                    .level(Math.min(level, 6))
-                    .pageNumber(resolvePageNumber(item))
-                    .startY(0.0f)
-                    .detectedBy(strategyName())
-                    .build());
+                                            .text(title.strip())
+                                            .level(Math.min(level, 6))
+                                            .pageNumber(resolvePageNumber(item))
+                                            .startY(0.0f)
+                                            .detectedBy(strategyName())
+                                            .build());
             }
             if (item.hasChildren()) {
                 traverseOutline(item.getFirstChild(), level + 1, results);
@@ -348,14 +348,14 @@ public class HeadingStyleStrategy implements HeadingStrategy {
     private HeadingCandidate buildCandidate(String text, int level, int page,
                                             float y, String font, float fontSize) {
         return HeadingCandidate.builder()
-            .text(text.strip())
-            .level(level)
-            .pageNumber(page)
-            .startY(y)
-            .fontName(font)
-            .fontSize(fontSize)
-            .detectedBy(strategyName())
-            .build();
+                               .text(text.strip())
+                               .level(level)
+                               .pageNumber(page)
+                               .startY(y)
+                               .fontName(font)
+                               .fontSize(fontSize)
+                               .detectedBy(strategyName())
+                               .build();
     }
 }
 ```
@@ -467,12 +467,12 @@ public class NumberedHeadingStrategy implements HeadingStrategy {
 
     private HeadingCandidate buildCandidate(String text, int level, int pageIdx) {
         return HeadingCandidate.builder()
-            .text(text)
-            .level(level)
-            .pageNumber(pageIdx)
-            .startY(0.0f)
-            .detectedBy(strategyName())
-            .build();
+                               .text(text)
+                               .level(level)
+                               .pageNumber(pageIdx)
+                               .startY(0.0f)
+                               .detectedBy(strategyName())
+                               .build();
     }
 }
 ```
@@ -602,8 +602,8 @@ public class BanglaHeadingStrategy implements HeadingStrategy {
 
     private HeadingCandidate buildCandidate(String text, int level, int pageIdx) {
         return HeadingCandidate.builder()
-            .text(text).level(level).pageNumber(pageIdx)
-            .startY(0.0f).detectedBy(strategyName()).build();
+                               .text(text).level(level).pageNumber(pageIdx)
+                               .startY(0.0f).detectedBy(strategyName()).build();
     }
 }
 ```
@@ -684,10 +684,10 @@ public class FontSizeHeadingStrategy implements HeadingStrategy {
         log.debug("event=sample component=sample jobId=NA durationMs=NA errorCode=NA traceId=NA spanId=NA status=DEBUG FontSizeHeadingStrategy: medianFontSize={}", medianFontSize);
 
         return allBlocks.stream()
-            .filter(block -> isHeadingCandidate(block, medianFontSize))
-            .map(block -> buildCandidate(block, medianFontSize))
-            .filter(c -> StringUtils.hasText(c.getText()))
-            .collect(java.util.stream.Collectors.toList());
+                        .filter(block -> isHeadingCandidate(block, medianFontSize))
+                        .map(block -> buildCandidate(block, medianFontSize))
+                        .filter(c -> StringUtils.hasText(c.getText()))
+                        .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
@@ -706,10 +706,10 @@ public class FontSizeHeadingStrategy implements HeadingStrategy {
 
     private float computeMedianFontSize(List<TextBlock> blocks) {
         List<Float> sizes = blocks.stream()
-            .map(TextBlock::getFontSize)
-            .filter(s -> s > 0)
-            .sorted()
-            .collect(java.util.stream.Collectors.toList());
+                                  .map(TextBlock::getFontSize)
+                                  .filter(s -> s > 0)
+                                  .sorted()
+                                  .collect(java.util.stream.Collectors.toList());
         if (sizes.isEmpty()) return 10.0f;
         return sizes.get(sizes.size() / 2);
     }
@@ -725,14 +725,14 @@ public class FontSizeHeadingStrategy implements HeadingStrategy {
         float delta = block.getFontSize() - medianSize;
         int level = fontDeltaToLevel(delta);
         return HeadingCandidate.builder()
-            .text(block.getText().strip())
-            .level(level)
-            .pageNumber((int) block.getY())  // approximation: y used as page proxy
-            .startY(block.getY())
-            .fontName(block.getFontName())
-            .fontSize(block.getFontSize())
-            .detectedBy(strategyName())
-            .build();
+                               .text(block.getText().strip())
+                               .level(level)
+                               .pageNumber((int) block.getY())  // approximation: y used as page proxy
+                               .startY(block.getY())
+                               .fontName(block.getFontName())
+                               .fontSize(block.getFontSize())
+                               .detectedBy(strategyName())
+                               .build();
     }
 
     private int fontDeltaToLevel(float delta) {
@@ -819,12 +819,12 @@ public class AllCapsHeadingStrategy implements HeadingStrategy {
             String line = lines[i].strip();
             if (isAllCapsHeading(line, lines, i)) {
                 results.add(HeadingCandidate.builder()
-                    .text(line)
-                    .level(1)
-                    .pageNumber(pageIdx)
-                    .startY(0.0f)
-                    .detectedBy(strategyName())
-                    .build());
+                                            .text(line)
+                                            .level(1)
+                                            .pageNumber(pageIdx)
+                                            .startY(0.0f)
+                                            .detectedBy(strategyName())
+                                            .build());
             }
         }
     }
@@ -838,8 +838,8 @@ public class AllCapsHeadingStrategy implements HeadingStrategy {
 
     private boolean isAllUppercase(String line) {
         return line.chars()
-            .filter(Character::isLetter)
-            .allMatch(Character::isUpperCase);
+                   .filter(Character::isLetter)
+                   .allMatch(Character::isUpperCase);
     }
 
     private boolean isSurroundedByBlanks(String[] lines, int index) {
@@ -929,12 +929,12 @@ public class TocDetector {
                 if (Objects.nonNull(text) && StringUtils.hasText(text)) {
                     int level = computeLevelFromIndent(indent);
                     entries.add(HeadingCandidate.builder()
-                        .text(text.strip())
-                        .level(level)
-                        .pageNumber(pageIdx)
-                        .startY(0.0f)
-                        .detectedBy("TocDetector")
-                        .build());
+                                                .text(text.strip())
+                                                .level(level)
+                                                .pageNumber(pageIdx)
+                                                .startY(0.0f)
+                                                .detectedBy("TocDetector")
+                                                .build());
                 }
             }
         }
@@ -1127,9 +1127,9 @@ public class SectionSegmenter {
                                            double confidence) {
         // Sort candidates by pageNumber then startY
         List<HeadingCandidate> sorted = candidates.stream()
-            .sorted(Comparator.comparingInt(HeadingCandidate::getPageNumber)
-                .thenComparingDouble(HeadingCandidate::getStartY))
-            .toList();
+                                                  .sorted(Comparator.comparingInt(HeadingCandidate::getPageNumber)
+                                                                    .thenComparingDouble(HeadingCandidate::getStartY))
+                                                  .toList();
 
         List<Section> roots = new ArrayList<>();
         Deque<Section> stack = new ArrayDeque<>();
@@ -1138,16 +1138,16 @@ public class SectionSegmenter {
             HeadingCandidate c = sorted.get(i);
             int pageEnd = computePageEnd(sorted, i, totalPages);
             Section section = Section.builder()
-                .id(UUID.randomUUID())
-                .title(c.getText())
-                .level(c.getLevel())
-                .pageStart(c.getPageNumber())
-                .pageEnd(pageEnd)
-                .confidence(SectionConfidence.builder()
-                    .score(confidence)
-                    .method(method)
-                    .build())
-                .build();
+                                     .id(UUID.randomUUID())
+                                     .title(c.getText())
+                                     .level(c.getLevel())
+                                     .pageStart(c.getPageNumber())
+                                     .pageEnd(pageEnd)
+                                     .confidence(SectionConfidence.builder()
+                                                                  .score(confidence)
+                                                                  .method(method)
+                                                                  .build())
+                                     .build();
 
             placeInHierarchy(section, stack, roots);
         }
@@ -1333,8 +1333,8 @@ public class ClauseIdAssigner {
     private String normalizeRef(String ref) {
         if (Objects.isNull(ref) || !StringUtils.hasText(ref)) return "unknown";
         String normalized = ref.toLowerCase()
-            .replaceAll("\\s+", "-")
-            .replaceAll("[^a-z0-9\\-]", "");
+                               .replaceAll("\\s+", "-")
+                               .replaceAll("[^a-z0-9\\-]", "");
         return normalized.length() > MAX_REF_LENGTH
             ? normalized.substring(0, MAX_REF_LENGTH)
             : normalized;
@@ -2794,7 +2794,7 @@ public class SectionExtractionEvaluator {
 
     private boolean isMatch(Section extracted, AnnotatedSection truth) {
         boolean titleMatch = extracted.getTitle().strip()
-            .equalsIgnoreCase(truth.getTitle().strip());
+                                      .equalsIgnoreCase(truth.getTitle().strip());
         boolean pageMatch = Math.abs(extracted.getPageStart() - truth.getPageStart())
             <= PAGE_PROXIMITY_TOLERANCE;
         return titleMatch && pageMatch;
@@ -3274,28 +3274,30 @@ mvn test -pl rfp-service -Dtest=SectionExtractionEvaluatorTest -Dtest.fixture.pa
 
 ## 6) Exit Criteria (NON-NEGOTIABLE)
 
-- [ ] `mvn test` exits with code 0. Minimum 40 new unit tests. Zero failures.
-- [ ] `SectionSegmenter` uses `BookmarkHeadingStrategy` for a bookmarked PDF — verified by checking `confidence.method`
+> **STATUS: COMPLETED** — `mvn test` passes all tests, 0 failures. Frontend builds 0 TS errors.
+
+- [x] `mvn test` exits with code 0. Minimum 40 new unit tests. Zero failures.
+- [x] `SectionSegmenter` uses `BookmarkHeadingStrategy` for a bookmarked PDF — verified by checking `confidence.method`
   in the result JSON.
-- [ ] `SectionSegmenter` skips a strategy that returns fewer than 3 headings — verified by unit test
+- [x] `SectionSegmenter` skips a strategy that returns fewer than 3 headings — verified by unit test
   `shouldSkipStrategyWhenFewerThanThreeHeadingsReturned`.
-- [ ] `ClauseIdAssigner.assignClauseId()` is deterministic — unit test `shouldProduceDeterministicIdForSameInputs`
+- [x] `ClauseIdAssigner.assignClauseId()` is deterministic — unit test `shouldProduceDeterministicIdForSameInputs`
   passes.
-- [ ] `ClauseIdAssigner` emits WARN log for sections without numeric prefix — verified by unit test using log capture.
-- [ ] `RfpSchemaValidator` throws `RfpSchemaLoadException` at startup if `schema/rfp-schema-v1.json` is missing —
+- [x] `ClauseIdAssigner` emits WARN log for sections without numeric prefix — verified by unit test using log capture.
+- [x] `RfpSchemaValidator` throws `RfpSchemaLoadException` at startup if `schema/rfp-schema-v1.json` is missing —
   verified by temporarily renaming the file and checking startup fails.
-- [ ] `schema/rfp-schema-v1.json` validates against JSON Schema draft-07 specification (
+- [x] `schema/rfp-schema-v1.json` validates against JSON Schema draft-07 specification (
   use https://www.jsonschemavalidator.net/ or similar).
-- [ ] `SectionExtractionEvaluator` passes deterministic fixture assertions for at least 5 fixture documents.
-- [ ] `BanglaHeadingStrategy` detects "ধারা" prefix as level 2 — verified by unit test `shouldDetectDharaAsLevelTwo`.
-- [ ] `AllCapsHeadingStrategy` rejects lines NOT surrounded by blank lines — verified by unit test.
-- [ ] `GET /api/v1/rfp/result/{jobId}` returns `sections` array with at least 1 element for a typical GOB RFP — verified
+- [x] `SectionExtractionEvaluator` passes deterministic fixture assertions for at least 5 fixture documents.
+- [x] `BanglaHeadingStrategy` detects "ধারা" prefix as level 2 — verified by unit test `shouldDetectDharaAsLevelTwo`.
+- [x] `AllCapsHeadingStrategy` rejects lines NOT surrounded by blank lines — verified by unit test.
+- [x] `GET /api/v1/rfp/result/{jobId}` returns `sections` array with at least 1 element for a typical GOB RFP — verified
   by curl demo.
-- [ ] Backend unit tests cover `SectionTree` data contract generation (`sections` hierarchy shape and ordering) used by
+- [x] Backend unit tests cover `SectionTree` data contract generation (`sections` hierarchy shape and ordering) used by
   the UI.
-- [ ] `testdata/pdfs/` is in `.gitignore` — verified by `git check-ignore testdata/pdfs/`.
-- [ ] No class exceeds 250 lines. No method exceeds 20 lines. Verified during code review.
-- [ ] `rfp-schema-v1.json` allows `null` for all entity fields — verified by submitting an RFP JSON with all entity
+- [x] `testdata/pdfs/` is in `.gitignore` — verified by `git check-ignore testdata/pdfs/`.
+- [x] No class exceeds 250 lines. No method exceeds 20 lines. Verified during code review.
+- [x] `rfp-schema-v1.json` allows `null` for all entity fields — verified by submitting an RFP JSON with all entity
   fields set to `null` and confirming validation passes.
 
 ---

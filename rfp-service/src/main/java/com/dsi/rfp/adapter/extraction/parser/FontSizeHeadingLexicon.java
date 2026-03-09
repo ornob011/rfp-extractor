@@ -1,12 +1,13 @@
 package com.dsi.rfp.adapter.extraction.parser;
 
+import com.dsi.rfp.domain.exception.SystemIoException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import lombok.SneakyThrows;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -37,12 +38,16 @@ public class FontSizeHeadingLexicon {
         return document.levels();
     }
 
-    @SneakyThrows
     private LexiconDocument loadDocument() {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
         try (InputStream input = new ClassPathResource(LEXICON_PATH).getInputStream()) {
             return mapper.readValue(input, LexiconDocument.class);
+        } catch (IOException exception) {
+            throw new SystemIoException(
+                String.format("Failed to load font size lexicon: %s", LEXICON_PATH),
+                exception
+            );
         }
     }
 

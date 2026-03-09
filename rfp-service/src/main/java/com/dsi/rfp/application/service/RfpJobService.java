@@ -3,6 +3,7 @@ package com.dsi.rfp.application.service;
 import com.dsi.rfp.adapter.rest.JobStatusResponse;
 import com.dsi.rfp.domain.model.ExtractionJob;
 import com.dsi.rfp.domain.port.out.JobStatePort;
+import com.dsi.rfp.domain.port.out.ResultPersistencePort;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -16,9 +17,14 @@ import java.util.Optional;
 public class RfpJobService {
 
     private final JobStatePort jobStatePort;
+    private final ResultPersistencePort resultPersistencePort;
 
-    public RfpJobService(JobStatePort jobStatePort) {
+    public RfpJobService(
+        JobStatePort jobStatePort,
+        ResultPersistencePort resultPersistencePort
+    ) {
         this.jobStatePort = jobStatePort;
+        this.resultPersistencePort = resultPersistencePort;
     }
 
     public Optional<JobStatusResponse> findById(Long jobId) {
@@ -38,6 +44,10 @@ public class RfpJobService {
                            .orElseThrow(() -> new EntityNotFoundException(
                                String.format("Job not found: %s", jobId)
                            ));
+    }
+
+    public Optional<JsonNode> getResult(Long jobId) {
+        return resultPersistencePort.findResult(jobId);
     }
 
     private JobStatusResponse toResponse(ExtractionJob job) {
