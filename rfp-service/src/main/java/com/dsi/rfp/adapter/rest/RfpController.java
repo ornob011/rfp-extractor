@@ -1,21 +1,39 @@
 package com.dsi.rfp.adapter.rest;
 
+import com.dsi.rfp.adapter.security.Auditable;
 import com.dsi.rfp.agent.ConfidenceScoringConfig;
 import com.dsi.rfp.application.service.RfpJobService;
 import com.dsi.rfp.application.service.RfpSubmissionService;
-import com.dsi.rfp.domain.model.*;
+import com.dsi.rfp.domain.model.AnalysisStatus;
+import com.dsi.rfp.domain.model.AuditAction;
+import com.dsi.rfp.domain.model.PageExtractionMethod;
+import com.dsi.rfp.domain.model.PageSummary;
+import com.dsi.rfp.domain.model.RfpDocument;
+import com.dsi.rfp.domain.model.RfpType;
+import com.dsi.rfp.domain.model.RulePackResults;
+import com.dsi.rfp.domain.model.UserRole;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -39,66 +57,106 @@ public class RfpController {
         this.scoringConfig = scoringConfig;
     }
 
+    @Auditable(action = AuditAction.SUBMIT_DOCUMENT)
     @PostMapping("/submit")
     public ResponseEntity<SubmitResponse> submit(
-        @RequestParam("file") MultipartFile file
+        @RequestParam("file") MultipartFile file,
+        Authentication authentication
     ) throws IOException {
+        String username = extractUsername(authentication);
         Long jobId = submissionService.submit(
             file.getOriginalFilename(),
-            file.getBytes()
+            file.getBytes(),
+            username
         );
 
         SubmitResponse response = SubmitResponse.builder()
-                                                .jobId(jobId)
-                                                .status(AnalysisStatus.QUEUED)
-                                                .message("RFP document submitted for processing")
-                                                .build();
+            .jobId(jobId)
+            .status(AnalysisStatus.QUEUED)
+            .message("RFP document submitted for processing")
+            .build();
 
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                             .body(response);
+            .body(response);
     }
 
     @GetMapping("/status/{jobId}")
     public ResponseEntity<JobStatusResponse> getStatus(
-        @PathVariable Long jobId
+        @PathVariable Long jobId,
+        Authentication authentication
     ) {
-        return jobService.findById(jobId)
-                         .map(ResponseEntity::ok)
-                         .orElse(ResponseEntity.notFound().build());
+        return jobService.findById(
+                jobId,
+                extractUsername(authentication),
+                extractRoles(authentication)
+            )
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/jobs")
-    public ResponseEntity<List<JobStatusResponse>> listJobs() {
-        return ResponseEntity.ok(jobService.findAll());
+    public ResponseEntity<List<JobStatusResponse>> listJobs(
+        Authentication authentication
+    ) {
+        return ResponseEntity.ok(
+            jobService.findAll(
+                extractUsername(authentication),
+                extractRoles(authentication)
+            )
+        );
     }
 
+    @Auditable(action = AuditAction.VIEW_RESULT)
     @GetMapping("/result/{jobId}")
     public ResponseEntity<RfpResultResponse> getResult(
-        @PathVariable Long jobId
+        @PathVariable Long jobId,
+        Authentication authentication
     ) {
-        return jobService.findById(jobId)
-                         .map(job -> buildResultResponse(job.getJobId()))
-                         .orElse(ResponseEntity.notFound().build());
+        return jobService.findById(
+                jobId,
+                extractUsername(authentication),
+                extractRoles(authentication)
+            )
+            .map(job -> buildResultResponse(job.getJobId()))
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    private String extractUsername(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof Jwt jwt) {
+            return jwt.getSubject();
+        }
+
+        return authentication.getName();
+    }
+
+    private Set<UserRole> extractRoles(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .map(role -> role.replace("ROLE_", ""))
+            .map(UserRole::valueOf)
+            .collect(Collectors.toUnmodifiableSet());
     }
 
     private ResponseEntity<RfpResultResponse> buildResultResponse(Long jobId) {
         JsonNode sectionsJson = jobService.getSectionsJson(jobId);
         JsonNode resultJson = jobService.getResult(jobId)
-                                        .orElse(null);
+            .orElse(null);
 
         ParsedResult parsedResult = parseResult(resultJson);
 
         RfpResultResponse response = RfpResultResponse.builder()
-                                                      .jobId(jobId)
-                                                      .sections(sectionsJson)
-                                                      .entities(parsedResult.entities())
-                                                      .confidenceMap(parsedResult.confidenceMap())
-                                                      .tables(parsedResult.tables())
-                                                      .pageDetails(parsedResult.pageDetails())
-                                                      .rulePackResults(parsedResult.rulePackResults())
-                                                      .rfpType(parsedResult.rfpType())
-                                                      .badgeThresholds(buildBadgeThresholds())
-                                                      .build();
+            .jobId(jobId)
+            .sections(sectionsJson)
+            .entities(parsedResult.entities())
+            .confidenceMap(parsedResult.confidenceMap())
+            .tables(parsedResult.tables())
+            .pageDetails(parsedResult.pageDetails())
+            .rulePackResults(parsedResult.rulePackResults())
+            .rfpType(parsedResult.rfpType())
+            .badgeThresholds(buildBadgeThresholds())
+            .build();
 
         return ResponseEntity.ok(response);
     }
@@ -125,14 +183,17 @@ public class RfpController {
 
     private RfpType resolveRfpType(RfpDocument result) {
         return Optional.ofNullable(result.getRulePackResults())
-                       .map(RulePackResults::getRfpType)
-                       .orElse(null);
+            .map(RulePackResults::getRfpType)
+            .orElse(null);
     }
 
     private List<PageDetailDto> buildPageDetails(RfpDocument result) {
         return result.getPageClassifications().stream()
-                     .map(page -> buildPageDetail(page, result))
-                     .toList();
+            .map(page -> buildPageDetail(
+                page,
+                result
+            ))
+            .toList();
     }
 
     private PageDetailDto buildPageDetail(
@@ -140,7 +201,7 @@ public class RfpController {
         RfpDocument result
     ) {
         double confidence = result.getPageConfidences()
-                                  .getOrDefault(page.getPageNumber(), 1.0);
+            .getOrDefault(page.getPageNumber(), 1.0);
 
         PageExtractionMethod method = resolveExtractionMethod(
             page,
@@ -159,17 +220,15 @@ public class RfpController {
         PageSummary page,
         RfpDocument result
     ) {
-        return Optional.ofNullable(
-                           pageExtractionMethods(result).get(page.getPageNumber())
-                       )
-                       .orElseGet(() -> defaultMethod(page));
+        return Optional.ofNullable(pageExtractionMethods(result).get(page.getPageNumber()))
+            .orElseGet(() -> defaultMethod(page));
     }
 
     private Map<Integer, PageExtractionMethod> pageExtractionMethods(
         RfpDocument result
     ) {
         return Optional.ofNullable(result.getPageExtractionMethods())
-                       .orElse(Map.of());
+            .orElse(Map.of());
     }
 
     private PageExtractionMethod defaultMethod(PageSummary page) {
