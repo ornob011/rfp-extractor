@@ -11,6 +11,27 @@ export const rfpClient = axios.create({
     headers: { 'Content-Type': 'application/json' },
 });
 
+rfpClient.interceptors.request.use((config) => {
+    const token = localStorage.getItem('rfp_token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+rfpClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            localStorage.removeItem('rfp_token');
+            localStorage.removeItem('rfp_roles');
+            localStorage.removeItem('rfp_username');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    },
+);
+
 export async function submitRfp(file: File): Promise<{ jobId: number; status: JobStatus }> {
     const formData = new FormData();
     formData.append('file', file);

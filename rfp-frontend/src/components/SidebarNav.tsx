@@ -1,19 +1,29 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Upload, Briefcase, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { hasRole, logout } from '@/api/authClient';
 
 interface SidebarNavProps {
     collapsed?: boolean;
     onNavigate?: () => void;
 }
 
-const navItems = [
+const BASE_NAV_ITEMS = [
     { to: '/jobs', label: 'Jobs', icon: Briefcase },
     { to: '/upload', label: 'Upload', icon: Upload },
-    { to: '/admin', label: 'Admin', icon: Settings },
-];
+] as const;
+
+const ADMIN_NAV_ITEM = { to: '/admin', label: 'Admin', icon: Settings } as const;
 
 export function SidebarNav({ collapsed = false, onNavigate }: SidebarNavProps) {
+    const navigate = useNavigate();
+    const navItems = navigationItems();
+
+    function handleLogout() {
+        logout();
+        navigate('/login');
+    }
+
     return (
         <div className="flex flex-col h-full">
             <div className="p-4">
@@ -52,8 +62,7 @@ export function SidebarNav({ collapsed = false, onNavigate }: SidebarNavProps) {
                         'text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors',
                         collapsed && 'justify-center px-2',
                     )}
-                    disabled
-                    title="Login available in Sprint 11"
+                    onClick={handleLogout}
                 >
                     <LogOut className="h-5 w-5 shrink-0" />
                     {!collapsed && <span>Logout</span>}
@@ -61,4 +70,12 @@ export function SidebarNav({ collapsed = false, onNavigate }: SidebarNavProps) {
             </div>
         </div>
     );
+}
+
+function navigationItems() {
+    if (hasRole('ADMIN')) {
+        return [...BASE_NAV_ITEMS, ADMIN_NAV_ITEM];
+    }
+
+    return BASE_NAV_ITEMS;
 }
