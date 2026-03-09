@@ -42,6 +42,7 @@
         <guava.version>33.5.0-jre</guava.version>
         <opennlp.version>2.5.6</opennlp.version>
         <icu4j.version>77.1</icu4j.version>
+        <tink.version>1.20.0</tink.version>
         <archunit.version>1.4.1</archunit.version>
         <commons-math3.version>3.6.1</commons-math3.version>
         <antlr4.version>4.13.2</antlr4.version>
@@ -154,6 +155,12 @@
                 <groupId>com.ibm.icu</groupId>
                 <artifactId>icu4j</artifactId>
                 <version>${icu4j.version}</version>
+            </dependency>
+            <!-- Google Tink -->
+            <dependency>
+                <groupId>com.google.crypto.tink</groupId>
+                <artifactId>tink</artifactId>
+                <version>${tink.version}</version>
             </dependency>
             <!-- ArchUnit -->
             <dependency>
