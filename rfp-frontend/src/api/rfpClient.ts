@@ -3,10 +3,8 @@ import type { JobStatus, JobStatusResponse, RfpResultResponse } from '../types/r
 import type { RulePackSummary, ReloadResult } from '../types/rulepack';
 import type { ArtifactMetadata } from '../types/artifact';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8081';
-
 export const rfpClient = axios.create({
-    baseURL: BASE_URL,
+    baseURL: '',
     timeout: 30_000,
     headers: { 'Content-Type': 'application/json' },
 });
@@ -76,5 +74,5 @@ export async function listArtifacts(jobId: string): Promise<ArtifactMetadata[]> 
 }
 
 export function artifactDownloadUrl(jobId: string, filename: string): string {
-    return `${BASE_URL}/api/v1/rfp/artifacts/${jobId}/${filename}`;
+    return `/api/v1/rfp/artifacts/${jobId}/${filename}`;
 }
