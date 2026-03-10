@@ -75,6 +75,7 @@ class OcrService:
         image_bytes: bytes,
         document_path: str | None,
         page_number: int | None,
+        pdfplumber_page=None,
     ) -> tuple[OcrResult, LayoutDetectionResult, ReadingOrderResult, list[ExtractedTable]]:
         with ThreadPoolExecutor(max_workers=3) as pool:
             ocr_future = pool.submit(
@@ -84,12 +85,14 @@ class OcrService:
                 self._extract_scanned_tables,
                 document_path,
                 page_number,
+                pdfplumber_page,
             )
             reading_order_future = pool.submit(
                 resolve_reading_order,
                 "",
                 document_path,
                 page_number,
+                pdfplumber_page,
             )
 
             ocr_result = ocr_future.result()
@@ -116,6 +119,7 @@ class OcrService:
         self,
         document_path: str | None,
         page_number: int | None,
+        pdfplumber_page=None,
     ) -> list[ExtractedTable]:
         match (document_path, page_number):
             case (str(path), int(page)):
@@ -123,6 +127,7 @@ class OcrService:
                     path,
                     page,
                     CONFIG.scanned_tables.strategies,
+                    pdfplumber_page,
                 )
             case _:
                 return []

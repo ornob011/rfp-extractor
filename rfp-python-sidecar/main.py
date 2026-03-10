@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Literal
 
 import easyocr
+import pdfplumber
 from fastapi import FastAPI, HTTPException
 from pydantic import Base64Bytes, BaseModel
 
@@ -137,11 +138,15 @@ async def health() -> HealthResponse:
 @app.post("/v1/table/extract", response_model=TableExtractResponse)
 def extract_table(request: TableExtractRequest) -> TableExtractResponse:
     document_path = _resolve_table_document_path(request)
-    extracted_tables = app.state.table_service.extract_page(
-        document_path=document_path,
-        page_number=request.pageNumber,
-        strategy=request.strategy,
-    )
+
+    with pdfplumber.open(document_path) as pdf:
+        page = pdf.pages[request.pageNumber - 1]
+        extracted_tables = app.state.table_service.extract_page(
+            document_path=document_path,
+            page_number=request.pageNumber,
+            strategy=request.strategy,
+            pdfplumber_page=page,
+        )
 
     response_tables = [
         _table_response(table)
@@ -177,12 +182,21 @@ def ocr_page_with_layout(
         )
 
     document_path = _resolve_document_path(request)
-
-    ocr_result, layout, reading_order, scanned_tables = ocr_service.extract_page_with_layout(
-        bytes(request.image_base64),
+    pdf, pdfplumber_page = _open_pdfplumber_page(
         document_path,
         request.page_number,
     )
+
+    try:
+        ocr_result, layout, reading_order, scanned_tables = ocr_service.extract_page_with_layout(
+            bytes(request.image_base64),
+            document_path,
+            request.page_number,
+            pdfplumber_page,
+        )
+    finally:
+        if pdf is not None:
+            pdf.close()
 
     return OcrPageWithLayoutResponse(
         ocr_result=ocr_result,
@@ -263,6 +277,17 @@ def _resolve_document_path(request: OcrRequest) -> str | None:
         return request.document_path
 
     return None
+
+
+def _open_pdfplumber_page(
+    document_path: str | None,
+    page_number: int | None,
+) -> tuple[pdfplumber.PDF | None, object | None]:
+    if document_path is None or page_number is None:
+        return None, None
+
+    pdf = pdfplumber.open(document_path)
+    return pdf, pdf.pages[page_number - 1]
 
 
 def _resolve_table_document_path(request: TableExtractRequest) -> str:
