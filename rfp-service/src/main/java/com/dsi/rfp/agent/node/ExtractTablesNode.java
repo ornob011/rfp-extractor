@@ -92,9 +92,7 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
                                               .filter(p -> p.getClassification() == PageClassification.SCANNED)
                                               .toList();
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-
-        try {
+        try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
             List<CompletableFuture<List<TableExtractionResult>>> futures = scannedPages.stream()
                                                                                        .map(page -> CompletableFuture.supplyAsync(
                                                                                            () -> reconstructForPage(
@@ -110,8 +108,6 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
             futures.stream()
                    .map(CompletableFuture::join)
                    .forEach(tables::addAll);
-        } finally {
-            executor.shutdown();
         }
     }
 
