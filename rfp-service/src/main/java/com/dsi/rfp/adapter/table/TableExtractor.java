@@ -17,7 +17,7 @@ import java.util.stream.IntStream;
 @Component
 public class TableExtractor {
 
-    private static final int TABLE_BATCH_CHUNK_SIZE = 15;
+    private static final int TABLE_BATCH_CHUNK_SIZE = 5;
 
     private final TableEngineClient tableEngineClient;
     private final LatticeTableExtractor latticeExtractor;
