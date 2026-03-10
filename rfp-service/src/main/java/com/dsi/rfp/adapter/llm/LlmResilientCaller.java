@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Component
 class LlmResilientCaller {
@@ -18,6 +20,7 @@ class LlmResilientCaller {
 
     private final ChatClient chatClient;
     private final ChatClient judgeChatClient;
+    private final ExecutorService llmExecutor;
 
     LlmResilientCaller(
         ChatClient chatClient,
@@ -25,6 +28,12 @@ class LlmResilientCaller {
     ) {
         this.chatClient = chatClient;
         this.judgeChatClient = judgeChatClient;
+        this.llmExecutor = Executors.newSingleThreadExecutor(
+            r -> Thread.ofPlatform()
+                       .name("llm-caller")
+                       .daemon(true)
+                       .unstarted(r)
+        );
     }
 
     @CircuitBreaker(
@@ -49,7 +58,8 @@ class LlmResilientCaller {
                             .system(systemPrompt)
                             .user(userContent)
                             .call()
-                            .content()
+                            .content(),
+            llmExecutor
         );
     }
 
@@ -73,7 +83,8 @@ class LlmResilientCaller {
             () -> judgeChatClient.prompt()
                                 .user(fullPrompt)
                                 .call()
-                                .content()
+                                .content(),
+            llmExecutor
         );
     }
 
