@@ -14,6 +14,7 @@ from reading_order import ReadingOrderResult
 from table_service import ExtractedTable, TableService
 
 logger = logging.getLogger(__name__)
+logging.getLogger("pdfminer").setLevel(logging.ERROR)
 
 
 @asynccontextmanager
@@ -109,7 +110,7 @@ async def health() -> HealthResponse:
 
 
 @app.post("/v1/table/extract", response_model=TableExtractResponse)
-async def extract_table(request: TableExtractRequest) -> TableExtractResponse:
+def extract_table(request: TableExtractRequest) -> TableExtractResponse:
     document_path = _resolve_table_document_path(request)
     extracted_tables = app.state.table_service.extract_page(
         document_path=document_path,
@@ -126,7 +127,7 @@ async def extract_table(request: TableExtractRequest) -> TableExtractResponse:
 
 
 @app.post("/ocr/page", response_model=OcrResult)
-async def ocr_page(request: OcrRequest) -> OcrResult:
+def ocr_page(request: OcrRequest) -> OcrResult:
     ocr_service: OcrService | None = getattr(app.state, "ocr_service", None)
 
     if ocr_service is None:
@@ -139,7 +140,7 @@ async def ocr_page(request: OcrRequest) -> OcrResult:
 
 
 @app.post("/ocr/page-with-layout", response_model=OcrPageWithLayoutResponse)
-async def ocr_page_with_layout(
+def ocr_page_with_layout(
     request: OcrRequest,
 ) -> OcrPageWithLayoutResponse:
     ocr_service: OcrService | None = getattr(app.state, "ocr_service", None)
