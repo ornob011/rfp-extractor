@@ -1,6 +1,6 @@
 version: 1
 render:
-  max_dpi: 400
+  max_dpi: 300
 ocr:
   confidence_threshold: 0.5
   tesseract_min_confidence: 0

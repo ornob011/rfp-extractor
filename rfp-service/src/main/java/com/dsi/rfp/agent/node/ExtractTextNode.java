@@ -2,11 +2,8 @@ package com.dsi.rfp.agent.node;
 
 import com.dsi.rfp.adapter.extraction.MixedPageContent;
 import com.dsi.rfp.adapter.extraction.MixedPageExtractor;
-import com.dsi.rfp.adapter.extraction.PageImageRenderer;
-import com.dsi.rfp.adapter.ocr.OcrPageWithLayoutResultDto;
+import com.dsi.rfp.adapter.ocr.OcrBatchPageResult;
 import com.dsi.rfp.adapter.ocr.OcrSidecarClient;
-import com.dsi.rfp.adapter.ocr.ScannedPageExtractionResult;
-import com.dsi.rfp.adapter.ocr.ScannedPageExtractor;
 import com.dsi.rfp.agent.ExtractionState;
 import com.dsi.rfp.domain.model.Clause;
 import com.dsi.rfp.domain.model.PageClassification;
@@ -18,21 +15,19 @@ import org.bsc.langgraph4j.action.NodeAction;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ExtractTextNode implements NodeAction<ExtractionState> {
 
-    private final ScannedPageExtractor scannedExtractor;
     private final MixedPageExtractor mixedExtractor;
     private final OcrSidecarClient ocrClient;
-    private final PageImageRenderer pageImageRenderer;
 
     @Override
     public Map<String, Object> apply(
@@ -66,17 +61,29 @@ public class ExtractTextNode implements NodeAction<ExtractionState> {
     private ExtractionAccumulator extractAllPages(
         ExtractionState state
     ) throws IOException {
-        Path docPath = Path.of(state.documentPath());
+        List<Integer> pageNumbers = state.pageClassifications()
+                                         .stream()
+                                         .map(PageSummary::getPageNumber)
+                                         .toList();
+
+        Map<Integer, OcrBatchPageResult> batchResults = ocrClient.extractBatch(
+            state.documentPath(),
+            pageNumbers
+        );
+
         List<Clause> clauses = new ArrayList<>();
         Map<Integer, String> pageTexts = new HashMap<>();
         Map<Integer, Double> pageConfidences = new HashMap<>();
         Map<Integer, PageExtractionMethod> pageMethods = new HashMap<>();
 
         for (PageSummary page : state.pageClassifications()) {
+            OcrBatchPageResult batchResult = batchResults.get(
+                page.getPageNumber()
+            );
             PageResult result = extractForPage(
                 state.documentPath(),
-                docPath,
-                page
+                page,
+                batchResult
             );
             collectResult(
                 result,
@@ -112,24 +119,23 @@ public class ExtractTextNode implements NodeAction<ExtractionState> {
 
     private PageResult extractForPage(
         String documentPath,
-        Path docPath,
-        PageSummary page
+        PageSummary page,
+        OcrBatchPageResult batchResult
     ) throws IOException {
         return switch (page.getClassification()) {
-            case DIGITAL -> extractDigital(docPath, page);
-            case SCANNED -> extractScanned(documentPath, page);
-            case MIXED -> extractMixed(documentPath, page);
+            case DIGITAL -> extractDigital(page, batchResult);
+            case SCANNED -> extractScanned(page, batchResult);
+            case MIXED -> extractMixed(
+                documentPath, page, batchResult
+            );
         };
     }
 
     private PageResult extractDigital(
-        Path docPath,
-        PageSummary page
-    ) throws IOException {
-        String text = extractOrderedText(
-            docPath.toString(),
-            page.getPageNumber()
-        );
+        PageSummary page,
+        OcrBatchPageResult batchResult
+    ) {
+        String text = batchResult.readingOrder().orderedText();
 
         return new PageResult(
             buildClause(page, text),
@@ -139,48 +145,32 @@ public class ExtractTextNode implements NodeAction<ExtractionState> {
         );
     }
 
-    private String extractOrderedText(
-        String documentPath,
-        int pageNumber
-    ) throws IOException {
-        byte[] pngBytes = pageImageRenderer.renderPage(
-            documentPath,
-            pageNumber
-        );
-        OcrPageWithLayoutResultDto result = ocrClient.extractPageWithLayout(
-            pngBytes,
-            documentPath,
-            pageNumber
-        );
-
-        return result.readingOrder().orderedText();
-    }
-
     private PageResult extractScanned(
-        String documentPath,
-        PageSummary page
-    ) throws IOException {
-        ScannedPageExtractionResult result = scannedExtractor.extractPage(
-            documentPath,
-            page.getPageNumber()
-        );
+        PageSummary page,
+        OcrBatchPageResult batchResult
+    ) {
+        String text = batchResult.ocrResult().text();
+        double confidence = batchResult.ocrResult().pageConfidence();
 
         return new PageResult(
-            buildClause(page, result.text()),
-            result.text(),
-            result.confidence(),
-            result.extractionMethod()
+            buildClause(page, text),
+            text,
+            confidence,
+            PageExtractionMethod.OCR
         );
     }
 
     private PageResult extractMixed(
         String documentPath,
-        PageSummary page
+        PageSummary page,
+        OcrBatchPageResult batchResult
     ) throws IOException {
-        MixedPageContent content = mixedExtractor.extractPage(
+        MixedPageContent content = mixedExtractor.extractPageWithResult(
             documentPath,
-            page.getPageNumber()
+            page.getPageNumber(),
+            batchResult
         );
+
         return new PageResult(
             buildClause(page, content.text()),
             content.text(),
@@ -214,7 +204,7 @@ public class ExtractTextNode implements NodeAction<ExtractionState> {
     ) {
         return values.entrySet()
                      .stream()
-                     .collect(java.util.stream.Collectors.toMap(
+                     .collect(Collectors.toMap(
                          entry -> String.valueOf(entry.getKey()),
                          Map.Entry::getValue
                      ));

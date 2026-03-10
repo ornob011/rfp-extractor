@@ -1,12 +1,11 @@
 package com.dsi.rfp.agent.node;
 
 import com.dsi.rfp.adapter.extraction.MixedPageExtractor;
-import com.dsi.rfp.adapter.extraction.PageImageRenderer;
-import com.dsi.rfp.adapter.ocr.OcrPageWithLayoutResultDto;
+import com.dsi.rfp.adapter.ocr.LayoutDetectionDto;
+import com.dsi.rfp.adapter.ocr.OcrBatchPageResult;
 import com.dsi.rfp.adapter.ocr.OcrResultDto;
 import com.dsi.rfp.adapter.ocr.OcrSidecarClient;
 import com.dsi.rfp.adapter.ocr.ReadingOrderDto;
-import com.dsi.rfp.adapter.ocr.ScannedPageExtractor;
 import com.dsi.rfp.agent.ExtractionState;
 import com.dsi.rfp.domain.model.PageClassification;
 import com.dsi.rfp.domain.model.PageExtractionMethod;
@@ -23,7 +22,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -31,16 +29,10 @@ import static org.mockito.Mockito.when;
 class ExtractTextNodeTest {
 
     @Mock
-    private ScannedPageExtractor scannedExtractor;
-
-    @Mock
     private MixedPageExtractor mixedExtractor;
 
     @Mock
     private OcrSidecarClient ocrClient;
-
-    @Mock
-    private PageImageRenderer pageImageRenderer;
 
     @InjectMocks
     private ExtractTextNode node;
@@ -49,23 +41,25 @@ class ExtractTextNodeTest {
     void shouldStorePageKeyedStateUsingStringKeys() throws Exception {
         ExtractionState state = buildState();
 
-        when(pageImageRenderer.renderPage(anyString(), anyInt()))
-            .thenReturn(new byte[] {1});
-        when(ocrClient.extractPageWithLayout(any(), anyString(), anyInt()))
-            .thenReturn(new OcrPageWithLayoutResultDto(
-                new OcrResultDto(
-                    "page text",
-                    List.of(),
-                    1.0,
+        when(ocrClient.extractBatch(anyString(), any()))
+            .thenReturn(Map.of(
+                1,
+                new OcrBatchPageResult(
                     1,
-                    "text_layer"
-                ),
-                null,
-                new ReadingOrderDto(
-                    "page text",
-                    ReadingOrderMethod.PDFPLUMBER_LAYOUT
-                ),
-                List.of()
+                    new OcrResultDto(
+                        "page text",
+                        List.of(),
+                        1.0,
+                        1,
+                        "text_layer"
+                    ),
+                    new LayoutDetectionDto(false, List.of(), List.of()),
+                    new ReadingOrderDto(
+                        "page text",
+                        ReadingOrderMethod.PDFPLUMBER_LAYOUT
+                    ),
+                    List.of()
+                )
             ));
 
         Map<String, Object> result = node.apply(state);

@@ -35,6 +35,17 @@ def detect_layout(
         image.width,
         image.height,
     )
+
+    return detect_layout_from_regions(
+        word_regions,
+        scanned_tables,
+    )
+
+
+def detect_layout_from_regions(
+    word_regions: list[BoundingBox],
+    scanned_tables: list[ExtractedTable],
+) -> LayoutDetectionResult:
     table_regions = [
         _from_table_bbox(table.bbox)
         for table in scanned_tables
