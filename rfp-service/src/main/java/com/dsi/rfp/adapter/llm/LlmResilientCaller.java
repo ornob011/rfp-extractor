@@ -4,7 +4,6 @@ import com.dsi.rfp.domain.exception.LlmUnavailableException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
-import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -12,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Component
 class LlmResilientCaller {
@@ -43,9 +43,6 @@ class LlmResilientCaller {
     @RateLimiter(
         name = RESILIENCE_INSTANCE
     )
-    @TimeLimiter(
-        name = RESILIENCE_INSTANCE
-    )
     @Retry(
         name = RESILIENCE_INSTANCE
     )
@@ -60,7 +57,7 @@ class LlmResilientCaller {
                             .call()
                             .content(),
             llmExecutor
-        );
+        ).orTimeout(120, TimeUnit.SECONDS);
     }
 
     @CircuitBreaker(
@@ -68,9 +65,6 @@ class LlmResilientCaller {
         fallbackMethod = "fallback"
     )
     @RateLimiter(
-        name = RESILIENCE_INSTANCE
-    )
-    @TimeLimiter(
         name = RESILIENCE_INSTANCE
     )
     @Retry(
@@ -85,7 +79,7 @@ class LlmResilientCaller {
                                 .call()
                                 .content(),
             llmExecutor
-        );
+        ).orTimeout(120, TimeUnit.SECONDS);
     }
 
     public CompletableFuture<String> fallback(
