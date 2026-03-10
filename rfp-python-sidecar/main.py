@@ -20,20 +20,23 @@ logger = logging.getLogger(__name__)
 logging.getLogger("pdfminer").setLevel(logging.ERROR)
 
 
-def _flatten_rnn_parameters(reader: easyocr.Reader) -> None:
+def _unwrap_data_parallel(reader: easyocr.Reader) -> None:
     for model_attr in ("recognizer", "detector"):
         model = getattr(reader, model_attr, None)
 
-        if model is None:
+        if not isinstance(model, torch.nn.DataParallel):
             continue
 
-        for module in model.modules():
+        unwrapped = model.module
+        setattr(reader, model_attr, unwrapped)
+
+        for module in unwrapped.modules():
             if isinstance(module, (torch.nn.LSTM, torch.nn.GRU, torch.nn.RNN)):
                 module.flatten_parameters()
 
     logger.info(
-        "event=rnn.flatten component=rfp-sidecar"
-        " message=Flattened RNN parameters to contiguous memory"
+        "event=rnn.unwrap component=rfp-sidecar"
+        " message=Unwrapped DataParallel and flattened RNN parameters"
     )
 
 
@@ -47,7 +50,7 @@ async def lifespan(app: FastAPI):
 
     app.state.table_service = getattr(app.state, "table_service", None) or TableService()
     reader = easyocr.Reader(["en", "bn"], gpu=True)
-    _flatten_rnn_parameters(reader)
+    _unwrap_data_parallel(reader)
     app.state.ocr_service = getattr(app.state, "ocr_service", None) or OcrService(
         reader,
         app.state.table_service,
