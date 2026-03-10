@@ -2,7 +2,7 @@ package com.dsi.rfp.adapter.table;
 
 import com.dsi.rfp.domain.exception.TableExtractionUnavailableException;
 import com.dsi.rfp.domain.model.TableExtractionStrategy;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -14,14 +14,11 @@ import java.util.Optional;
 public class TableEngineRestClient implements TableEngineClient {
 
     private final RestClient restClient;
-    private final String tableSidecarUrl;
 
     public TableEngineRestClient(
-        RestClient restClient,
-        @Value("${app.sidecar.url}") String tableSidecarUrl
+        @Qualifier("sidecarRestClient") RestClient restClient
     ) {
         this.restClient = restClient;
-        this.tableSidecarUrl = tableSidecarUrl;
     }
 
     @Override
@@ -31,7 +28,7 @@ public class TableEngineRestClient implements TableEngineClient {
         TableExtractionStrategy strategy
     ) {
         TableEngineResponse response = restClient.post()
-                                                 .uri(String.format("%s/v1/table/extract", tableSidecarUrl))
+                                                 .uri("/v1/table/extract")
                                                  .body(new TableEngineRequest(
                                                      documentPath,
                                                      pageNumber,

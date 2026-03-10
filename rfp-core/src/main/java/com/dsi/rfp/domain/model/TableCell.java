@@ -3,9 +3,11 @@ package com.dsi.rfp.domain.model;
 import lombok.Builder;
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
 @Builder
-public class TableCell {
+public class TableCell implements Serializable {
 
     private final int row;
     private final int col;

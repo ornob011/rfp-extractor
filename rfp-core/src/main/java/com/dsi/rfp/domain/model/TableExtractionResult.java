@@ -3,12 +3,13 @@ package com.dsi.rfp.domain.model;
 import lombok.Builder;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
 @Data
 @Builder
-public class TableExtractionResult {
+public class TableExtractionResult implements Serializable {
 
     @Builder.Default
     private UUID tableId = UUID.randomUUID();

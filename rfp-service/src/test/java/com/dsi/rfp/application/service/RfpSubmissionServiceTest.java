@@ -54,7 +54,8 @@ class RfpSubmissionServiceTest {
 
     @Test
     void shouldReturnJobIdOnValidSubmit() {
-        Path stored = Path.of("/tmp/test/doc.pdf");
+        Path stored = Path.of("/tmp/test/doc.pdf.enc");
+        Path decrypted = Path.of("/tmp/test/doc.pdf");
         when(validationService.validate(any(Path.class), anyLong()))
             .thenReturn(ValidationResult.ok());
         when(documentRepository.findBySha256Checksum(anyString()))
@@ -77,11 +78,13 @@ class RfpSubmissionServiceTest {
         when(jobStatePort.save(any())).thenReturn(savedJob);
         when(fileStoragePort.store(eq(42L), any(), anyString()))
             .thenReturn(stored);
+        when(fileStoragePort.retrieve(eq(42L), eq("test.pdf")))
+            .thenReturn(decrypted);
 
         Long result = service.submit("test.pdf", "content".getBytes());
 
         assertThat(result).isEqualTo(42L);
-        verify(orchestrationService).runExtraction(eq(42L), eq(stored));
+        verify(orchestrationService).runExtraction(eq(42L), eq(decrypted));
     }
 
     @Test
@@ -108,7 +111,8 @@ class RfpSubmissionServiceTest {
 
     @Test
     void shouldSaveJobBeforeDispatching() {
-        Path stored = Path.of("/tmp/test/doc.pdf");
+        Path stored = Path.of("/tmp/test/doc.pdf.enc");
+        Path decrypted = Path.of("/tmp/test/doc.pdf");
         when(validationService.validate(any(Path.class), anyLong()))
             .thenReturn(ValidationResult.ok());
         when(documentRepository.findBySha256Checksum(anyString()))
@@ -131,17 +135,20 @@ class RfpSubmissionServiceTest {
         when(jobStatePort.save(any())).thenReturn(savedJob);
         when(fileStoragePort.store(eq(42L), any(), anyString()))
             .thenReturn(stored);
+        when(fileStoragePort.retrieve(eq(42L), eq("test.pdf")))
+            .thenReturn(decrypted);
 
         service.submit("test.pdf", "data".getBytes());
 
         var inOrder = inOrder(jobStatePort, orchestrationService);
         inOrder.verify(jobStatePort).save(any(ExtractionJob.class));
-        inOrder.verify(orchestrationService).runExtraction(eq(42L), eq(stored));
+        inOrder.verify(orchestrationService).runExtraction(eq(42L), eq(decrypted));
     }
 
     @Test
     void shouldReuseDuplicateDocument() {
-        Path stored = Path.of("/tmp/test/doc.pdf");
+        Path stored = Path.of("/tmp/test/doc.pdf.enc");
+        Path decrypted = Path.of("/tmp/test/doc.pdf");
         when(validationService.validate(any(Path.class), anyLong()))
             .thenReturn(ValidationResult.ok());
         DocumentEntity existing = DocumentEntity.builder()
@@ -163,6 +170,8 @@ class RfpSubmissionServiceTest {
         when(jobStatePort.save(any())).thenReturn(savedJob);
         when(fileStoragePort.store(eq(42L), any(), anyString()))
             .thenReturn(stored);
+        when(fileStoragePort.retrieve(eq(42L), eq("test.pdf")))
+            .thenReturn(decrypted);
 
         service.submit("test.pdf", "data".getBytes());
 

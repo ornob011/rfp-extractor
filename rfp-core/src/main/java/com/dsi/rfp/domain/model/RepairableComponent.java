@@ -3,9 +3,11 @@ package com.dsi.rfp.domain.model;
 import lombok.Builder;
 import lombok.Value;
 
+import java.io.Serializable;
+
 @Value
 @Builder
-public class RepairableComponent {
+public class RepairableComponent implements Serializable {
 
     String componentId;
 

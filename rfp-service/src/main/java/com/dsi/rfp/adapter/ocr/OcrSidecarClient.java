@@ -3,7 +3,7 @@ package com.dsi.rfp.adapter.ocr;
 import com.dsi.rfp.domain.exception.OcrUnavailableException;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -21,14 +21,11 @@ public class OcrSidecarClient {
     private static final String DEFAULT_LANGUAGE = "eng+ben";
 
     private final RestClient restClient;
-    private final String sidecarUrl;
 
     public OcrSidecarClient(
-        RestClient restClient,
-        @Value("${app.sidecar.url}") String sidecarUrl
+        @Qualifier("sidecarRestClient") RestClient restClient
     ) {
         this.restClient = restClient;
-        this.sidecarUrl = sidecarUrl;
     }
 
     @Retry(name = RESILIENCE_INSTANCE)
@@ -43,7 +40,7 @@ public class OcrSidecarClient {
         );
 
         OcrResultDto result = restClient.post()
-                                        .uri(String.format("%s/ocr/page", sidecarUrl))
+                                        .uri("/ocr/page")
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body(request)
                                         .retrieve()
@@ -107,7 +104,7 @@ public class OcrSidecarClient {
         );
 
         OcrPageWithLayoutResultDto result = restClient.post()
-                                                      .uri(String.format("%s/ocr/page-with-layout", sidecarUrl))
+                                                      .uri("/ocr/page-with-layout")
                                                       .contentType(MediaType.APPLICATION_JSON)
                                                       .body(request)
                                                       .retrieve()

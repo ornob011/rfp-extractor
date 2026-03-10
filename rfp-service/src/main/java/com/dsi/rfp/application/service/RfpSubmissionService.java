@@ -99,15 +99,20 @@ public class RfpSubmissionService {
         ExtractionJob saved = jobStatePort.save(job);
         Long jobId = saved.getJobId();
 
-        Path storedFile = fileStoragePort.store(
+        fileStoragePort.store(
             jobId,
             fileContent,
             originalFilename
         );
 
+        Path decryptedFile = fileStoragePort.retrieve(
+            jobId,
+            originalFilename
+        );
+
         orchestrationService.runExtraction(
             jobId,
-            storedFile
+            decryptedFile
         );
 
         log.info(

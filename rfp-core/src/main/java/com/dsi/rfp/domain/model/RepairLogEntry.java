@@ -3,11 +3,12 @@ package com.dsi.rfp.domain.model;
 import lombok.Builder;
 import lombok.Value;
 
+import java.io.Serializable;
 import java.time.Instant;
 
 @Value
 @Builder
-public class RepairLogEntry {
+public class RepairLogEntry implements Serializable {
 
     String componentId;
 

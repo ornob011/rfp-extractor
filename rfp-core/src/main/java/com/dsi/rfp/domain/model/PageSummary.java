@@ -3,9 +3,11 @@ package com.dsi.rfp.domain.model;
 import lombok.Builder;
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
 @Builder
-public class PageSummary {
+public class PageSummary implements Serializable {
 
     private final int pageNumber;
     private final PageClassification classification;

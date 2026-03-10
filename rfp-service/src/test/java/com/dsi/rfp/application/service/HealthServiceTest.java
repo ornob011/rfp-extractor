@@ -31,7 +31,7 @@ class HealthServiceTest {
         props = new LlmProviderProperties();
         props.setProvider(LlmProvider.OPENROUTER);
         props.getOpenrouter().setModel("google/gemini-2.0-flash-001");
-        healthService = new HealthService(props, restClient, "http://localhost:8000");
+        healthService = new HealthService(props, restClient);
     }
 
     @Test

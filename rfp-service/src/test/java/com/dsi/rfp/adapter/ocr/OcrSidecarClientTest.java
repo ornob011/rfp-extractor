@@ -22,8 +22,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class OcrSidecarClientTest {
 
-    private static final String SIDECAR_URL = "http://localhost:8501";
-
     @Mock
     private RestClient restClient;
 
@@ -40,7 +38,7 @@ class OcrSidecarClientTest {
 
     @BeforeEach
     void setUp() {
-        client = new OcrSidecarClient(restClient, SIDECAR_URL);
+        client = new OcrSidecarClient(restClient);
     }
 
     @Test
@@ -197,9 +195,7 @@ class OcrSidecarClientTest {
 
         client.extractPage(imageBytes, "eng");
 
-        verify(requestBodyUriSpec).uri(
-            "http://localhost:8501/ocr/page"
-        );
+        verify(requestBodyUriSpec).uri("/ocr/page");
     }
 
     private void stubPostChain() {
