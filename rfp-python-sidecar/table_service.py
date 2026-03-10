@@ -40,7 +40,42 @@ class ExtractedTable:
     bbox: TableBoundingBox | None
 
 
+BATCH_TABLE_WORKERS = 4
+
+
 class TableService:
+    def extract_document_batch(
+        self,
+        document_path: str,
+        page_numbers: list[int],
+    ) -> dict[int, list[ExtractedTable]]:
+        pdfplumber = import_module("pdfplumber")
+
+        with pdfplumber.open(document_path) as pdf:
+            page_map = {
+                page_num: pdf.pages[page_num - 1]
+                for page_num in page_numbers
+            }
+
+            with ThreadPoolExecutor(max_workers=BATCH_TABLE_WORKERS) as pool:
+                futures = {
+                    pool.submit(
+                        self.extract_page_with_strategies,
+                        document_path,
+                        page_num,
+                        ["lattice", "stream"],
+                        page_map[page_num],
+                    ): page_num
+                    for page_num in page_numbers
+                }
+
+                results: dict[int, list[ExtractedTable]] = {}
+                for future in futures:
+                    page_num = futures[future]
+                    results[page_num] = future.result()
+
+        return results
+
     def extract_page(
         self,
         document_path: str,
