@@ -35,15 +35,13 @@ class TableExtractorTest {
             pageSummary(2, PageClassification.SCANNED)
         );
 
-        when(tableEngineClient.extractTablesBatch(any(), eq(List.of())))
-            .thenReturn(Map.of());
-
         List<TableExtractionResult> result = extractor.extractFromDocument(
             "/tmp/sample.pdf",
             pages
         );
 
         assertThat(result).isEmpty();
+        verifyNoInteractions(tableEngineClient);
         verifyNoInteractions(latticeExtractor);
     }
 

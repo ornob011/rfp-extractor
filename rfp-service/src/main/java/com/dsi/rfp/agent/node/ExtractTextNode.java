@@ -20,11 +20,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ExtractTextNode implements NodeAction<ExtractionState> {
+
+    private static final int OCR_BATCH_CHUNK_SIZE = 10;
 
     private final MixedPageExtractor mixedExtractor;
     private final OcrSidecarClient ocrClient;
@@ -66,7 +69,7 @@ public class ExtractTextNode implements NodeAction<ExtractionState> {
                                          .map(PageSummary::getPageNumber)
                                          .toList();
 
-        Map<Integer, OcrBatchPageResult> batchResults = ocrClient.extractBatch(
+        Map<Integer, OcrBatchPageResult> batchResults = extractInChunks(
             state.documentPath(),
             pageNumbers
         );
@@ -101,6 +104,38 @@ public class ExtractTextNode implements NodeAction<ExtractionState> {
             pageConfidences,
             pageMethods
         );
+    }
+
+    private Map<Integer, OcrBatchPageResult> extractInChunks(
+        String documentPath,
+        List<Integer> pageNumbers
+    ) {
+        List<List<Integer>> chunks = IntStream.range(0, pageNumbers.size())
+            .boxed()
+            .collect(Collectors.groupingBy(
+                i -> i / OCR_BATCH_CHUNK_SIZE,
+                Collectors.mapping(pageNumbers::get, Collectors.toList())
+            ))
+            .values()
+            .stream()
+            .toList();
+
+        Map<Integer, OcrBatchPageResult> merged = new HashMap<>();
+
+        for (List<Integer> chunk : chunks) {
+            log.info(
+                "event=ocr.chunk component=ExtractTextNode"
+                + " chunkSize={} totalPages={}",
+                chunk.size(),
+                pageNumbers.size()
+            );
+
+            merged.putAll(
+                ocrClient.extractBatch(documentPath, chunk)
+            );
+        }
+
+        return merged;
     }
 
     private void collectResult(
