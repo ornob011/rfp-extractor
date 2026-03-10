@@ -12,11 +12,11 @@ class RfpUserDetailsTest {
     void shouldExposeSerializableUserDetailsFields() {
         RfpUserDetails details = new RfpUserDetails(
             UserEntity.builder()
-                .username("analyst")
-                .passwordHash("hash")
-                .role(UserRole.ANALYST)
-                .enabled(true)
-                .build()
+                      .username("analyst")
+                      .passwordHash("hash")
+                      .role(UserRole.ANALYST)
+                      .enabled(true)
+                      .build()
         );
 
         assertThat(details.getUsername()).isEqualTo("analyst");

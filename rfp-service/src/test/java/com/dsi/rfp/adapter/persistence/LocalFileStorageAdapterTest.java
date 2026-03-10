@@ -49,7 +49,6 @@ class LocalFileStorageAdapterTest {
         assertThat(dir.toString()).contains("42");
     }
 
-
     @Test
     void shouldDeleteJobDirectory() {
         Long jobId = 7L;

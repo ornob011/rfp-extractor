@@ -72,7 +72,7 @@ public class LocalFileStorageAdapter implements FileStoragePort {
 
         try (Stream<Path> paths = Files.walk(directory)) {
             paths.sorted(Comparator.reverseOrder())
-                .forEach(this::deletePath);
+                 .forEach(this::deletePath);
         } catch (IOException exception) {
             throw new SystemIoException(
                 String.format("Failed to delete job directory: %s", directory),

@@ -30,7 +30,6 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -69,11 +68,11 @@ class AuthApplicationServiceTest {
     @Test
     void shouldLoginSuccessfully() {
         UserEntity user = UserEntity.builder()
-            .username("testuser")
-            .passwordHash("hashed")
-            .role(UserRole.ANALYST)
-            .enabled(true)
-            .build();
+                                    .username("testuser")
+                                    .passwordHash("hashed")
+                                    .role(UserRole.ANALYST)
+                                    .enabled(true)
+                                    .build();
 
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("password", "hashed")).thenReturn(true);
@@ -81,11 +80,11 @@ class AuthApplicationServiceTest {
             .thenReturn("jwt-token");
         when(jwtTokenService.validateToken("jwt-token")).thenReturn(
             JwtClaims.builder()
-                .subject("testuser")
-                .roles(Set.of(UserRole.ANALYST))
-                .issuedAt(Instant.parse("2026-01-01T12:00:00Z"))
-                .expiresAt(Instant.parse("2026-01-01T20:00:00Z"))
-                .build()
+                     .subject("testuser")
+                     .roles(Set.of(UserRole.ANALYST))
+                     .issuedAt(Instant.parse("2026-01-01T12:00:00Z"))
+                     .expiresAt(Instant.parse("2026-01-01T20:00:00Z"))
+                     .build()
         );
 
         LoginResponse response = service.login(new LoginRequest("testuser", "password"));
@@ -97,11 +96,11 @@ class AuthApplicationServiceTest {
     @Test
     void shouldRejectInvalidPassword() {
         UserEntity user = UserEntity.builder()
-            .username("testuser")
-            .passwordHash("hashed")
-            .role(UserRole.ANALYST)
-            .enabled(true)
-            .build();
+                                    .username("testuser")
+                                    .passwordHash("hashed")
+                                    .role(UserRole.ANALYST)
+                                    .enabled(true)
+                                    .build();
 
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("password", "hashed")).thenReturn(false);
@@ -137,17 +136,17 @@ class AuthApplicationServiceTest {
     @Test
     void shouldRefreshEligibleToken() {
         JwtClaims claims = JwtClaims.builder()
-            .subject("testuser")
-            .roles(Set.of(UserRole.ANALYST))
-            .issuedAt(Instant.parse("2026-01-01T12:00:00Z"))
-            .expiresAt(Instant.parse("2026-01-01T12:30:00Z"))
-            .build();
+                                    .subject("testuser")
+                                    .roles(Set.of(UserRole.ANALYST))
+                                    .issuedAt(Instant.parse("2026-01-01T12:00:00Z"))
+                                    .expiresAt(Instant.parse("2026-01-01T12:30:00Z"))
+                                    .build();
         JwtClaims refreshed = JwtClaims.builder()
-            .subject("testuser")
-            .roles(Set.of(UserRole.ANALYST))
-            .issuedAt(Instant.parse("2026-01-01T12:00:00Z"))
-            .expiresAt(Instant.parse("2026-01-01T20:00:00Z"))
-            .build();
+                                       .subject("testuser")
+                                       .roles(Set.of(UserRole.ANALYST))
+                                       .issuedAt(Instant.parse("2026-01-01T12:00:00Z"))
+                                       .expiresAt(Instant.parse("2026-01-01T20:00:00Z"))
+                                       .build();
 
         when(jwtTokenService.validateToken("old-token"))
             .thenReturn(claims);
@@ -165,11 +164,11 @@ class AuthApplicationServiceTest {
     @Test
     void shouldRejectRefreshOutsideWindow() {
         JwtClaims claims = JwtClaims.builder()
-            .subject("testuser")
-            .roles(Set.of(UserRole.ANALYST))
-            .issuedAt(Instant.parse("2026-01-01T12:00:00Z"))
-            .expiresAt(Instant.parse("2026-01-01T18:00:00Z"))
-            .build();
+                                    .subject("testuser")
+                                    .roles(Set.of(UserRole.ANALYST))
+                                    .issuedAt(Instant.parse("2026-01-01T12:00:00Z"))
+                                    .expiresAt(Instant.parse("2026-01-01T18:00:00Z"))
+                                    .build();
 
         when(jwtTokenService.validateToken("old-token")).thenReturn(claims);
 

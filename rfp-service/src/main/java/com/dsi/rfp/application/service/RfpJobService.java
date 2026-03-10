@@ -39,7 +39,7 @@ public class RfpJobService {
 
     public Optional<JobStatusResponse> findById(Long jobId) {
         return jobStatePort.findById(jobId)
-            .map(job -> toResponse(job, jobId));
+                           .map(job -> toResponse(job, jobId));
     }
 
     public Optional<JobStatusResponse> findById(
@@ -48,20 +48,20 @@ public class RfpJobService {
         Set<UserRole> roles
     ) {
         return jobStatePort.findById(jobId)
-            .map(job -> {
-                checkOwnership(
-                    job,
-                    username,
-                    roles
-                );
-                return toResponse(job, jobId);
-            });
+                           .map(job -> {
+                               checkOwnership(
+                                   job,
+                                   username,
+                                   roles
+                               );
+                               return toResponse(job, jobId);
+                           });
     }
 
     public List<JobStatusResponse> findAll() {
         return jobStatePort.findAll().stream()
-            .map(job -> toResponse(job, job.getJobId()))
-            .toList();
+                           .map(job -> toResponse(job, job.getJobId()))
+                           .toList();
     }
 
     public List<JobStatusResponse> findAll(
@@ -69,21 +69,21 @@ public class RfpJobService {
         Set<UserRole> roles
     ) {
         return jobStatePort.findAll().stream()
-            .filter(job -> isAccessible(
-                job,
-                username,
-                roles
-            ))
-            .map(job -> toResponse(job, job.getJobId()))
-            .toList();
+                           .filter(job -> isAccessible(
+                               job,
+                               username,
+                               roles
+                           ))
+                           .map(job -> toResponse(job, job.getJobId()))
+                           .toList();
     }
 
     public JsonNode getSectionsJson(Long jobId) {
         return jobStatePort.findById(jobId)
-            .map(ExtractionJob::getSectionsJson)
-            .orElseThrow(() -> new EntityNotFoundException(
-                String.format("Job not found: %s", jobId)
-            ));
+                           .map(ExtractionJob::getSectionsJson)
+                           .orElseThrow(() -> new EntityNotFoundException(
+                               String.format("Job not found: %s", jobId)
+                           ));
     }
 
     public Optional<JsonNode> getResult(Long jobId) {
@@ -131,24 +131,24 @@ public class RfpJobService {
         Optional<ExtractionState> checkpoint = checkpointRepository.load(jobId);
 
         return JobStatusResponse.builder()
-            .jobId(job.getJobId())
-            .status(job.getStatus())
-            .progress(job.getProgress())
-            .submittedAt(job.getSubmittedAt())
-            .completedAt(job.getCompletedAt())
-            .errorMessage(job.getErrorMessage())
-            .originalFilename(job.getOriginalFilename())
-            .pageCount(job.getPageCount())
-            .repairEvents(checkpoint.map(this::mapRepairEvents).orElse(List.of()))
-            .totalRepairIterations(checkpoint.map(ExtractionState::totalRepairIterations).orElse(0))
-            .lowConfidenceQueueSize(checkpoint.map(state -> state.lowConfidenceQueue().size()).orElse(0))
-            .build();
+                                .jobId(job.getJobId())
+                                .status(job.getStatus())
+                                .progress(job.getProgress())
+                                .submittedAt(job.getSubmittedAt())
+                                .completedAt(job.getCompletedAt())
+                                .errorMessage(job.getErrorMessage())
+                                .originalFilename(job.getOriginalFilename())
+                                .pageCount(job.getPageCount())
+                                .repairEvents(checkpoint.map(this::mapRepairEvents).orElse(List.of()))
+                                .totalRepairIterations(checkpoint.map(ExtractionState::totalRepairIterations).orElse(0))
+                                .lowConfidenceQueueSize(checkpoint.map(state -> state.lowConfidenceQueue().size()).orElse(0))
+                                .build();
     }
 
     private List<RepairEventDto> mapRepairEvents(ExtractionState state) {
         return state.repairLog().stream()
-            .map(this::toRepairEvent)
-            .toList();
+                    .map(this::toRepairEvent)
+                    .toList();
     }
 
     private RepairEventDto toRepairEvent(RepairLogEntry entry) {

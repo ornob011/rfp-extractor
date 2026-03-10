@@ -4,14 +4,7 @@ import com.dsi.rfp.adapter.security.Auditable;
 import com.dsi.rfp.agent.ConfidenceScoringConfig;
 import com.dsi.rfp.application.service.RfpJobService;
 import com.dsi.rfp.application.service.RfpSubmissionService;
-import com.dsi.rfp.domain.model.AnalysisStatus;
-import com.dsi.rfp.domain.model.AuditAction;
-import com.dsi.rfp.domain.model.PageExtractionMethod;
-import com.dsi.rfp.domain.model.PageSummary;
-import com.dsi.rfp.domain.model.RfpDocument;
-import com.dsi.rfp.domain.model.RfpType;
-import com.dsi.rfp.domain.model.RulePackResults;
-import com.dsi.rfp.domain.model.UserRole;
+import com.dsi.rfp.domain.model.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -20,12 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -71,13 +59,13 @@ public class RfpController {
         );
 
         SubmitResponse response = SubmitResponse.builder()
-            .jobId(jobId)
-            .status(AnalysisStatus.QUEUED)
-            .message("RFP document submitted for processing")
-            .build();
+                                                .jobId(jobId)
+                                                .status(AnalysisStatus.QUEUED)
+                                                .message("RFP document submitted for processing")
+                                                .build();
 
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-            .body(response);
+                             .body(response);
     }
 
     @GetMapping("/status/{jobId}")
@@ -86,12 +74,12 @@ public class RfpController {
         Authentication authentication
     ) {
         return jobService.findById(
-                jobId,
-                extractUsername(authentication),
-                extractRoles(authentication)
-            )
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+                             jobId,
+                             extractUsername(authentication),
+                             extractRoles(authentication)
+                         )
+                         .map(ResponseEntity::ok)
+                         .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/jobs")
@@ -113,12 +101,12 @@ public class RfpController {
         Authentication authentication
     ) {
         return jobService.findById(
-                jobId,
-                extractUsername(authentication),
-                extractRoles(authentication)
-            )
-            .map(job -> buildResultResponse(job.getJobId()))
-            .orElse(ResponseEntity.notFound().build());
+                             jobId,
+                             extractUsername(authentication),
+                             extractRoles(authentication)
+                         )
+                         .map(job -> buildResultResponse(job.getJobId()))
+                         .orElse(ResponseEntity.notFound().build());
     }
 
     private String extractUsername(Authentication authentication) {
@@ -133,30 +121,30 @@ public class RfpController {
 
     private Set<UserRole> extractRoles(Authentication authentication) {
         return authentication.getAuthorities().stream()
-            .map(GrantedAuthority::getAuthority)
-            .map(role -> role.replace("ROLE_", ""))
-            .map(UserRole::valueOf)
-            .collect(Collectors.toUnmodifiableSet());
+                             .map(GrantedAuthority::getAuthority)
+                             .map(role -> role.replace("ROLE_", ""))
+                             .map(UserRole::valueOf)
+                             .collect(Collectors.toUnmodifiableSet());
     }
 
     private ResponseEntity<RfpResultResponse> buildResultResponse(Long jobId) {
         JsonNode sectionsJson = jobService.getSectionsJson(jobId);
         JsonNode resultJson = jobService.getResult(jobId)
-            .orElse(null);
+                                        .orElse(null);
 
         ParsedResult parsedResult = parseResult(resultJson);
 
         RfpResultResponse response = RfpResultResponse.builder()
-            .jobId(jobId)
-            .sections(sectionsJson)
-            .entities(parsedResult.entities())
-            .confidenceMap(parsedResult.confidenceMap())
-            .tables(parsedResult.tables())
-            .pageDetails(parsedResult.pageDetails())
-            .rulePackResults(parsedResult.rulePackResults())
-            .rfpType(parsedResult.rfpType())
-            .badgeThresholds(buildBadgeThresholds())
-            .build();
+                                                      .jobId(jobId)
+                                                      .sections(sectionsJson)
+                                                      .entities(parsedResult.entities())
+                                                      .confidenceMap(parsedResult.confidenceMap())
+                                                      .tables(parsedResult.tables())
+                                                      .pageDetails(parsedResult.pageDetails())
+                                                      .rulePackResults(parsedResult.rulePackResults())
+                                                      .rfpType(parsedResult.rfpType())
+                                                      .badgeThresholds(buildBadgeThresholds())
+                                                      .build();
 
         return ResponseEntity.ok(response);
     }
@@ -183,17 +171,17 @@ public class RfpController {
 
     private RfpType resolveRfpType(RfpDocument result) {
         return Optional.ofNullable(result.getRulePackResults())
-            .map(RulePackResults::getRfpType)
-            .orElse(null);
+                       .map(RulePackResults::getRfpType)
+                       .orElse(null);
     }
 
     private List<PageDetailDto> buildPageDetails(RfpDocument result) {
         return result.getPageClassifications().stream()
-            .map(page -> buildPageDetail(
-                page,
-                result
-            ))
-            .toList();
+                     .map(page -> buildPageDetail(
+                         page,
+                         result
+                     ))
+                     .toList();
     }
 
     private PageDetailDto buildPageDetail(
@@ -201,7 +189,7 @@ public class RfpController {
         RfpDocument result
     ) {
         double confidence = result.getPageConfidences()
-            .getOrDefault(page.getPageNumber(), 1.0);
+                                  .getOrDefault(page.getPageNumber(), 1.0);
 
         PageExtractionMethod method = resolveExtractionMethod(
             page,
@@ -221,14 +209,14 @@ public class RfpController {
         RfpDocument result
     ) {
         return Optional.ofNullable(pageExtractionMethods(result).get(page.getPageNumber()))
-            .orElseGet(() -> defaultMethod(page));
+                       .orElseGet(() -> defaultMethod(page));
     }
 
     private Map<Integer, PageExtractionMethod> pageExtractionMethods(
         RfpDocument result
     ) {
         return Optional.ofNullable(result.getPageExtractionMethods())
-            .orElse(Map.of());
+                       .orElse(Map.of());
     }
 
     private PageExtractionMethod defaultMethod(PageSummary page) {

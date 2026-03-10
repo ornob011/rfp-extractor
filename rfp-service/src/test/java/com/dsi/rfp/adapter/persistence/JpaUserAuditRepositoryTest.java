@@ -38,13 +38,13 @@ class JpaUserAuditRepositoryTest {
     @Test
     void shouldRecordEvent() {
         UserAuditEvent event = UserAuditEvent.builder()
-            .username("testuser")
-            .action(AuditAction.LOGIN)
-            .jobId(42L)
-            .timestamp(Instant.now())
-            .ipAddress("127.0.0.1")
-            .success(true)
-            .build();
+                                             .username("testuser")
+                                             .action(AuditAction.LOGIN)
+                                             .jobId(42L)
+                                             .timestamp(Instant.now())
+                                             .ipAddress("127.0.0.1")
+                                             .success(true)
+                                             .build();
 
         when(repository.save(any())).thenReturn(new UserAuditEntity());
 
@@ -64,13 +64,13 @@ class JpaUserAuditRepositoryTest {
     @Test
     void shouldFindByUsername() {
         UserAuditEntity entity = UserAuditEntity.builder()
-            .username("user1")
-            .action(AuditAction.SUBMIT_DOCUMENT)
-            .jobId(10L)
-            .timestamp(Instant.now())
-            .ipAddress("10.0.0.1")
-            .success(true)
-            .build();
+                                                .username("user1")
+                                                .action(AuditAction.SUBMIT_DOCUMENT)
+                                                .jobId(10L)
+                                                .timestamp(Instant.now())
+                                                .ipAddress("10.0.0.1")
+                                                .success(true)
+                                                .build();
 
         when(repository.findByUsernameOrderByCreatedAtDesc(
             eq("user1"),

@@ -2,7 +2,6 @@ package com.dsi.rfp.adapter.persistence;
 
 import com.dsi.rfp.adapter.persistence.entity.UserAuditEntity;
 import com.dsi.rfp.adapter.persistence.repository.UserAuditRepository;
-import com.dsi.rfp.domain.model.AuditAction;
 import com.dsi.rfp.domain.model.UserAuditEvent;
 import com.dsi.rfp.domain.port.out.UserAuditPort;
 import lombok.extern.slf4j.Slf4j;
@@ -24,13 +23,13 @@ public class JpaUserAuditRepository implements UserAuditPort {
     @Override
     public void record(UserAuditEvent event) {
         UserAuditEntity entity = UserAuditEntity.builder()
-            .username(event.getUsername())
-            .action(event.getAction())
-            .jobId(event.getJobId())
-            .timestamp(event.getTimestamp())
-            .ipAddress(event.getIpAddress())
-            .success(event.isSuccess())
-            .build();
+                                                .username(event.getUsername())
+                                                .action(event.getAction())
+                                                .jobId(event.getJobId())
+                                                .timestamp(event.getTimestamp())
+                                                .ipAddress(event.getIpAddress())
+                                                .success(event.isSuccess())
+                                                .build();
 
         repository.save(entity);
 
@@ -47,31 +46,31 @@ public class JpaUserAuditRepository implements UserAuditPort {
         int limit
     ) {
         return repository.findByUsernameOrderByCreatedAtDesc(
-                username,
-                PageRequest.of(0, limit)
-            )
-            .stream()
-            .map(this::toDomain)
-            .toList();
+                             username,
+                             PageRequest.of(0, limit)
+                         )
+                         .stream()
+                         .map(this::toDomain)
+                         .toList();
     }
 
     @Override
     public List<UserAuditEvent> findAll(int limit) {
         return repository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, limit))
-            .stream()
-            .map(this::toDomain)
-            .toList();
+                         .stream()
+                         .map(this::toDomain)
+                         .toList();
     }
 
     private UserAuditEvent toDomain(UserAuditEntity entity) {
         return UserAuditEvent.builder()
-            .eventId(entity.getId())
-            .username(entity.getUsername())
-            .action(entity.getAction())
-            .jobId(entity.getJobId())
-            .timestamp(entity.getTimestamp())
-            .ipAddress(entity.getIpAddress())
-            .success(entity.isSuccess())
-            .build();
+                             .eventId(entity.getId())
+                             .username(entity.getUsername())
+                             .action(entity.getAction())
+                             .jobId(entity.getJobId())
+                             .timestamp(entity.getTimestamp())
+                             .ipAddress(entity.getIpAddress())
+                             .success(entity.isSuccess())
+                             .build();
     }
 }

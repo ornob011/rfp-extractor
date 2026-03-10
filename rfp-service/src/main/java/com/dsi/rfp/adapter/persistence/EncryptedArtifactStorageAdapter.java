@@ -65,11 +65,11 @@ public class EncryptedArtifactStorageAdapter implements ArtifactPort {
         List<StoredArtifact> artifacts
     ) {
         List<StoredArtifact> encrypted = artifacts.stream()
-            .map(artifact -> new StoredArtifact(
-                artifact.filename(),
-                encryptionService.encrypt(artifact.content())
-            ))
-            .toList();
+                                                  .map(artifact -> new StoredArtifact(
+                                                      artifact.filename(),
+                                                      encryptionService.encrypt(artifact.content())
+                                                  ))
+                                                  .toList();
 
         return delegate.replaceArtifacts(jobId, encrypted);
     }

@@ -47,7 +47,7 @@ public class AuthApplicationService {
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         UserEntity user = userRepository.findByUsername(request.username())
-            .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+                                        .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
         guardPasswordMatches(
             request.password(),
@@ -74,11 +74,11 @@ public class AuthApplicationService {
 
         UserEntity saved = userRepository.save(
             UserEntity.builder()
-                .username(request.username())
-                .passwordHash(passwordEncoder.encode(request.password()))
-                .role(UserRole.ANALYST)
-                .enabled(true)
-                .build()
+                      .username(request.username())
+                      .passwordHash(passwordEncoder.encode(request.password()))
+                      .role(UserRole.ANALYST)
+                      .enabled(true)
+                      .build()
         );
 
         return new SignupResponse(

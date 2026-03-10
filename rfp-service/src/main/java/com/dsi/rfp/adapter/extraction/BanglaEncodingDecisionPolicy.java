@@ -34,15 +34,15 @@ class BanglaEncodingDecisionPolicy {
         }
 
         return EncodingDetectionResult.builder()
-            .suspectedLegacy(true)
-            .confidence(confidence)
-            .reason(String.format(
-                properties.legacyReasonTemplate(),
-                signals.banglaCount(),
-                signals.banglaMixRatio(),
-                signals.suspiciousPatternHits()
-            ))
-            .build();
+                                      .suspectedLegacy(true)
+                                      .confidence(confidence)
+                                      .reason(String.format(
+                                          properties.legacyReasonTemplate(),
+                                          signals.banglaCount(),
+                                          signals.banglaMixRatio(),
+                                          signals.suspiciousPatternHits()
+                                      ))
+                                      .build();
     }
 
     private double ratioConfidence(double banglaMixRatio) {
@@ -71,9 +71,9 @@ class BanglaEncodingDecisionPolicy {
 
     private EncodingDetectionResult clean() {
         return EncodingDetectionResult.builder()
-            .suspectedLegacy(false)
-            .confidence(0.0)
-            .reason(properties.cleanReason())
-            .build();
+                                      .suspectedLegacy(false)
+                                      .confidence(0.0)
+                                      .reason(properties.cleanReason())
+                                      .build();
     }
 }

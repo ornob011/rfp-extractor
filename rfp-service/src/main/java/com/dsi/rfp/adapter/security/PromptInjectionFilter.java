@@ -16,9 +16,9 @@ public class PromptInjectionFilter {
     public PromptInjectionFilter(PromptInjectionProperties properties) {
         this.properties = properties;
         this.trie = Trie.builder()
-            .ignoreCase()
-            .addKeywords(properties.phrases())
-            .build();
+                        .ignoreCase()
+                        .addKeywords(properties.phrases())
+                        .build();
     }
 
     public String sanitize(String content) {

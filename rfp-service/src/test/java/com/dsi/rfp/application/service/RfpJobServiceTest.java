@@ -62,13 +62,13 @@ class RfpJobServiceTest {
     void shouldMapJobToResponse() {
         Long jobId = 42L;
         ExtractionJob job = ExtractionJob.builder()
-            .jobId(jobId)
-            .status(AnalysisStatus.RUNNING)
-            .progress(50)
-            .submittedAt(Instant.now())
-            .originalFilename("test.pdf")
-            .pageCount(10)
-            .build();
+                                         .jobId(jobId)
+                                         .status(AnalysisStatus.RUNNING)
+                                         .progress(50)
+                                         .submittedAt(Instant.now())
+                                         .originalFilename("test.pdf")
+                                         .pageCount(10)
+                                         .build();
         when(jobStatePort.findById(jobId))
             .thenReturn(Optional.of(job));
 
@@ -117,11 +117,11 @@ class RfpJobServiceTest {
     void shouldAllowOwnerToAccessJob() {
         Long jobId = 1L;
         ExtractionJob job = ExtractionJob.builder()
-            .jobId(jobId)
-            .status(AnalysisStatus.COMPLETED)
-            .submittedByUsername("analyst1")
-            .originalFilename("test.pdf")
-            .build();
+                                         .jobId(jobId)
+                                         .status(AnalysisStatus.COMPLETED)
+                                         .submittedByUsername("analyst1")
+                                         .originalFilename("test.pdf")
+                                         .build();
 
         when(jobStatePort.findById(jobId)).thenReturn(Optional.of(job));
 
@@ -136,11 +136,11 @@ class RfpJobServiceTest {
     void shouldDenyNonOwnerAnalystAccess() {
         Long jobId = 1L;
         ExtractionJob job = ExtractionJob.builder()
-            .jobId(jobId)
-            .status(AnalysisStatus.COMPLETED)
-            .submittedByUsername("analyst1")
-            .originalFilename("test.pdf")
-            .build();
+                                         .jobId(jobId)
+                                         .status(AnalysisStatus.COMPLETED)
+                                         .submittedByUsername("analyst1")
+                                         .originalFilename("test.pdf")
+                                         .build();
 
         when(jobStatePort.findById(jobId)).thenReturn(Optional.of(job));
 
@@ -153,11 +153,11 @@ class RfpJobServiceTest {
     void shouldAllowAdminToAccessAnyJob() {
         Long jobId = 1L;
         ExtractionJob job = ExtractionJob.builder()
-            .jobId(jobId)
-            .status(AnalysisStatus.COMPLETED)
-            .submittedByUsername("analyst1")
-            .originalFilename("test.pdf")
-            .build();
+                                         .jobId(jobId)
+                                         .status(AnalysisStatus.COMPLETED)
+                                         .submittedByUsername("analyst1")
+                                         .originalFilename("test.pdf")
+                                         .build();
 
         when(jobStatePort.findById(jobId)).thenReturn(Optional.of(job));
 
@@ -172,11 +172,11 @@ class RfpJobServiceTest {
     void shouldAllowAuditorToAccessAnyJob() {
         Long jobId = 1L;
         ExtractionJob job = ExtractionJob.builder()
-            .jobId(jobId)
-            .status(AnalysisStatus.COMPLETED)
-            .submittedByUsername("analyst1")
-            .originalFilename("test.pdf")
-            .build();
+                                         .jobId(jobId)
+                                         .status(AnalysisStatus.COMPLETED)
+                                         .submittedByUsername("analyst1")
+                                         .originalFilename("test.pdf")
+                                         .build();
 
         when(jobStatePort.findById(jobId)).thenReturn(Optional.of(job));
 
@@ -190,17 +190,17 @@ class RfpJobServiceTest {
     @Test
     void shouldFilterJobsByOwnerForAnalyst() {
         ExtractionJob job1 = ExtractionJob.builder()
-            .jobId(1L)
-            .status(AnalysisStatus.COMPLETED)
-            .submittedByUsername("analyst1")
-            .originalFilename("test1.pdf")
-            .build();
+                                          .jobId(1L)
+                                          .status(AnalysisStatus.COMPLETED)
+                                          .submittedByUsername("analyst1")
+                                          .originalFilename("test1.pdf")
+                                          .build();
         ExtractionJob job2 = ExtractionJob.builder()
-            .jobId(2L)
-            .status(AnalysisStatus.COMPLETED)
-            .submittedByUsername("analyst2")
-            .originalFilename("test2.pdf")
-            .build();
+                                          .jobId(2L)
+                                          .status(AnalysisStatus.COMPLETED)
+                                          .submittedByUsername("analyst2")
+                                          .originalFilename("test2.pdf")
+                                          .build();
 
         when(jobStatePort.findAll()).thenReturn(List.of(job1, job2));
 
@@ -215,17 +215,17 @@ class RfpJobServiceTest {
     @Test
     void shouldReturnAllJobsForAdmin() {
         ExtractionJob job1 = ExtractionJob.builder()
-            .jobId(1L)
-            .status(AnalysisStatus.COMPLETED)
-            .submittedByUsername("analyst1")
-            .originalFilename("test1.pdf")
-            .build();
+                                          .jobId(1L)
+                                          .status(AnalysisStatus.COMPLETED)
+                                          .submittedByUsername("analyst1")
+                                          .originalFilename("test1.pdf")
+                                          .build();
         ExtractionJob job2 = ExtractionJob.builder()
-            .jobId(2L)
-            .status(AnalysisStatus.COMPLETED)
-            .submittedByUsername("analyst2")
-            .originalFilename("test2.pdf")
-            .build();
+                                          .jobId(2L)
+                                          .status(AnalysisStatus.COMPLETED)
+                                          .submittedByUsername("analyst2")
+                                          .originalFilename("test2.pdf")
+                                          .build();
 
         when(jobStatePort.findAll()).thenReturn(List.of(job1, job2));
 

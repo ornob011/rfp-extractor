@@ -62,13 +62,13 @@ public class AuditingAspect {
         boolean success
     ) {
         UserAuditEvent event = UserAuditEvent.builder()
-            .username(username)
-            .action(action)
-            .jobId(jobId)
-            .timestamp(clock.instant())
-            .ipAddress(ipAddress)
-            .success(success)
-            .build();
+                                             .username(username)
+                                             .action(action)
+                                             .jobId(jobId)
+                                             .timestamp(clock.instant())
+                                             .ipAddress(ipAddress)
+                                             .success(success)
+                                             .build();
 
         auditService.record(event);
     }

@@ -2,7 +2,6 @@ package com.dsi.rfp.adapter.persistence;
 
 import com.dsi.rfp.adapter.persistence.entity.AnalysisJobEntity;
 import com.dsi.rfp.adapter.persistence.entity.DocumentEntity;
-import com.dsi.rfp.adapter.persistence.entity.UserEntity;
 import com.dsi.rfp.adapter.persistence.repository.AnalysisJobRepository;
 import com.dsi.rfp.adapter.persistence.repository.DocumentRepository;
 import com.dsi.rfp.adapter.persistence.repository.UserRepository;

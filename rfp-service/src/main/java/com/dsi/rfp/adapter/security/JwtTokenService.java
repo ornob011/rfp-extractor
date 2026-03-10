@@ -20,7 +20,6 @@ import org.springframework.security.converter.RsaKeyConverters;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
@@ -96,11 +95,11 @@ public class JwtTokenService {
         JWTClaimsSet claims = extractClaims(signedJwt);
 
         return JwtClaims.builder()
-            .subject(claims.getSubject())
-            .roles(extractRoles(claims))
-            .issuedAt(claims.getIssueTime().toInstant())
-            .expiresAt(validateExpiry(claims))
-            .build();
+                        .subject(claims.getSubject())
+                        .roles(extractRoles(claims))
+                        .issuedAt(claims.getIssueTime().toInstant())
+                        .expiresAt(validateExpiry(claims))
+                        .build();
     }
 
     private void sign(SignedJWT jwt) {
@@ -144,9 +143,9 @@ public class JwtTokenService {
     private Set<UserRole> extractRoles(JWTClaimsSet claims) {
         try {
             return claims.getStringListClaim("roles")
-                .stream()
-                .map(UserRole::valueOf)
-                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+                         .stream()
+                         .map(UserRole::valueOf)
+                         .collect(java.util.stream.Collectors.toUnmodifiableSet());
         } catch (ParseException exception) {
             throw new JwtValidationException("Failed to extract roles from JWT", exception);
         } catch (IllegalArgumentException exception) {

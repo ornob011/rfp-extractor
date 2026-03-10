@@ -11,10 +11,10 @@ class LegacyBanglaPatternMatcher {
 
     LegacyBanglaPatternMatcher(BanglaEncodingProperties properties) {
         Trie.TrieBuilder trieBuilder = Trie.builder()
-            .ignoreCase();
+                                           .ignoreCase();
 
         properties.suspiciousPatterns()
-            .forEach(trieBuilder::addKeyword);
+                  .forEach(trieBuilder::addKeyword);
 
         trie = trieBuilder.build();
     }

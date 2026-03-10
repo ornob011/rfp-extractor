@@ -90,11 +90,11 @@ public class RfpSubmissionService {
         );
 
         ExtractionJob job = ExtractionJob.builder()
-            .status(AnalysisStatus.QUEUED)
-            .documentId(document.getId())
-            .originalFilename(originalFilename)
-            .submittedByUsername(username)
-            .build();
+                                         .status(AnalysisStatus.QUEUED)
+                                         .documentId(document.getId())
+                                         .originalFilename(originalFilename)
+                                         .submittedByUsername(username)
+                                         .build();
 
         ExtractionJob saved = jobStatePort.save(job);
         Long jobId = saved.getJobId();
@@ -149,21 +149,21 @@ public class RfpSubmissionService {
         String username
     ) {
         return documentRepository.findBySha256Checksum(checksum)
-            .orElseGet(() -> documentRepository.save(
-                DocumentEntity.builder()
-                    .originalFilename(filename)
-                    .contentType(MediaType.APPLICATION_PDF_VALUE)
-                    .fileSizeBytes(size)
-                    .storagePath(StringUtils.EMPTY)
-                    .sha256Checksum(checksum)
-                    .uploadedBy(resolveUser(username).orElse(null))
-                    .build()
-            ));
+                                 .orElseGet(() -> documentRepository.save(
+                                     DocumentEntity.builder()
+                                                   .originalFilename(filename)
+                                                   .contentType(MediaType.APPLICATION_PDF_VALUE)
+                                                   .fileSizeBytes(size)
+                                                   .storagePath(StringUtils.EMPTY)
+                                                   .sha256Checksum(checksum)
+                                                   .uploadedBy(resolveUser(username).orElse(null))
+                                                   .build()
+                                 ));
     }
 
     private Optional<UserEntity> resolveUser(String username) {
         return Optional.ofNullable(username)
-            .flatMap(userRepository::findByUsername);
+                       .flatMap(userRepository::findByUsername);
     }
 
     private Path writeTempFile(byte[] content) {
