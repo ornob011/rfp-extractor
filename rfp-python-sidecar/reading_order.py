@@ -19,10 +19,12 @@ def resolve_reading_order(
     ocr_text: str,
     document_path: str | None,
     page_number: int | None,
+    pdfplumber_page=None,
 ) -> ReadingOrderResult:
     pdf_text = _extract_pdf_text(
         document_path,
         page_number,
+        pdfplumber_page,
     )
 
     if pdf_text.strip():
@@ -40,7 +42,12 @@ def resolve_reading_order(
 def _extract_pdf_text(
     document_path: str | None,
     page_number: int | None,
+    pdfplumber_page=None,
 ) -> str:
+    if pdfplumber_page is not None:
+        extracted_text = pdfplumber_page.extract_text(layout=True)
+        return extracted_text or ""
+
     if document_path is None:
         return ""
 

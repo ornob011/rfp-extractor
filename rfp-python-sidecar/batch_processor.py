@@ -2,9 +2,10 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+import pdfplumber
 from pydantic import BaseModel
 
-from image_utils import render_pdf_page_to_image
+from image_utils import render_pdf_pages_batch
 from layout_detector import LayoutDetectionResult, detect_layout_from_regions
 from ocr_service import OcrResult, OcrService
 from reading_order import (
@@ -40,21 +41,33 @@ def process_batch(
         len(pages),
     )
 
-    with ThreadPoolExecutor(max_workers=BATCH_WORKERS) as pool:
-        futures = {
-            pool.submit(
-                _process_page,
-                ocr_service,
-                document_path,
-                page_num,
-                dpi,
-            ): page_num
-            for page_num in pages
-        }
+    zero_based = [p - 1 for p in pages]
+    rendered_images = render_pdf_pages_batch(
+        document_path,
+        zero_based,
+        dpi,
+    )
 
-        results = []
-        for future in as_completed(futures):
-            results.append(future.result())
+    render_elapsed = time.time() - start
+    logger.info(
+        "event=batch.rendered component=batch_processor"
+        " pages=%d durationMs=%d",
+        len(pages),
+        int(render_elapsed * 1000),
+    )
+
+    pdf = pdfplumber.open(document_path)
+
+    try:
+        results = _process_all_pages(
+            ocr_service,
+            document_path,
+            pages,
+            rendered_images,
+            pdf,
+        )
+    finally:
+        pdf.close()
 
     results.sort(key=lambda r: r.page_number)
 
@@ -69,29 +82,53 @@ def process_batch(
     return results
 
 
+def _process_all_pages(
+    ocr_service: OcrService,
+    document_path: str,
+    pages: list[int],
+    rendered_images: dict[int, bytes],
+    pdf: pdfplumber.PDF,
+) -> list[BatchPageResult]:
+    with ThreadPoolExecutor(max_workers=BATCH_WORKERS) as pool:
+        futures = {
+            pool.submit(
+                _process_page,
+                ocr_service,
+                document_path,
+                page_num,
+                rendered_images[page_num - 1],
+                pdf.pages[page_num - 1],
+            ): page_num
+            for page_num in pages
+        }
+
+        results = []
+        for future in as_completed(futures):
+            results.append(future.result())
+
+    return results
+
+
 def _process_page(
     ocr_service: OcrService,
     document_path: str,
     page_number: int,
-    dpi: int,
+    image_bytes: bytes,
+    pdfplumber_page,
 ) -> BatchPageResult:
-    image_bytes = render_pdf_page_to_image(
-        document_path,
-        page_number - 1,
-        dpi,
-    )
-
     ocr_result = ocr_service.extract_page(image_bytes)
 
     scanned_tables = ocr_service._extract_scanned_tables(
         document_path,
         page_number,
+        pdfplumber_page,
     )
 
     reading_order = resolve_reading_order(
         "",
         document_path,
         page_number,
+        pdfplumber_page,
     )
 
     word_regions = [w.bbox for w in ocr_result.word_confidences]

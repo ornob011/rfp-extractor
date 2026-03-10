@@ -46,6 +46,55 @@ def render_pdf_page_to_image(
     return buf.getvalue()
 
 
+def render_pdf_pages_batch(
+    pdf_path: str,
+    page_nums: list[int],
+    dpi: int = 300,
+) -> dict[int, bytes]:
+    """
+    Render multiple PDF pages in a single poppler invocation.
+    page_nums are 0-based.
+    Returns dict mapping 0-based page_num -> PNG bytes.
+    """
+    if not page_nums:
+        return {}
+
+    effective_dpi = min(dpi, CONFIG.render.max_dpi)
+    sorted_nums = sorted(set(page_nums))
+    min_page = sorted_nums[0]
+    max_page = sorted_nums[-1]
+
+    logger.info(
+        "event=batch.render component=image_utils"
+        " pages=%d range=%d-%d dpi=%d",
+        len(sorted_nums),
+        min_page,
+        max_page,
+        effective_dpi,
+    )
+
+    rendered = convert_from_path(
+        pdf_path,
+        dpi=effective_dpi,
+        first_page=min_page + 1,
+        last_page=max_page + 1,
+        thread_count=4,
+    )
+
+    page_set = set(page_nums)
+    result: dict[int, bytes] = {}
+
+    for i, page_idx in enumerate(range(min_page, max_page + 1)):
+        if page_idx not in page_set:
+            continue
+
+        buf = io.BytesIO()
+        rendered[i].save(buf, format="PNG")
+        result[page_idx] = buf.getvalue()
+
+    return result
+
+
 def bytes_to_pil(image_bytes: bytes) -> Image.Image:
     """
     Decode PNG/JPEG bytes to PIL Image in RGB mode.

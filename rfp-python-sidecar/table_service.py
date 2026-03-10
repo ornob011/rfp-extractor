@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from importlib import import_module
 from typing import Literal
@@ -42,6 +43,7 @@ class TableService:
         document_path: str,
         page_number: int,
         strategy: Literal["lattice", "stream"],
+        pdfplumber_page=None,
     ) -> list[ExtractedTable]:
         tables = camelot.read_pdf(
             filepath=document_path,
@@ -55,6 +57,7 @@ class TableService:
                 strategy,
                 document_path,
                 page_number,
+                pdfplumber_page,
             )
             for table in tables
         ]
@@ -64,17 +67,25 @@ class TableService:
         document_path: str,
         page_number: int,
         strategies: list[str],
+        pdfplumber_page=None,
     ) -> list[ExtractedTable]:
-        extracted_tables = map(
-            lambda strategy: self.extract_page(
-                document_path,
-                page_number,
-                strategy,
-            ),
-            strategies,
-        )
+        with ThreadPoolExecutor(max_workers=len(strategies)) as pool:
+            futures = [
+                pool.submit(
+                    self.extract_page,
+                    document_path,
+                    page_number,
+                    strategy,
+                    pdfplumber_page,
+                )
+                for strategy in strategies
+            ]
+            results = [f.result() for f in futures]
 
-        return next((tables for tables in extracted_tables if tables), [])
+        return next(
+            (tables for tables in results if tables),
+            [],
+        )
 
     def _to_extracted_table(
         self,
@@ -82,6 +93,7 @@ class TableService:
         strategy: str,
         document_path: str,
         page_number: int,
+        pdfplumber_page=None,
     ) -> ExtractedTable:
         raw_grid = table.df.fillna("").values.tolist()
         headers = raw_grid[0] if raw_grid else []
@@ -112,6 +124,7 @@ class TableService:
                 table,
                 document_path,
                 page_number,
+                pdfplumber_page,
             ),
         )
 
@@ -120,18 +133,22 @@ class TableService:
         table: camelot.core.Table,
         document_path: str,
         page_number: int,
+        pdfplumber_page=None,
     ) -> TableBoundingBox | None:
         bbox = getattr(table, "_bbox", None)
 
         if bbox is None:
             return None
 
-        pdfplumber = import_module("pdfplumber")
-
-        with pdfplumber.open(document_path) as pdf:
-            page = pdf.pages[page_number - 1]
-            page_width = float(page.width)
-            page_height = float(page.height)
+        if pdfplumber_page is not None:
+            page_width = float(pdfplumber_page.width)
+            page_height = float(pdfplumber_page.height)
+        else:
+            pdfplumber = import_module("pdfplumber")
+            with pdfplumber.open(document_path) as pdf:
+                page = pdf.pages[page_number - 1]
+                page_width = float(page.width)
+                page_height = float(page.height)
 
         x0, y0, x1, y1 = bbox
 
