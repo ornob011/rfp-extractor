@@ -48,11 +48,16 @@ class TableService:
         strategy: Literal["lattice", "stream"],
         pdfplumber_page=None,
     ) -> list[ExtractedTable]:
-        if self._page_has_no_text(pdfplumber_page, document_path, page_number):
+        if not self._page_has_table_structure(
+            pdfplumber_page,
+            document_path,
+            page_number,
+        ):
             logger.debug(
                 "event=table.skip component=TableService page=%d"
-                " reason=no_text_content",
+                " reason=no_table_structure strategy=%s",
                 page_number,
+                strategy,
             )
             return []
 
@@ -80,39 +85,37 @@ class TableService:
         strategies: list[str],
         pdfplumber_page=None,
     ) -> list[ExtractedTable]:
-        with ThreadPoolExecutor(max_workers=len(strategies)) as pool:
-            futures = [
-                pool.submit(
-                    self.extract_page,
-                    document_path,
-                    page_number,
-                    strategy,
-                    pdfplumber_page,
-                )
-                for strategy in strategies
-            ]
-            results = [f.result() for f in futures]
-
-        return next(
-            (tables for tables in results if tables),
-            [],
+        ordered = sorted(
+            strategies,
+            key=lambda s: 0 if s == "lattice" else 1,
         )
 
+        for strategy in ordered:
+            tables = self.extract_page(
+                document_path,
+                page_number,
+                strategy,
+                pdfplumber_page,
+            )
+
+            if tables:
+                return tables
+
+        return []
+
     @staticmethod
-    def _page_has_no_text(
+    def _page_has_table_structure(
         pdfplumber_page,
         document_path: str,
         page_number: int,
     ) -> bool:
         if pdfplumber_page is not None:
-            text = pdfplumber_page.extract_text() or ""
-            return not text.strip()
+            return len(pdfplumber_page.find_tables()) > 0
 
         pdfplumber = import_module("pdfplumber")
         with pdfplumber.open(document_path) as pdf:
             page = pdf.pages[page_number - 1]
-            text = page.extract_text() or ""
-            return not text.strip()
+            return len(page.find_tables()) > 0
 
     def _to_extracted_table(
         self,
