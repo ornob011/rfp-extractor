@@ -1,5 +1,7 @@
 import logging
+import tempfile
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Literal
 
 import easyocr
@@ -47,7 +49,8 @@ class HealthResponse(BaseModel):
 
 
 class TableExtractRequest(BaseModel):
-    documentPath: str
+    documentPath: str | None = None
+    documentBase64: Base64Bytes | None = None
     pageNumber: int
     strategy: Literal["lattice", "stream"]
 
@@ -85,6 +88,7 @@ class OcrRequest(BaseModel):
     lang: str = "eng+ben"
     dpi: int = 300
     document_path: str | None = None
+    document_base64: Base64Bytes | None = None
     page_number: int | None = None
 
 
@@ -106,8 +110,9 @@ async def health() -> HealthResponse:
 
 @app.post("/v1/table/extract", response_model=TableExtractResponse)
 async def extract_table(request: TableExtractRequest) -> TableExtractResponse:
+    document_path = _resolve_table_document_path(request)
     extracted_tables = app.state.table_service.extract_page(
-        document_path=request.documentPath,
+        document_path=document_path,
         page_number=request.pageNumber,
         strategy=request.strategy,
     )
@@ -145,9 +150,11 @@ async def ocr_page_with_layout(
             detail="OCR service not available",
         )
 
+    document_path = _resolve_document_path(request)
+
     ocr_result, layout, reading_order, scanned_tables = ocr_service.extract_page_with_layout(
         bytes(request.image_base64),
-        request.document_path,
+        document_path,
         request.page_number,
     )
 
@@ -159,6 +166,39 @@ async def ocr_page_with_layout(
             _scanned_table_response(table)
             for table in scanned_tables
         ],
+    )
+
+
+def _write_temp_pdf(pdf_bytes: bytes) -> str:
+    tmp = tempfile.NamedTemporaryFile(
+        suffix=".pdf",
+        delete=False,
+    )
+    tmp.write(pdf_bytes)
+    tmp.close()
+    return tmp.name
+
+
+def _resolve_document_path(request: OcrRequest) -> str | None:
+    if request.document_base64 is not None:
+        return _write_temp_pdf(bytes(request.document_base64))
+
+    if request.document_path and Path(request.document_path).exists():
+        return request.document_path
+
+    return None
+
+
+def _resolve_table_document_path(request: TableExtractRequest) -> str:
+    if request.documentBase64 is not None:
+        return _write_temp_pdf(bytes(request.documentBase64))
+
+    if request.documentPath and Path(request.documentPath).exists():
+        return request.documentPath
+
+    raise HTTPException(
+        status_code=400,
+        detail="Either documentBase64 or a valid documentPath is required",
     )
 
 

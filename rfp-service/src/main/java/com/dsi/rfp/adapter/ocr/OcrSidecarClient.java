@@ -9,6 +9,9 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -95,11 +98,13 @@ public class OcrSidecarClient {
         int pageNumber,
         int dpi
     ) {
+        String documentBase64 = readDocumentBase64(documentPath);
+
         OcrPageRequest request = new OcrPageRequest(
             Base64.getEncoder().encodeToString(imageBytes),
             DEFAULT_LANGUAGE,
             dpi,
-            documentPath,
+            documentBase64,
             pageNumber
         );
 
@@ -125,5 +130,17 @@ public class OcrSidecarClient {
                        .orElseThrow(() -> new OcrUnavailableException(
                            "OCR sidecar returned an empty page-with-layout response body"
                        ));
+    }
+
+    private String readDocumentBase64(String documentPath) {
+        try {
+            byte[] pdfBytes = Files.readAllBytes(Path.of(documentPath));
+            return Base64.getEncoder().encodeToString(pdfBytes);
+        } catch (IOException e) {
+            throw new OcrUnavailableException(
+                String.format("Failed to read PDF file: %s", documentPath),
+                e
+            );
+        }
     }
 }

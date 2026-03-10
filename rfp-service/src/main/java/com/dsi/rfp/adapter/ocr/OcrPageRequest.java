@@ -10,8 +10,8 @@ public record OcrPageRequest(
 
     int dpi,
 
-    @JsonProperty("document_path")
-    String documentPath,
+    @JsonProperty("document_base64")
+    String documentBase64,
 
     @JsonProperty("page_number")
     Integer pageNumber

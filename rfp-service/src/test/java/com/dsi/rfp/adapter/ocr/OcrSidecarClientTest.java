@@ -4,13 +4,17 @@ import com.dsi.rfp.domain.model.ReadingOrderMethod;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.List;
 
@@ -88,7 +92,12 @@ class OcrSidecarClientTest {
     }
 
     @Test
-    void shouldExtractPageWithLayoutSuccessfully() {
+    void shouldExtractPageWithLayoutSuccessfully(
+        @TempDir Path tempDir
+    ) throws IOException {
+        Path tempPdf = tempDir.resolve("sample.pdf");
+        Files.write(tempPdf, "fake-pdf".getBytes(StandardCharsets.UTF_8));
+
         byte[] imageBytes = "fake-png".getBytes(StandardCharsets.UTF_8);
 
         OcrResultDto ocrResult = new OcrResultDto(
@@ -129,7 +138,7 @@ class OcrSidecarClientTest {
         OcrPageWithLayoutResultDto result =
             client.extractPageWithLayout(
                 imageBytes,
-                "/tmp/sample.pdf",
+                tempPdf.toString(),
                 1
             );
 
@@ -140,7 +149,12 @@ class OcrSidecarClientTest {
     }
 
     @Test
-    void shouldIncludeDocumentContextForOrderedExtraction() {
+    void shouldIncludeDocumentContextForOrderedExtraction(
+        @TempDir Path tempDir
+    ) throws IOException {
+        Path tempPdf = tempDir.resolve("sample.pdf");
+        Files.write(tempPdf, "fake-pdf-content".getBytes(StandardCharsets.UTF_8));
+
         byte[] imageBytes = "img".getBytes(StandardCharsets.UTF_8);
         OcrPageWithLayoutResultDto expected = new OcrPageWithLayoutResultDto(
             new OcrResultDto(
@@ -167,7 +181,7 @@ class OcrSidecarClientTest {
 
         client.extractPageWithLayout(
             imageBytes,
-            "/tmp/sample.pdf",
+            tempPdf.toString(),
             3
         );
 
@@ -175,7 +189,9 @@ class OcrSidecarClientTest {
             ArgumentCaptor.forClass(OcrPageRequest.class);
         verify(requestBodySpec).body(captor.capture());
 
-        assertThat(captor.getValue().documentPath()).isEqualTo("/tmp/sample.pdf");
+        String expectedBase64 = Base64.getEncoder()
+            .encodeToString("fake-pdf-content".getBytes(StandardCharsets.UTF_8));
+        assertThat(captor.getValue().documentBase64()).isEqualTo(expectedBase64);
         assertThat(captor.getValue().pageNumber()).isEqualTo(3);
     }
 
