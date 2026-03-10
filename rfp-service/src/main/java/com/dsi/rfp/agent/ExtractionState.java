@@ -105,16 +105,10 @@ public class ExtractionState extends AgentState {
     }
 
     public Map<Integer, String> pageTexts() {
-        Map<?, ?> value = readMapOrDefault(Key.PAGE_TEXTS, Map.of());
-
-        return value.entrySet()
-                    .stream()
-                    .filter(entry -> entry.getKey() instanceof Integer)
-                    .filter(entry -> entry.getValue() instanceof String)
-                    .collect(Collectors.toMap(
-                        entry -> (Integer) entry.getKey(),
-                        entry -> (String) entry.getValue()
-                    ));
+        return integerKeyedMap(
+            Key.PAGE_TEXTS,
+            String.class
+        );
     }
 
     public Map<Integer, Double> pageConfidences() {
@@ -122,28 +116,19 @@ public class ExtractionState extends AgentState {
 
         return value.entrySet()
                     .stream()
-                    .filter(entry -> entry.getKey() instanceof Integer)
+                    .filter(this::hasIntegerStringKey)
                     .filter(entry -> entry.getValue() instanceof Number)
                     .collect(Collectors.toMap(
-                        entry -> (Integer) entry.getKey(),
+                        entry -> Integer.parseInt((String) entry.getKey()),
                         entry -> ((Number) entry.getValue()).doubleValue()
                     ));
     }
 
     public Map<Integer, PageExtractionMethod> pageExtractionMethods() {
-        Map<?, ?> value = readMapOrDefault(
+        return integerKeyedMap(
             Key.PAGE_EXTRACTION_METHODS,
-            Map.of()
+            PageExtractionMethod.class
         );
-
-        return value.entrySet()
-                    .stream()
-                    .filter(entry -> entry.getKey() instanceof Integer)
-                    .filter(entry -> entry.getValue() instanceof PageExtractionMethod)
-                    .collect(Collectors.toMap(
-                        entry -> (Integer) entry.getKey(),
-                        entry -> (PageExtractionMethod) entry.getValue()
-                    ));
     }
 
     public List<RepairLogEntry> repairLog() {
@@ -240,6 +225,34 @@ public class ExtractionState extends AgentState {
     ) {
         return value(stateKey.value()).flatMap(this::asMap)
                                       .orElse(defaultValue);
+    }
+
+    private <T> Map<Integer, T> integerKeyedMap(
+        Key stateKey,
+        Class<T> valueType
+    ) {
+        Map<?, ?> value = readMapOrDefault(
+            stateKey,
+            Map.of()
+        );
+
+        return value.entrySet()
+                    .stream()
+                    .filter(this::hasIntegerStringKey)
+                    .filter(entry -> valueType.isInstance(entry.getValue()))
+                    .collect(Collectors.toMap(
+                        entry -> Integer.parseInt((String) entry.getKey()),
+                        entry -> valueType.cast(entry.getValue())
+                    ));
+    }
+
+    private boolean hasIntegerStringKey(
+        Map.Entry<?, ?> entry
+    ) {
+        return switch (entry.getKey()) {
+            case String key -> key.chars().allMatch(Character::isDigit);
+            case null, default -> false;
+        };
     }
 
     private Optional<List<?>> asList(Object value) {

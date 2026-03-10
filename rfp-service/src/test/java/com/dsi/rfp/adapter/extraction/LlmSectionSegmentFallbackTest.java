@@ -72,9 +72,9 @@ class LlmSectionSegmentFallbackTest {
                    .build()
         )));
         data.put(ExtractionState.Key.PAGE_TEXTS.value(), Map.of(
-            0, "Some text page 0",
-            1, "Some text page 1",
-            2, "Some text page 2"
+            "0", "Some text page 0",
+            "1", "Some text page 1",
+            "2", "Some text page 2"
         ));
 
         Map<String, Object> result = createFallback().execute(new ExtractionState(data));
@@ -114,7 +114,7 @@ class LlmSectionSegmentFallbackTest {
 
         Map<String, Object> data = ExtractionState.initial(1L, "/tmp/x.pdf");
         data.put(ExtractionState.Key.PAGE_CLASSIFICATIONS.value(), buildPages(25));
-        data.put(ExtractionState.Key.PAGE_TEXTS.value(), Map.of(0, "A".repeat(5000)));
+        data.put(ExtractionState.Key.PAGE_TEXTS.value(), Map.of("0", "A".repeat(5000)));
         data.put(ExtractionState.Key.SECTIONS.value(), List.of());
 
         Map<String, Object> result = createFallback().execute(new ExtractionState(data));

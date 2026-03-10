@@ -149,11 +149,11 @@ class ExtractTablesNodeTest {
         );
         data.put(
             ExtractionState.Key.PAGE_TEXTS.value(),
-            Map.of(2, "Col1\tCol2\nA\tB\nC\tD\nE\tF")
+            Map.of("2", "Col1\tCol2\nA\tB\nC\tD\nE\tF")
         );
         data.put(
             ExtractionState.Key.PAGE_CONFIDENCES.value(),
-            Map.of(2, 0.75)
+            Map.of("2", 0.75)
         );
 
         return new ExtractionState(data);
