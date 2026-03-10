@@ -1,7 +1,6 @@
 package com.dsi.rfp.application.service;
 
 import com.dsi.rfp.adapter.api.HealthResponse;
-import com.dsi.rfp.config.LlmProviderProperties;
 import com.dsi.rfp.domain.model.HealthStatus;
 import com.dsi.rfp.domain.model.LlmProvider;
 import com.dsi.rfp.domain.model.SidecarReachability;
@@ -10,6 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
@@ -23,15 +24,17 @@ class HealthServiceTest {
     @Mock
     private RestClient restClient;
 
+    @Mock
+    private ChatModel chatModel;
+
     private HealthService healthService;
-    private LlmProviderProperties props;
 
     @BeforeEach
     void setUp() {
-        props = new LlmProviderProperties();
-        props.setProvider(LlmProvider.OPENROUTER);
-        props.getOpenrouter().setModel("google/gemini-2.0-flash-001");
-        healthService = new HealthService(props, restClient);
+        ChatOptions chatOptions = mock(ChatOptions.class);
+        lenient().when(chatOptions.getModel()).thenReturn("google/gemini-2.0-flash-001");
+        lenient().when(chatModel.getDefaultOptions()).thenReturn(chatOptions);
+        healthService = new HealthService("openrouter", chatModel, restClient);
     }
 
     @Test
@@ -71,10 +74,12 @@ class HealthServiceTest {
 
     @Test
     void shouldReturnOllamaModelWhenProviderIsOllama() {
-        props.setProvider(LlmProvider.OLLAMA);
-        props.getOllama().setModel("llama3.1:8b");
+        ChatOptions ollamaOptions = mock(ChatOptions.class);
+        when(ollamaOptions.getModel()).thenReturn("llama3.1:8b");
+        when(chatModel.getDefaultOptions()).thenReturn(ollamaOptions);
+        HealthService ollamaService = new HealthService("ollama", chatModel, restClient);
         stubOcrSidecarSuccess();
-        HealthResponse response = healthService.check();
+        HealthResponse response = ollamaService.check();
         assertThat(response.getModel()).isEqualTo("llama3.1:8b");
         assertThat(response.getProvider()).isEqualTo(LlmProvider.OLLAMA);
     }

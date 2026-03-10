@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties({
-    LlmProviderProperties.class,
     SecurityProperties.class,
     StorageEncryptionProperties.class,
     PromptInjectionProperties.class,

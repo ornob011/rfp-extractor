@@ -5,7 +5,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum LlmProvider {
     OPENROUTER("openrouter"),
-    OLLAMA("ollama");
+    OLLAMA("ollama"),
+    OPENAI("openai");
 
     private final String jsonValue;
 

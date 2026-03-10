@@ -16,24 +16,26 @@ import static org.mockito.Mockito.when;
 class LlmResilientCallerTest {
 
     private ChatClient chatClient;
+    private ChatClient judgeChatClient;
     private LlmResilientCaller caller;
 
     @BeforeEach
     void setUp() {
         chatClient = mock(ChatClient.class);
-        caller = new LlmResilientCaller(chatClient);
+        judgeChatClient = mock(ChatClient.class);
+        caller = new LlmResilientCaller(chatClient, judgeChatClient);
     }
 
     @Test
     void callShouldReturnContentFromChatClient() throws Exception {
-        stubChatClientToReturn("hello");
+        stubChatClientToReturn(chatClient, "hello");
         CompletableFuture<String> result = caller.call("sys", "user");
         assertThat(result.get()).isEqualTo("hello");
     }
 
     @Test
-    void callJudgeShouldReturnContentFromChatClient() throws Exception {
-        stubChatClientToReturn("PASS");
+    void callJudgeShouldReturnContentFromJudgeChatClient() throws Exception {
+        stubChatClientToReturn(judgeChatClient, "PASS");
         CompletableFuture<String> result = caller.callJudge("full prompt");
         assertThat(result.get()).isEqualTo("PASS");
     }
@@ -56,11 +58,14 @@ class LlmResilientCallerTest {
             .hasCauseInstanceOf(LlmUnavailableException.class);
     }
 
-    private void stubChatClientToReturn(String response) {
+    private void stubChatClientToReturn(
+        ChatClient client,
+        String response
+    ) {
         ChatClient.ChatClientRequestSpec spec = mock(ChatClient.ChatClientRequestSpec.class);
         ChatClient.CallResponseSpec callSpec = mock(ChatClient.CallResponseSpec.class);
 
-        when(chatClient.prompt()).thenReturn(spec);
+        when(client.prompt()).thenReturn(spec);
         when(spec.system(anyString())).thenReturn(spec);
         when(spec.user(anyString())).thenReturn(spec);
         when(spec.call()).thenReturn(callSpec);

@@ -5,19 +5,27 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.CompletableFuture;
 
 @Component
-@RequiredArgsConstructor
 class LlmResilientCaller {
 
     private static final String RESILIENCE_INSTANCE = "llm";
 
     private final ChatClient chatClient;
+    private final ChatClient judgeChatClient;
+
+    LlmResilientCaller(
+        ChatClient chatClient,
+        @Qualifier("judgeChatClient") ChatClient judgeChatClient
+    ) {
+        this.chatClient = chatClient;
+        this.judgeChatClient = judgeChatClient;
+    }
 
     @CircuitBreaker(
         name = RESILIENCE_INSTANCE,
@@ -62,10 +70,10 @@ class LlmResilientCaller {
         String fullPrompt
     ) {
         return CompletableFuture.supplyAsync(
-            () -> chatClient.prompt()
-                            .user(fullPrompt)
-                            .call()
-                            .content()
+            () -> judgeChatClient.prompt()
+                                .user(fullPrompt)
+                                .call()
+                                .content()
         );
     }
 
