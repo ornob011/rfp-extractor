@@ -85,7 +85,7 @@ class ScannedTableReconstructorTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().getProvenance()).isEqualTo(TableProvenance.SCANNED);
-        verify(llmAdapter, never()).extractStructured(anyString(), anyString(), any());
+        verify(llmAdapter, never()).extractStructured(any(), anyString(), any());
     }
 
     @Test
@@ -110,7 +110,7 @@ class ScannedTableReconstructorTest {
                 )
             )
         )).when(llmAdapter).extractStructured(
-            anyString(),
+            any(),
             anyString(),
             any()
         );

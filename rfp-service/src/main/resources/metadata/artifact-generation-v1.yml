@@ -2,6 +2,7 @@ version: 1
 prompts:
   clarificationQuestionResourcePath: prompts/clarification-question-gen-v1.md
   riskMitigationResourcePath: prompts/risk-mitigation-suggestion-v1.md
+  systemPromptResourcePath: prompts/artifact-generation-system-v1.md
 templates:
   clarificationQuestionsResourcePath: clarification-questions.ftl
   auditReportResourcePath: audit-report.ftl

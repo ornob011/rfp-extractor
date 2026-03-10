@@ -13,7 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -29,6 +32,10 @@ class LlmAdapterTest {
 
     @Mock
     private LlmResilientCaller caller;
+
+    private static final Resource SYSTEM_RESOURCE = new ByteArrayResource(
+        "system prompt".getBytes(StandardCharsets.UTF_8)
+    );
 
     private LlmAdapter llmAdapter;
 
@@ -51,7 +58,7 @@ class LlmAdapterTest {
     @Test
     void shouldReturnParsedDtoWhenLlmReturnsValidJson() {
         stubCallerToReturn("{\"name\":\"test\"}");
-        Optional<TestDto> result = llmAdapter.extractStructured("system prompt", "user content", TestDto.class);
+        Optional<TestDto> result = llmAdapter.extractStructured(SYSTEM_RESOURCE, "user content", TestDto.class);
         assertThat(result).isPresent();
         assertThat(result.get().getName()).isEqualTo("test");
     }
@@ -59,21 +66,21 @@ class LlmAdapterTest {
     @Test
     void shouldThrowRuntimeExceptionWhenLlmReturnsInvalidJson() {
         stubCallerToReturn("this is not json");
-        assertThatThrownBy(() -> llmAdapter.extractStructured("system", "user", TestDto.class))
+        assertThatThrownBy(() -> llmAdapter.extractStructured(SYSTEM_RESOURCE, "user", TestDto.class))
             .isInstanceOf(RuntimeException.class);
     }
 
     @Test
     void shouldReturnEmptyWhenLlmReturnsBlankResponse() {
         stubCallerToReturn("   ");
-        Optional<TestDto> result = llmAdapter.extractStructured("system", "user", TestDto.class);
+        Optional<TestDto> result = llmAdapter.extractStructured(SYSTEM_RESOURCE, "user", TestDto.class);
         assertThat(result).isEmpty();
     }
 
     @Test
     void shouldStripMarkdownJsonCodeFencesBeforeParsing() {
         stubCallerToReturn("```json\n{\"name\":\"fenced\"}\n```");
-        Optional<TestDto> result = llmAdapter.extractStructured("system", "user", TestDto.class);
+        Optional<TestDto> result = llmAdapter.extractStructured(SYSTEM_RESOURCE, "user", TestDto.class);
         assertThat(result).isPresent();
         assertThat(result.get().getName()).isEqualTo("fenced");
     }
@@ -81,7 +88,7 @@ class LlmAdapterTest {
     @Test
     void shouldStripMarkdownCodeFencesBeforeParsing() {
         stubCallerToReturn("```\n{\"name\":\"plain-fence\"}\n```");
-        Optional<TestDto> result = llmAdapter.extractStructured("system", "user", TestDto.class);
+        Optional<TestDto> result = llmAdapter.extractStructured(SYSTEM_RESOURCE, "user", TestDto.class);
         assertThat(result).isPresent();
         assertThat(result.get().getName()).isEqualTo("plain-fence");
     }
@@ -91,7 +98,7 @@ class LlmAdapterTest {
         when(caller.call(anyString(), anyString())).thenReturn(CompletableFuture.failedFuture(
             new LlmUnavailableException("LLM unavailable: Connection refused",
                 new RuntimeException("Connection refused"))));
-        assertThatThrownBy(() -> llmAdapter.extractStructured("system", "user", TestDto.class))
+        assertThatThrownBy(() -> llmAdapter.extractStructured(SYSTEM_RESOURCE, "user", TestDto.class))
             .isInstanceOf(CompletionException.class)
             .hasCauseInstanceOf(LlmUnavailableException.class);
     }

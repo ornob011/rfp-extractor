@@ -1,14 +1,19 @@
 package com.dsi.rfp.adapter.llm;
 
 import com.dsi.rfp.adapter.security.PromptInjectionFilter;
+import com.dsi.rfp.domain.exception.SystemIoException;
 import com.dsi.rfp.domain.model.LlmJudgmentResult;
 import com.dsi.rfp.domain.model.RuleStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.converter.*;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -46,7 +51,7 @@ public class LlmAdapter {
     }
 
     public <T> Optional<T> extractStructured(
-        String systemPrompt,
+        Resource systemPromptResource,
         String userContent,
         Class<T> responseType
     ) {
@@ -55,7 +60,7 @@ public class LlmAdapter {
         return parseResponse(
             joinAndUnwrap(
                 caller.call(
-                    systemPrompt,
+                    loadResource(systemPromptResource),
                     sanitized
                 )
             ),
@@ -64,13 +69,16 @@ public class LlmAdapter {
     }
 
     public Optional<String> extractRaw(
-        String systemPrompt,
+        Resource systemPromptResource,
         String userContent
     ) {
         String sanitized = injectionFilter.sanitize(userContent);
 
         String raw = joinAndUnwrap(
-            caller.call(systemPrompt, sanitized)
+            caller.call(
+                loadResource(systemPromptResource),
+                sanitized
+            )
         );
 
         if (!StringUtils.hasText(raw)) {
@@ -111,6 +119,20 @@ public class LlmAdapter {
         RuleStatus status = result.isFinding() ? RuleStatus.FAIL : RuleStatus.PASS;
         result.setStatus(status);
         return result;
+    }
+
+    private String loadResource(Resource resource) {
+        try {
+            return StreamUtils.copyToString(
+                resource.getInputStream(),
+                StandardCharsets.UTF_8
+            );
+        } catch (IOException exception) {
+            throw new SystemIoException(
+                String.format("Failed to load prompt resource: %s", resource.getDescription()),
+                exception
+            );
+        }
     }
 
     private <T> Optional<T> parseResponse(

@@ -1,3 +1,4 @@
+systemPromptResourcePath: prompts/entity-extraction-system-v1.md
 extractors:
   GENERAL:
     promptResourcePath: prompts/entity-general-v1.md

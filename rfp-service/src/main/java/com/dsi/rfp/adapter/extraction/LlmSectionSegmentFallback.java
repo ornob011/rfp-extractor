@@ -9,6 +9,7 @@ import com.dsi.rfp.domain.model.SectionConfidence;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -23,6 +24,7 @@ public class LlmSectionSegmentFallback {
     private final PromptTemplateRenderer promptTemplateRenderer;
     private final LevenshteinDistance levenshteinDistance;
     private final String promptTemplate;
+    private final Resource systemPromptResource;
 
     public LlmSectionSegmentFallback(
         LlmAdapter llmAdapter,
@@ -34,6 +36,7 @@ public class LlmSectionSegmentFallback {
         this.promptTemplateRenderer = promptTemplateRenderer;
         levenshteinDistance = LevenshteinDistance.getDefaultInstance();
         promptTemplate = config.promptTemplate();
+        systemPromptResource = config.systemPromptResource();
     }
 
     public boolean shouldFire(ExtractionState state) {
@@ -53,7 +56,7 @@ public class LlmSectionSegmentFallback {
         List<Section> mergedSections = new ArrayList<>(state.sections());
 
         llmAdapter.extractStructured(
-                      StringUtils.EMPTY,
+                      systemPromptResource,
                       prompt,
                       SectionFallbackResponse.class
                   )

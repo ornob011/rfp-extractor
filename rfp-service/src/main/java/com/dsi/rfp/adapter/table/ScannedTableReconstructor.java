@@ -10,6 +10,7 @@ import com.dsi.rfp.adapter.ocr.OcrSidecarClient;
 import com.dsi.rfp.domain.model.TableExtractionResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -28,6 +29,7 @@ public class ScannedTableReconstructor {
     private final PromptTemplateRenderer promptTemplateRenderer;
     private final TableExtractionConfig config;
     private final String promptTemplate;
+    private final Resource systemPromptResource;
 
     public ScannedTableReconstructor(
         LlmAdapter llmAdapter,
@@ -44,6 +46,7 @@ public class ScannedTableReconstructor {
         this.promptTemplateRenderer = promptTemplateRenderer;
         this.config = config;
         promptTemplate = config.scannedPromptTemplate();
+        systemPromptResource = config.scannedSystemPromptResource();
     }
 
     public List<com.dsi.rfp.domain.model.TableExtractionResult> reconstructTables(
@@ -168,7 +171,7 @@ public class ScannedTableReconstructor {
         );
 
         return llmAdapter.extractStructured(
-                             StringUtils.EMPTY,
+                             systemPromptResource,
                              prompt,
                              ScannedTableResponse.class
                          )

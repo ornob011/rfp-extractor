@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
@@ -32,6 +33,10 @@ public class ArtifactGenerationConfig {
 
     public String riskMitigationPromptTemplate() {
         return loadResource(config.prompts().riskMitigationResourcePath());
+    }
+
+    public Resource systemPromptResource() {
+        return new ClassPathResource(config.prompts().systemPromptResourcePath());
     }
 
     public String clarificationQuestionsTemplateName() {
@@ -221,7 +226,8 @@ public class ArtifactGenerationConfig {
 
     private record Prompts(
         String clarificationQuestionResourcePath,
-        String riskMitigationResourcePath
+        String riskMitigationResourcePath,
+        String systemPromptResourcePath
     ) {
     }
 
