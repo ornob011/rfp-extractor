@@ -46,4 +46,22 @@ class ExtractionStateTest {
         assertThat(state.entities()).isNotNull();
         assertThat(state.entities().getClientName()).isEqualTo("Test Client");
     }
+
+    @Test
+    void shouldConvertStringPageKeysToIntegerMaps() {
+        ExtractionState state = new ExtractionState(Map.of(
+            ExtractionState.Key.PAGE_TEXTS.value(),
+            Map.of("1", "Page 1"),
+            ExtractionState.Key.PAGE_CONFIDENCES.value(),
+            Map.of("1", 0.85),
+            ExtractionState.Key.PAGE_EXTRACTION_METHODS.value(),
+            Map.of("1", com.dsi.rfp.domain.model.PageExtractionMethod.TEXT_LAYER)
+        ));
+
+        assertThat(state.pageTexts()).isEqualTo(Map.of(1, "Page 1"));
+        assertThat(state.pageConfidences()).isEqualTo(Map.of(1, 0.85));
+        assertThat(state.pageExtractionMethods()).isEqualTo(
+            Map.of(1, com.dsi.rfp.domain.model.PageExtractionMethod.TEXT_LAYER)
+        );
+    }
 }

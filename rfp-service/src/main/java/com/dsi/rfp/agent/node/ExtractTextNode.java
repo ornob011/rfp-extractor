@@ -57,9 +57,9 @@ public class ExtractTextNode implements NodeAction<ExtractionState> {
 
         return Map.of(
             ExtractionState.Key.CLAUSES.value(), acc.clauses(),
-            ExtractionState.Key.PAGE_TEXTS.value(), acc.pageTexts(),
-            ExtractionState.Key.PAGE_CONFIDENCES.value(), acc.pageConfidences(),
-            ExtractionState.Key.PAGE_EXTRACTION_METHODS.value(), acc.pageMethods()
+            ExtractionState.Key.PAGE_TEXTS.value(), stringifyPageKeys(acc.pageTexts()),
+            ExtractionState.Key.PAGE_CONFIDENCES.value(), stringifyPageKeys(acc.pageConfidences()),
+            ExtractionState.Key.PAGE_EXTRACTION_METHODS.value(), stringifyPageKeys(acc.pageMethods())
         );
     }
 
@@ -207,6 +207,17 @@ public class ExtractTextNode implements NodeAction<ExtractionState> {
         return pages.stream()
                     .filter(p -> p.getClassification() == classification)
                     .count();
+    }
+
+    private <T> Map<String, T> stringifyPageKeys(
+        Map<Integer, T> values
+    ) {
+        return values.entrySet()
+                     .stream()
+                     .collect(java.util.stream.Collectors.toMap(
+                         entry -> String.valueOf(entry.getKey()),
+                         Map.Entry::getValue
+                     ));
     }
 
     private record PageResult(
