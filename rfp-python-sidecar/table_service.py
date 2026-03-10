@@ -72,7 +72,16 @@ class TableService:
                 results: dict[int, list[ExtractedTable]] = {}
                 for future in futures:
                     page_num = futures[future]
-                    results[page_num] = future.result()
+                    try:
+                        results[page_num] = future.result()
+                    except Exception:
+                        logger.error(
+                            "event=table.batch.pageFailed"
+                            " component=TableService page=%d",
+                            page_num,
+                            exc_info=True,
+                        )
+                        results[page_num] = []
 
         return results
 
