@@ -13,7 +13,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -130,6 +134,56 @@ public class OcrSidecarClient {
                        .orElseThrow(() -> new OcrUnavailableException(
                            "OCR sidecar returned an empty page-with-layout response body"
                        ));
+    }
+
+    public Map<Integer, OcrBatchPageResult> extractBatch(
+        String documentPath,
+        List<Integer> pageNumbers
+    ) {
+        String documentBase64 = readDocumentBase64(documentPath);
+
+        OcrBatchRequest request = new OcrBatchRequest(
+            documentBase64,
+            pageNumbers,
+            DEFAULT_DPI,
+            DEFAULT_LANGUAGE
+        );
+
+        OcrBatchResponse response = restClient.post()
+                                               .uri("/ocr/batch")
+                                               .contentType(MediaType.APPLICATION_JSON)
+                                               .body(request)
+                                               .retrieve()
+                                               .onStatus(
+                                                   HttpStatusCode::isError,
+                                                   (req, res) -> {
+                                                       throw new OcrUnavailableException(
+                                                           String.format(
+                                                               "OCR batch returned status=%s",
+                                                               res.getStatusCode()
+                                                           )
+                                                       );
+                                                   }
+                                               )
+                                               .body(OcrBatchResponse.class);
+
+        OcrBatchResponse resolvedResponse = Optional.ofNullable(response)
+                                                     .orElseThrow(() -> new OcrUnavailableException(
+                                                         "OCR batch returned an empty response body"
+                                                     ));
+
+        log.info(
+            "event=ocr.batch component=OcrSidecarClient status=INFO"
+            + " pages={}",
+            resolvedResponse.results().size()
+        );
+
+        return resolvedResponse.results()
+                               .stream()
+                               .collect(Collectors.toMap(
+                                   OcrBatchPageResult::pageNumber,
+                                   Function.identity()
+                               ));
     }
 
     private String readDocumentBase64(String documentPath) {

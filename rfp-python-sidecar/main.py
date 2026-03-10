@@ -8,6 +8,7 @@ import easyocr
 from fastapi import FastAPI, HTTPException
 from pydantic import Base64Bytes, BaseModel
 
+from batch_processor import BatchPageResult, process_batch
 from layout_detector import LayoutDetectionResult
 from ocr_service import OcrResult, OcrService
 from reading_order import ReadingOrderResult
@@ -100,6 +101,25 @@ class OcrPageWithLayoutResponse(BaseModel):
     scanned_tables: list[ScannedTableResponse]
 
 
+class BatchOcrRequest(BaseModel):
+    document_base64: Base64Bytes
+    pages: list[int]
+    dpi: int = 300
+    lang: str = "eng+ben"
+
+
+class BatchPageResponse(BaseModel):
+    page_number: int
+    ocr_result: OcrResult
+    layout: LayoutDetectionResult
+    reading_order: ReadingOrderResult
+    scanned_tables: list[ScannedTableResponse]
+
+
+class BatchOcrResponse(BaseModel):
+    results: list[BatchPageResponse]
+
+
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     return HealthResponse(
@@ -166,6 +186,56 @@ def ocr_page_with_layout(
         scanned_tables=[
             _scanned_table_response(table)
             for table in scanned_tables
+        ],
+    )
+
+
+@app.post("/ocr/batch", response_model=BatchOcrResponse)
+def ocr_batch(request: BatchOcrRequest) -> BatchOcrResponse:
+    ocr_service: OcrService | None = getattr(app.state, "ocr_service", None)
+
+    if ocr_service is None:
+        raise HTTPException(
+            status_code=503,
+            detail="OCR service not available",
+        )
+
+    document_path = _write_temp_pdf(bytes(request.document_base64))
+
+    try:
+        results = process_batch(
+            ocr_service,
+            document_path,
+            request.pages,
+            request.dpi,
+        )
+
+        return BatchOcrResponse(
+            results=[
+                _batch_page_response(r)
+                for r in results
+            ],
+        )
+    finally:
+        Path(document_path).unlink(missing_ok=True)
+
+
+def _batch_page_response(
+    result: BatchPageResult,
+) -> BatchPageResponse:
+    return BatchPageResponse(
+        page_number=result.page_number,
+        ocr_result=result.ocr_result,
+        layout=result.layout,
+        reading_order=result.reading_order,
+        scanned_tables=[
+            ScannedTableResponse(
+                headers=t.headers,
+                rows=t.rows,
+                confidence=t.confidence,
+                method=t.method,
+            )
+            for t in result.scanned_tables
         ],
     )
 

@@ -1,5 +1,6 @@
 package com.dsi.rfp.adapter.extraction;
 
+import com.dsi.rfp.adapter.ocr.OcrBatchPageResult;
 import com.dsi.rfp.adapter.ocr.OcrPageWithLayoutResultDto;
 import com.dsi.rfp.adapter.ocr.OcrSidecarClient;
 import com.dsi.rfp.domain.model.TextBlock;
@@ -47,6 +48,28 @@ public class MixedPageExtractor {
                 result.readingOrder().orderedText(),
                 result.ocrResult(),
                 result.layout(),
+                textLayerQuality
+            )
+        );
+    }
+
+    public MixedPageContent extractPageWithResult(
+        String documentPath,
+        int pageNum,
+        OcrBatchPageResult batchResult
+    ) throws IOException {
+        List<TextBlock> textBlocks = loader.loadPageBoundingBoxes(
+            Path.of(documentPath),
+            pageNum
+        );
+
+        double textLayerQuality = qualityPolicy.score(textBlocks);
+
+        return mergeService.merge(
+            new MixedPageMergeInput(
+                batchResult.readingOrder().orderedText(),
+                batchResult.ocrResult(),
+                batchResult.layout(),
                 textLayerQuality
             )
         );

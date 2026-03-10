@@ -1,4 +1,5 @@
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pytesseract
@@ -10,9 +11,13 @@ from image_utils import bytes_to_pil
 from layout_detector import (
     BoundingBox,
     LayoutDetectionResult,
-    detect_layout,
+    detect_layout_from_regions,
 )
-from reading_order import ReadingOrderResult, resolve_reading_order
+from reading_order import (
+    ReadingOrderMethod,
+    ReadingOrderResult,
+    resolve_reading_order,
+)
 from sidecar_config import load_sidecar_config
 from table_service import ExtractedTable, TableService
 
@@ -71,22 +76,39 @@ class OcrService:
         document_path: str | None,
         page_number: int | None,
     ) -> tuple[OcrResult, LayoutDetectionResult, ReadingOrderResult, list[ExtractedTable]]:
-        ocr_result = self.extract_page(image_bytes)
-        image = bytes_to_pil(image_bytes)
-        scanned_tables = self._extract_scanned_tables(
-            document_path,
-            page_number,
-        )
-        layout = detect_layout(
-            image,
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            ocr_future = pool.submit(
+                self.extract_page, image_bytes,
+            )
+            tables_future = pool.submit(
+                self._extract_scanned_tables,
+                document_path,
+                page_number,
+            )
+            reading_order_future = pool.submit(
+                resolve_reading_order,
+                "",
+                document_path,
+                page_number,
+            )
+
+            ocr_result = ocr_future.result()
+            scanned_tables = tables_future.result()
+            reading_order = reading_order_future.result()
+
+        word_regions = [
+            w.bbox for w in ocr_result.word_confidences
+        ]
+        layout = detect_layout_from_regions(
+            word_regions,
             scanned_tables,
-            self._reader,
         )
-        reading_order = resolve_reading_order(
-            ocr_result.text,
-            document_path,
-            page_number,
-        )
+
+        if reading_order.method == ReadingOrderMethod.OCR_TEXT_FLOW:
+            reading_order = ReadingOrderResult(
+                ordered_text=ocr_result.text,
+                method=ReadingOrderMethod.OCR_TEXT_FLOW,
+            )
 
         return ocr_result, layout, reading_order, scanned_tables
 
