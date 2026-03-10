@@ -7,6 +7,10 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,10 +31,13 @@ public class TableEngineRestClient implements TableEngineClient {
         int pageNumber,
         TableExtractionStrategy strategy
     ) {
+        String documentBase64 = readDocumentBase64(documentPath);
+
         TableEngineResponse response = restClient.post()
                                                  .uri("/v1/table/extract")
                                                  .body(new TableEngineRequest(
                                                      documentPath,
+                                                     documentBase64,
                                                      pageNumber,
                                                      strategy
                                                  ))
@@ -53,5 +60,19 @@ public class TableEngineRestClient implements TableEngineClient {
         return Optional.ofNullable(response)
                        .map(TableEngineResponse::tables)
                        .orElse(List.of());
+    }
+
+    private String readDocumentBase64(String documentPath) {
+        try {
+            byte[] pdfBytes = Files.readAllBytes(Path.of(documentPath));
+            return Base64.getEncoder().encodeToString(pdfBytes);
+        } catch (IOException e) {
+            throw new TableExtractionUnavailableException(
+                String.format(
+                    "Failed to read document for base64 encoding: %s",
+                    documentPath
+                )
+            );
+        }
     }
 }
