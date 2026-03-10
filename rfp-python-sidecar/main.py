@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
 
     app.state.table_service = getattr(app.state, "table_service", None) or TableService()
     app.state.ocr_service = getattr(app.state, "ocr_service", None) or OcrService(
-        easyocr.Reader(["en", "bn"], gpu=False),
+        easyocr.Reader(["en", "bn"], gpu=True),
         app.state.table_service,
     )
 

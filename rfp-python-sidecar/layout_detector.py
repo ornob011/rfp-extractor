@@ -55,7 +55,7 @@ def detect_layout(
 def _create_reader() -> object:
     import easyocr
 
-    return easyocr.Reader(["en", "bn"], gpu=False)
+    return easyocr.Reader(["en", "bn"], gpu=True)
 
 
 def _to_array(image: Image.Image):

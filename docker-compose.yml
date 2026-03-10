@@ -26,6 +26,7 @@ services:
             PYTHONUNBUFFERED: "1"
         volumes:
             - rfp_storage:/app/rfp-storage
+        runtime: nvidia
         healthcheck:
             test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
             interval: 15s

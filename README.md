@@ -21,6 +21,7 @@ runs domain rule packs to produce Bid Clarity outputs.
 - Java 21 + Maven 3.9+ (local dev)
 - Node 20+ (frontend dev)
 - Python 3.11+ (OCR sidecar dev)
+- NVIDIA GPU with drivers + [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) (for GPU-accelerated OCR sidecar)
 - OpenRouter API key (from https://openrouter.ai/) OR local Ollama instance
 
 ## Option A: Full Docker Stack (Recommended)
@@ -172,15 +173,41 @@ pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-First startup downloads easyOCR models (~500MB). Requires `tesseract-ocr` and `tesseract-ocr-ben` system packages, plus
-`poppler-utils` and `ghostscript`.
+First startup downloads easyOCR models (~500MB). Requires system packages for OCR, PDF rendering, and CUDA.
 
-On Ubuntu or Debian:
+On Ubuntu or Debian (GPU server):
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y tesseract-ocr tesseract-ocr-ben poppler-utils ghostscript libgl1
+
+# CUDA toolkit for PyTorch GPU support (requires NVIDIA drivers already installed)
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+sudo dpkg -i cuda-keyring_1.1-1_all.deb
+sudo apt-get update
+sudo apt-get install -y cuda-toolkit-12-4
 ```
+
+Verify GPU is available after installing requirements:
+
+```bash
+python3 -c "import torch; print(torch.cuda.is_available())"  # Should print True
+```
+
+For Docker deployment, also install the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html):
+
+```bash
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+  sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+  sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+sudo apt-get update
+sudo apt-get install -y nvidia-container-toolkit
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+```
+
+Verify Docker GPU access: `docker run --rm --runtime=nvidia nvidia/cuda:12.4.1-runtime-ubuntu22.04 nvidia-smi`
 
 ### 3. Run Java service
 
