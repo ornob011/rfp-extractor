@@ -1,5 +1,6 @@
 version: 1
 promptResourcePath: prompts/section-segmentation-fallback-v1.md
+systemPromptResourcePath: prompts/section-segmentation-system-v1.md
 trigger:
   minPages: 20
   minSections: 3

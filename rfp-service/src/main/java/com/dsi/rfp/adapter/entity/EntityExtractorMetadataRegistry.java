@@ -20,6 +20,7 @@ public class EntityExtractorMetadataRegistry {
     private static final String METADATA_PATH = "metadata/entity-extractor-metadata-v1.yml";
 
     private final Map<PromptKey, ExtractorMetadata> metadataByPromptKey;
+    private final Resource systemPromptResource;
 
     public EntityExtractorMetadataRegistry() {
         metadataByPromptKey = new EnumMap<>(PromptKey.class);
@@ -29,12 +30,17 @@ public class EntityExtractorMetadataRegistry {
         document.extractors().forEach(this::putEntry);
         validatePromptKeyCoverage();
         validatePromptResources();
+        systemPromptResource = new ClassPathResource(document.systemPromptResourcePath());
     }
 
     public Resource promptResource(PromptKey key) {
         String path = metadata(key).promptResourcePath();
 
         return new ClassPathResource(path);
+    }
+
+    public Resource systemPromptResource() {
+        return systemPromptResource;
     }
 
     public List<String> requiredFields(PromptKey key) {
@@ -132,10 +138,15 @@ public class EntityExtractorMetadataRegistry {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record MetadataDocument(
+        String systemPromptResourcePath,
         Map<String, ExtractorMetadata> extractors
     ) {
 
         private MetadataDocument {
+            if (systemPromptResourcePath == null) {
+                throw new EntityMetadataContractException("Metadata must include 'systemPromptResourcePath'");
+            }
+
             if (extractors == null) {
                 throw new EntityMetadataContractException("Metadata must include 'extractors' map");
             }

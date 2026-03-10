@@ -47,6 +47,10 @@ public class SectionFallbackConfig {
         return config.confidence().score();
     }
 
+    public Resource systemPromptResource() {
+        return new ClassPathResource(config.systemPromptResourcePath());
+    }
+
     public Resource promptResource() {
         return new ClassPathResource(config.promptResourcePath());
     }
@@ -90,6 +94,7 @@ public class SectionFallbackConfig {
     private record ConfigDocument(
         int version,
         String promptResourcePath,
+        String systemPromptResourcePath,
         Trigger trigger,
         Prompt prompt,
         Merge merge,

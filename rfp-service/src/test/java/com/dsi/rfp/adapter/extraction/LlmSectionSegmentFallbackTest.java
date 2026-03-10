@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -57,7 +58,7 @@ class LlmSectionSegmentFallbackTest {
                 new SectionFallbackResponse.SectionSuggestion("Evaluation", 1, 5)
             )
         );
-        when(llmAdapter.extractStructured(anyString(), anyString(), org.mockito.ArgumentMatchers.eq(SectionFallbackResponse.class)))
+        when(llmAdapter.extractStructured(any(), anyString(), org.mockito.ArgumentMatchers.eq(SectionFallbackResponse.class)))
             .thenReturn(Optional.of(response));
 
         Map<String, Object> data = ExtractionState.initial(1L, "/tmp/x.pdf");
@@ -85,7 +86,7 @@ class LlmSectionSegmentFallbackTest {
 
     @Test
     void shouldNotModifyStateWhenLlmCallFails() {
-        when(llmAdapter.extractStructured(anyString(), anyString(), org.mockito.ArgumentMatchers.eq(SectionFallbackResponse.class)))
+        when(llmAdapter.extractStructured(any(), anyString(), org.mockito.ArgumentMatchers.eq(SectionFallbackResponse.class)))
             .thenReturn(Optional.empty());
 
         Map<String, Object> data = ExtractionState.initial(1L, "/tmp/x.pdf");
@@ -109,7 +110,7 @@ class LlmSectionSegmentFallbackTest {
 
     @Test
     void shouldTruncateDocumentTextToMaxChars() {
-        when(llmAdapter.extractStructured(anyString(), anyString(), org.mockito.ArgumentMatchers.eq(SectionFallbackResponse.class)))
+        when(llmAdapter.extractStructured(any(), anyString(), org.mockito.ArgumentMatchers.eq(SectionFallbackResponse.class)))
             .thenReturn(Optional.of(new SectionFallbackResponse(List.of())));
 
         Map<String, Object> data = ExtractionState.initial(1L, "/tmp/x.pdf");

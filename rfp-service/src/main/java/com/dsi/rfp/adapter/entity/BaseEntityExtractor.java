@@ -110,7 +110,7 @@ public abstract class BaseEntityExtractor {
         String prompt,
         Long jobId
     ) {
-        return llmAdapter.extractRaw(StringUtils.EMPTY, prompt)
+        return llmAdapter.extractRaw(metadataRegistry.systemPromptResource(), prompt)
                          .map(raw -> parseJson(raw, jobId))
                          .orElseGet(Map::of);
     }

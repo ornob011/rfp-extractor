@@ -64,7 +64,7 @@ public class ClarificationQuestionsGenerator {
         );
 
         return llmAdapter.extractStructured(
-                             "",
+                             config.systemPromptResource(),
                              prompt,
                              LlmQuestionResponse.class
                          )

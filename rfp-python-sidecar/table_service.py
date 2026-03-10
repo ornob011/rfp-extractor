@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from importlib import import_module
 from typing import Literal
 
 import camelot
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -45,6 +48,14 @@ class TableService:
         strategy: Literal["lattice", "stream"],
         pdfplumber_page=None,
     ) -> list[ExtractedTable]:
+        if self._page_has_no_text(pdfplumber_page, document_path, page_number):
+            logger.debug(
+                "event=table.skip component=TableService page=%d"
+                " reason=no_text_content",
+                page_number,
+            )
+            return []
+
         tables = camelot.read_pdf(
             filepath=document_path,
             pages=str(page_number),
@@ -86,6 +97,22 @@ class TableService:
             (tables for tables in results if tables),
             [],
         )
+
+    @staticmethod
+    def _page_has_no_text(
+        pdfplumber_page,
+        document_path: str,
+        page_number: int,
+    ) -> bool:
+        if pdfplumber_page is not None:
+            text = pdfplumber_page.extract_text() or ""
+            return not text.strip()
+
+        pdfplumber = import_module("pdfplumber")
+        with pdfplumber.open(document_path) as pdf:
+            page = pdf.pages[page_number - 1]
+            text = page.extract_text() or ""
+            return not text.strip()
 
     def _to_extracted_table(
         self,

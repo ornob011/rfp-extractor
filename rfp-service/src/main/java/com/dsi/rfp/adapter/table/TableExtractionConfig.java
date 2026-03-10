@@ -102,6 +102,10 @@ public class TableExtractionConfig {
         }
     }
 
+    public Resource scannedSystemPromptResource() {
+        return new ClassPathResource(config.scanned().systemPromptResourcePath());
+    }
+
     public int scannedMaxOcrTextLength() {
         return config.scanned().maxOcrTextLength();
     }
@@ -208,6 +212,7 @@ public class TableExtractionConfig {
 
     private record Scanned(
         String promptResourcePath,
+        String systemPromptResourcePath,
         int maxOcrTextLength,
         double confidenceFactor,
         String llmMethod
@@ -216,6 +221,10 @@ public class TableExtractionConfig {
         private Scanned {
             if (promptResourcePath == null) {
                 throw new EntityMetadataContractException("Table extraction config scanned section must define promptResourcePath");
+            }
+
+            if (systemPromptResourcePath == null) {
+                throw new EntityMetadataContractException("Table extraction config scanned section must define systemPromptResourcePath");
             }
 
             if (llmMethod == null) {

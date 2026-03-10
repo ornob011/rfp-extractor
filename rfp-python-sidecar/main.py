@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
+import torch
 import easyocr
 import pdfplumber
 from fastapi import FastAPI, HTTPException
@@ -15,13 +16,25 @@ from ocr_service import OcrResult, OcrService
 from reading_order import ReadingOrderResult
 from table_service import ExtractedTable, TableService
 
-import warnings
-
-warnings.filterwarnings("ignore", message="No tables found")
-warnings.filterwarnings("ignore", message="RNN module weights are not part of single contiguous chunk")
-
 logger = logging.getLogger(__name__)
 logging.getLogger("pdfminer").setLevel(logging.ERROR)
+
+
+def _flatten_rnn_parameters(reader: easyocr.Reader) -> None:
+    for model_attr in ("recognizer", "detector"):
+        model = getattr(reader, model_attr, None)
+
+        if model is None:
+            continue
+
+        for module in model.modules():
+            if isinstance(module, (torch.nn.LSTM, torch.nn.GRU, torch.nn.RNN)):
+                module.flatten_parameters()
+
+    logger.info(
+        "event=rnn.flatten component=rfp-sidecar"
+        " message=Flattened RNN parameters to contiguous memory"
+    )
 
 
 @asynccontextmanager
@@ -33,8 +46,10 @@ async def lifespan(app: FastAPI):
     )
 
     app.state.table_service = getattr(app.state, "table_service", None) or TableService()
+    reader = easyocr.Reader(["en", "bn"], gpu=True)
+    _flatten_rnn_parameters(reader)
     app.state.ocr_service = getattr(app.state, "ocr_service", None) or OcrService(
-        easyocr.Reader(["en", "bn"], gpu=True),
+        reader,
         app.state.table_service,
     )
 

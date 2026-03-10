@@ -105,7 +105,7 @@ class RiskMitigationEnricher {
         );
 
         return llmAdapter.extractStructured(
-                             "",
+                             config.systemPromptResource(),
                              prompt,
                              RiskMitigationResponse.class
                          )
