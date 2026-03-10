@@ -14,6 +14,11 @@ from ocr_service import OcrResult, OcrService
 from reading_order import ReadingOrderResult
 from table_service import ExtractedTable, TableService
 
+import warnings
+
+warnings.filterwarnings("ignore", message="No tables found")
+warnings.filterwarnings("ignore", message="RNN module weights are not part of single contiguous chunk")
+
 logger = logging.getLogger(__name__)
 logging.getLogger("pdfminer").setLevel(logging.ERROR)
 
