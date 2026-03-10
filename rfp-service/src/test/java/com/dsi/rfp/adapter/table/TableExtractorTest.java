@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,13 +20,10 @@ import static org.mockito.Mockito.when;
 class TableExtractorTest {
 
     @Mock
+    private TableEngineClient tableEngineClient;
+
+    @Mock
     private LatticeTableExtractor latticeExtractor;
-
-    @Mock
-    private StreamTableExtractor streamExtractor;
-
-    @Mock
-    private TableExtractionConfig config;
 
     @InjectMocks
     private TableExtractor extractor;
@@ -37,6 +35,9 @@ class TableExtractorTest {
             pageSummary(2, PageClassification.SCANNED)
         );
 
+        when(tableEngineClient.extractTablesBatch(any(), eq(List.of())))
+            .thenReturn(Map.of());
+
         List<TableExtractionResult> result = extractor.extractFromDocument(
             "/tmp/sample.pdf",
             pages
@@ -47,45 +48,31 @@ class TableExtractorTest {
     }
 
     @Test
-    void shouldUseLatticeFirst() {
-        when(config.extractionOrder()).thenReturn(List.of(
-            TableExtractionStrategy.LATTICE,
-            TableExtractionStrategy.STREAM
-        ));
-
+    void shouldExtractDigitalPagesViaBatch() {
         List<PageSummary> pages = List.of(
-            pageSummary(1, PageClassification.DIGITAL)
+            pageSummary(1, PageClassification.DIGITAL),
+            pageSummary(2, PageClassification.DIGITAL)
         );
 
-        TableExtractionResult table = sampleTable(1);
-        when(latticeExtractor.extractFromPage(any(), eq(1)))
-            .thenReturn(List.of(table));
-
-        List<TableExtractionResult> result = extractor.extractFromDocument(
-            "/tmp/sample.pdf",
-            pages
+        TableEngineTable engineTable = new TableEngineTable(
+            null,
+            List.of("A", "B"),
+            List.of(),
+            0.9,
+            "lattice"
         );
 
-        assertThat(result).hasSize(1);
-        verifyNoInteractions(streamExtractor);
-    }
+        when(tableEngineClient.extractTablesBatch(any(), eq(List.of(1, 2))))
+            .thenReturn(Map.of(
+                1, List.of(engineTable),
+                2, List.of()
+            ));
 
-    @Test
-    void shouldFallbackToStreamWhenLatticeEmpty() {
-        when(config.extractionOrder()).thenReturn(List.of(
-            TableExtractionStrategy.LATTICE,
-            TableExtractionStrategy.STREAM
-        ));
-
-        List<PageSummary> pages = List.of(
-            pageSummary(1, PageClassification.DIGITAL)
-        );
-
-        when(latticeExtractor.extractFromPage(any(), eq(1)))
+        TableExtractionResult domainTable = sampleTable(1);
+        when(latticeExtractor.toDomainList(List.of(engineTable), 1))
+            .thenReturn(List.of(domainTable));
+        when(latticeExtractor.toDomainList(List.of(), 2))
             .thenReturn(List.of());
-        TableExtractionResult table = sampleTable(1);
-        when(streamExtractor.extractFromPage(any(), eq(1)))
-            .thenReturn(List.of(table));
 
         List<TableExtractionResult> result = extractor.extractFromDocument(
             "/tmp/sample.pdf",
@@ -96,19 +83,14 @@ class TableExtractorTest {
     }
 
     @Test
-    void shouldProcessMixedPages() {
-        when(config.extractionOrder()).thenReturn(List.of(
-            TableExtractionStrategy.LATTICE,
-            TableExtractionStrategy.STREAM
-        ));
-
+    void shouldProcessMixedPagesAsDigital() {
         List<PageSummary> pages = List.of(
             pageSummary(1, PageClassification.MIXED)
         );
 
-        when(latticeExtractor.extractFromPage(any(), eq(1)))
-            .thenReturn(List.of());
-        when(streamExtractor.extractFromPage(any(), eq(1)))
+        when(tableEngineClient.extractTablesBatch(any(), eq(List.of(1))))
+            .thenReturn(Map.of(1, List.of()));
+        when(latticeExtractor.toDomainList(List.of(), 1))
             .thenReturn(List.of());
 
         List<TableExtractionResult> result = extractor.extractFromDocument(
@@ -117,6 +99,42 @@ class TableExtractorTest {
         );
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldFilterScannedAndBatchDigital() {
+        List<PageSummary> pages = List.of(
+            pageSummary(1, PageClassification.DIGITAL),
+            pageSummary(2, PageClassification.SCANNED),
+            pageSummary(3, PageClassification.DIGITAL)
+        );
+
+        TableEngineTable engineTable = new TableEngineTable(
+            null,
+            List.of("X"),
+            List.of(),
+            0.85,
+            "lattice"
+        );
+
+        when(tableEngineClient.extractTablesBatch(any(), eq(List.of(1, 3))))
+            .thenReturn(Map.of(
+                1, List.of(engineTable),
+                3, List.of()
+            ));
+
+        TableExtractionResult domainTable = sampleTable(1);
+        when(latticeExtractor.toDomainList(List.of(engineTable), 1))
+            .thenReturn(List.of(domainTable));
+        when(latticeExtractor.toDomainList(List.of(), 3))
+            .thenReturn(List.of());
+
+        List<TableExtractionResult> result = extractor.extractFromDocument(
+            "/tmp/sample.pdf",
+            pages
+        );
+
+        assertThat(result).hasSize(1);
     }
 
     private PageSummary pageSummary(

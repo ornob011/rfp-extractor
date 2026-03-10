@@ -2,6 +2,7 @@ package com.dsi.rfp.adapter.table;
 
 import com.dsi.rfp.domain.exception.TableExtractionUnavailableException;
 import com.dsi.rfp.domain.model.TableExtractionStrategy;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
@@ -12,8 +13,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 public class TableEngineRestClient implements TableEngineClient {
 
@@ -60,6 +65,53 @@ public class TableEngineRestClient implements TableEngineClient {
         return Optional.ofNullable(response)
                        .map(TableEngineResponse::tables)
                        .orElse(List.of());
+    }
+
+    @Override
+    public Map<Integer, List<TableEngineTable>> extractTablesBatch(
+        String documentPath,
+        List<Integer> pageNumbers
+    ) {
+        String documentBase64 = readDocumentBase64(documentPath);
+
+        TableEngineBatchResponse response = restClient.post()
+                                                      .uri("/v1/table/batch")
+                                                      .body(new TableEngineBatchRequest(
+                                                          documentBase64,
+                                                          pageNumbers
+                                                      ))
+                                                      .retrieve()
+                                                      .onStatus(
+                                                          HttpStatusCode::isError,
+                                                          (request, result) -> {
+                                                              throw new TableExtractionUnavailableException(
+                                                                  String.format(
+                                                                      "Table batch sidecar request failed: status=%s pages=%d",
+                                                                      result.getStatusCode(),
+                                                                      pageNumbers.size()
+                                                                  )
+                                                              );
+                                                          }
+                                                      )
+                                                      .body(TableEngineBatchResponse.class);
+
+        TableEngineBatchResponse resolved = Optional.ofNullable(response)
+                                                    .orElseThrow(() -> new TableExtractionUnavailableException(
+                                                        "Table batch sidecar returned an empty response body"
+                                                    ));
+
+        log.info(
+            "event=table.batch component=TableEngineRestClient"
+            + " pages={}",
+            resolved.results().size()
+        );
+
+        return resolved.results()
+                        .stream()
+                        .collect(Collectors.toMap(
+                            TableEngineBatchPageResult::pageNumber,
+                            TableEngineBatchPageResult::tables
+                        ));
     }
 
     private String readDocumentBase64(String documentPath) {

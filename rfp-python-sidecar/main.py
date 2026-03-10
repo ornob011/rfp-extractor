@@ -109,6 +109,20 @@ class TableExtractResponse(BaseModel):
     tables: list[TableResponse]
 
 
+class BatchTableRequest(BaseModel):
+    document_base64: Base64Bytes
+    pages: list[int]
+
+
+class BatchTablePageResponse(BaseModel):
+    page_number: int
+    tables: list[TableResponse]
+
+
+class BatchTableResponse(BaseModel):
+    results: list[BatchTablePageResponse]
+
+
 class OcrRequest(BaseModel):
     image_base64: Base64Bytes
     lang: str = "eng+ben"
@@ -172,6 +186,40 @@ def extract_table(request: TableExtractRequest) -> TableExtractResponse:
     ]
 
     return TableExtractResponse(tables=response_tables)
+
+
+@app.post("/v1/table/batch", response_model=BatchTableResponse)
+def extract_table_batch(request: BatchTableRequest) -> BatchTableResponse:
+    document_path = _write_temp_pdf(bytes(request.document_base64))
+
+    try:
+        table_service: TableService = app.state.table_service
+        batch_results = table_service.extract_document_batch(
+            document_path,
+            request.pages,
+        )
+
+        page_responses = [
+            BatchTablePageResponse(
+                page_number=page_num,
+                tables=[
+                    _table_response(table)
+                    for table in tables
+                ],
+            )
+            for page_num, tables in sorted(batch_results.items())
+        ]
+
+        logger.info(
+            "event=table.batch component=rfp-sidecar"
+            " pages=%d totalTables=%d",
+            len(request.pages),
+            sum(len(r.tables) for r in page_responses),
+        )
+
+        return BatchTableResponse(results=page_responses)
+    finally:
+        Path(document_path).unlink(missing_ok=True)
 
 
 @app.post("/ocr/page", response_model=OcrResult)

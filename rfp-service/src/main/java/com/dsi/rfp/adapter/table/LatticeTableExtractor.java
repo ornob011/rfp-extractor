@@ -36,6 +36,15 @@ public class LatticeTableExtractor {
                                 .toList();
     }
 
+    public List<TableExtractionResult> toDomainList(
+        List<TableEngineTable> tables,
+        int pageNum
+    ) {
+        return tables.stream()
+                     .map(table -> toDomain(table, pageNum))
+                     .toList();
+    }
+
     private TableExtractionResult toDomain(
         TableEngineTable table,
         int pageNum

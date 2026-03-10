@@ -17,6 +17,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Slf4j
 @Component
@@ -80,41 +83,60 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
     private void reconstructScannedTables(
         ExtractionState state,
         List<TableExtractionResult> tables
-    ) throws IOException {
+    ) {
         Map<Integer, String> pageTexts = state.pageTexts();
         Map<Integer, Double> pageConfidences = state.pageConfidences();
 
-        for (PageSummary page : state.pageClassifications().stream()
-                                     .filter(p -> p.getClassification() == PageClassification.SCANNED)
-                                     .toList()) {
-            addReconstructedTables(
-                state.documentPath(),
-                page,
-                pageTexts,
-                pageConfidences,
-                tables
-            );
+        List<PageSummary> scannedPages = state.pageClassifications()
+                                              .stream()
+                                              .filter(p -> p.getClassification() == PageClassification.SCANNED)
+                                              .toList();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        try {
+            List<CompletableFuture<List<TableExtractionResult>>> futures = scannedPages.stream()
+                                                                                       .map(page -> CompletableFuture.supplyAsync(
+                                                                                           () -> reconstructForPage(
+                                                                                               state.documentPath(),
+                                                                                               page.getPageNumber(),
+                                                                                               pageTexts.getOrDefault(page.getPageNumber(), StringUtils.EMPTY),
+                                                                                               pageConfidences.getOrDefault(page.getPageNumber(), 0.0)
+                                                                                           ),
+                                                                                           executor
+                                                                                       ))
+                                                                                       .toList();
+
+            futures.stream()
+                   .map(CompletableFuture::join)
+                   .forEach(tables::addAll);
+        } finally {
+            executor.shutdown();
         }
     }
 
-    private void addReconstructedTables(
+    private List<TableExtractionResult> reconstructForPage(
         String documentPath,
-        PageSummary page,
-        Map<Integer, String> pageTexts,
-        Map<Integer, Double> pageConfidences,
-        List<TableExtractionResult> tables
-    ) throws IOException {
-        int pageNum = page.getPageNumber();
-        String ocrText = pageTexts.getOrDefault(pageNum, StringUtils.EMPTY);
-        double confidence = pageConfidences.getOrDefault(pageNum, 0.0);
-
-        tables.addAll(
-            scannedTableReconstructor.reconstructTables(
+        int pageNum,
+        String ocrText,
+        double confidence
+    ) {
+        try {
+            return scannedTableReconstructor.reconstructTables(
                 documentPath,
                 ocrText,
                 pageNum,
                 confidence
-            )
-        );
+            );
+        } catch (IOException exception) {
+            log.warn(
+                "event=table.scannedReconstructFailed page={} error={}",
+                pageNum,
+                exception.getMessage(),
+                exception
+            );
+
+            return List.of();
+        }
     }
 }
