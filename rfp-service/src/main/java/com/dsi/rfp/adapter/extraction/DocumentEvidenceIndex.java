@@ -129,6 +129,11 @@ public class DocumentEvidenceIndex {
             scores
         ));
 
+        double bestScore = scores.values()
+                                 .stream()
+                                 .max(Comparator.naturalOrder())
+                                 .orElse(0.0);
+
         List<ScoredPayload<T>> matches = scores.entrySet()
                                                .stream()
                                                .filter(entry -> entry.getValue() >= minimumScore)
@@ -139,11 +144,6 @@ public class DocumentEvidenceIndex {
                                                    entry.getValue()
                                                ))
                                                .toList();
-
-        double bestScore = matches.stream()
-                                  .map(ScoredPayload::score)
-                                  .max(Comparator.naturalOrder())
-                                  .orElse(0.0);
 
         return new RetrievalResult<>(
             matches.stream().map(ScoredPayload::payload).toList(),
