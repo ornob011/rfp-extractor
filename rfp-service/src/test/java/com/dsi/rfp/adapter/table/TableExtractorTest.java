@@ -12,10 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,6 +24,9 @@ class TableExtractorTest {
 
     @Mock
     private LatticeTableExtractor latticeExtractor;
+
+    @Mock
+    private TableCandidatePageSelector candidatePageSelector;
 
     @InjectMocks
     private TableExtractor extractor;
@@ -39,7 +40,8 @@ class TableExtractorTest {
 
         List<TableExtractionResult> result = extractor.extractFromDocument(
             "/tmp/sample.pdf",
-            pages
+            pages,
+            Map.of()
         );
 
         assertThat(result).isEmpty();
@@ -66,6 +68,10 @@ class TableExtractorTest {
                 1, List.of(engineTable),
                 2, List.of()
             ));
+        when(candidatePageSelector.selectDigitalCandidatePages(
+            eq(pages),
+            anyMap()
+        )).thenReturn(List.of(1, 2));
 
         TableExtractionResult domainTable = sampleTable(1);
         when(latticeExtractor.toDomainList(List.of(engineTable), 1))
@@ -75,7 +81,11 @@ class TableExtractorTest {
 
         List<TableExtractionResult> result = extractor.extractFromDocument(
             "/tmp/sample.pdf",
-            pages
+            pages,
+            Map.of(
+                1, "price schedule",
+                2, "bill of quantity"
+            )
         );
 
         assertThat(result).hasSize(1);
@@ -89,7 +99,8 @@ class TableExtractorTest {
 
         List<TableExtractionResult> result = extractor.extractFromDocument(
             "/tmp/sample.pdf",
-            pages
+            pages,
+            Map.of()
         );
 
         assertThat(result).isEmpty();
@@ -117,6 +128,10 @@ class TableExtractorTest {
                 1, List.of(engineTable),
                 3, List.of()
             ));
+        when(candidatePageSelector.selectDigitalCandidatePages(
+            eq(pages),
+            anyMap()
+        )).thenReturn(List.of(1, 3));
 
         TableExtractionResult domainTable = sampleTable(1);
         when(latticeExtractor.toDomainList(List.of(engineTable), 1))
@@ -126,7 +141,11 @@ class TableExtractorTest {
 
         List<TableExtractionResult> result = extractor.extractFromDocument(
             "/tmp/sample.pdf",
-            pages
+            pages,
+            Map.of(
+                1, "price schedule",
+                3, "deliverables"
+            )
         );
 
         assertThat(result).hasSize(1);

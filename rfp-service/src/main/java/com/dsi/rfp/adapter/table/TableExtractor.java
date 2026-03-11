@@ -10,34 +10,54 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+
 @Slf4j
 @Component
 public class TableExtractor {
 
     private final TableEnginePort tableEngineClient;
     private final LatticeTableExtractor latticeExtractor;
+    private final TableCandidatePageSelector candidatePageSelector;
 
     public TableExtractor(
         TableEnginePort tableEngineClient,
-        LatticeTableExtractor latticeExtractor
+        LatticeTableExtractor latticeExtractor,
+        TableCandidatePageSelector candidatePageSelector
     ) {
         this.tableEngineClient = tableEngineClient;
         this.latticeExtractor = latticeExtractor;
+        this.candidatePageSelector = candidatePageSelector;
     }
 
     public List<TableExtractionResult> extractFromDocument(
         String documentPath,
-        List<PageSummary> pageClassifications
+        List<PageSummary> pageClassifications,
+        Map<Integer, String> pageTexts
     ) {
-        List<Integer> candidatePages = pageClassifications.stream()
-                                                          .filter(page -> page.getClassification() == PageClassification.DIGITAL)
-                                                          .map(PageSummary::getPageNumber)
-                                                          .toList();
+        List<Integer> digitalPages = pageClassifications.stream()
+                                                        .filter(page -> page.getClassification() == PageClassification.DIGITAL)
+                                                        .map(PageSummary::getPageNumber)
+                                                        .toList();
 
         log.info(
             "event=table.extract component=TableExtractor"
+            + " digitalPages={}",
+            digitalPages.size()
+        );
+
+        if (digitalPages.isEmpty()) {
+            return List.of();
+        }
+
+        List<Integer> candidatePages = candidatePageSelector.selectDigitalCandidatePages(
+            pageClassifications,
+            pageTexts
+        );
+
+        log.info(
+            "event=table.candidates component=TableExtractor"
             + " digitalPages={} candidatePages={}",
-            candidatePages.size(),
+            digitalPages.size(),
             candidatePages.size()
         );
 

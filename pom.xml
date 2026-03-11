@@ -46,6 +46,7 @@
         <archunit.version>1.4.1</archunit.version>
         <commons-math3.version>3.6.1</commons-math3.version>
         <antlr4.version>4.13.2</antlr4.version>
+        <lucene.version>10.3.1</lucene.version>
     </properties>
 
     <dependencyManagement>
@@ -182,6 +183,22 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+            <!-- Lucene -->
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>${lucene.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-analysis-common</artifactId>
+                <version>${lucene.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-queryparser</artifactId>
+                <version>${lucene.version}</version>
+            </dependency>
 
     <build>
         <pluginManagement>

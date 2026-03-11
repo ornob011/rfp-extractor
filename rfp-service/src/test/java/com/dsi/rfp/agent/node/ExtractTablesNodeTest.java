@@ -44,7 +44,7 @@ class ExtractTablesNodeTest {
         ExtractionState state = buildState();
 
         TableExtractionResult table = sampleTable();
-        when(tableExtractor.extractFromDocument(anyString(), anyList()))
+        when(tableExtractor.extractFromDocument(anyString(), anyList(), anyMap()))
             .thenReturn(List.of(table));
         when(continuationDetector.detect(anyList()))
             .thenReturn(List.of(table));
@@ -61,7 +61,7 @@ class ExtractTablesNodeTest {
     void shouldCallContinuationDetector() throws Exception {
         ExtractionState state = buildState();
 
-        when(tableExtractor.extractFromDocument(anyString(), anyList()))
+        when(tableExtractor.extractFromDocument(anyString(), anyList(), anyMap()))
             .thenReturn(List.of(sampleTable()));
         when(continuationDetector.detect(anyList()))
             .thenReturn(List.of(sampleTable()));
@@ -75,7 +75,7 @@ class ExtractTablesNodeTest {
     void shouldCallSectionLinker() throws Exception {
         ExtractionState state = buildState();
 
-        when(tableExtractor.extractFromDocument(anyString(), anyList()))
+        when(tableExtractor.extractFromDocument(anyString(), anyList(), anyMap()))
             .thenReturn(List.of(sampleTable()));
         when(continuationDetector.detect(anyList()))
             .thenReturn(List.of(sampleTable()));
@@ -89,7 +89,7 @@ class ExtractTablesNodeTest {
     void shouldPropagateError() {
         ExtractionState state = buildState();
 
-        when(tableExtractor.extractFromDocument(anyString(), anyList()))
+        when(tableExtractor.extractFromDocument(anyString(), anyList(), anyMap()))
             .thenThrow(new RuntimeException("table failed"));
 
         assertThatThrownBy(() -> node.apply(state))
@@ -115,7 +115,7 @@ class ExtractTablesNodeTest {
         );
 
         TableExtractionResult digitalTable = sampleTable();
-        when(tableExtractor.extractFromDocument(anyString(), anyList()))
+        when(tableExtractor.extractFromDocument(anyString(), anyList(), anyMap()))
             .thenReturn(List.of(digitalTable));
         when(continuationDetector.detect(anyList()))
             .thenAnswer(invocation -> invocation.getArgument(0));
@@ -147,7 +147,7 @@ class ExtractTablesNodeTest {
                                                                                                   .build())
                                                                   .build();
 
-        when(tableExtractor.extractFromDocument(anyString(), anyList()))
+        when(tableExtractor.extractFromDocument(anyString(), anyList(), anyMap()))
             .thenReturn(List.of(digitalTable));
         when(scannedTableReconstructor.reconstructTables(
             anyString(),

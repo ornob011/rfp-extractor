@@ -19,7 +19,6 @@ import org.springframework.util.StreamUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -52,21 +51,22 @@ public abstract class BaseEntityExtractor {
         List<DocumentChunk> chunks,
         ExtractionState state
     ) {
-        Map<String, Object> accumulated = new LinkedHashMap<>();
-
-        for (DocumentChunk chunk : chunks) {
-            String prompt = buildPrompt(chunk);
-
-            Map<String, Object> parsed = callAndParse(
-                prompt,
+        if (chunks.isEmpty()) {
+            log.info(
+                "event=entity.extract.skip component={} jobId={} reason=no_chunks",
+                getClass().getSimpleName(),
                 state.jobId()
             );
 
-            mergeInto(
-                accumulated,
-                parsed
-            );
+            return Map.of();
         }
+
+        String prompt = buildPrompt(chunks);
+
+        Map<String, Object> accumulated = callAndParse(
+            prompt,
+            state.jobId()
+        );
 
         validateFields(accumulated);
 
@@ -80,11 +80,30 @@ public abstract class BaseEntityExtractor {
         return accumulated;
     }
 
-    protected String buildPrompt(DocumentChunk chunk) {
+    protected String buildPrompt(List<DocumentChunk> chunks) {
         String template = loadPromptTemplate();
+        String contextHeader = chunks.stream()
+                                     .map(DocumentChunk::getContextHeader)
+                                     .distinct()
+                                     .reduce(
+                                         "",
+                                         this::joinSegments
+                                     );
+        String chunkText = chunks.stream()
+                                 .map(this::chunkText)
+                                 .reduce(
+                                     "",
+                                     this::joinSegments
+                                 );
 
-        return template.replace("{{contextHeader}}", chunk.getContextHeader())
-                       .replace("{{chunkText}}", chunk.getRawText());
+        return template.replace(
+                           "{{contextHeader}}",
+                           contextHeader
+                       )
+                       .replace(
+                           "{{chunkText}}",
+                           chunkText
+                       );
     }
 
     protected abstract PromptKey promptKey();
@@ -110,6 +129,10 @@ public abstract class BaseEntityExtractor {
                 exception
             );
         }
+    }
+
+    protected final PromptKey key() {
+        return promptKey();
     }
 
     private Map<String, Object> callAndParse(
@@ -146,10 +169,33 @@ public abstract class BaseEntityExtractor {
         }
     }
 
-    private void mergeInto(
-        Map<String, Object> target,
-        Map<String, Object> source
+    private String chunkText(
+        DocumentChunk chunk
     ) {
-        source.forEach(target::putIfAbsent);
+        return String.format(
+            "[Chunk %d]%n%s%n%n%s",
+            chunk.getChunkIndex(),
+            chunk.getContextHeader(),
+            chunk.getRawText()
+        );
+    }
+
+    private String joinSegments(
+        String left,
+        String right
+    ) {
+        if (left.isBlank()) {
+            return right;
+        }
+
+        if (right.isBlank()) {
+            return left;
+        }
+
+        return String.format(
+            "%s%n%n%s",
+            left,
+            right
+        );
     }
 }
