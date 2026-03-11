@@ -38,6 +38,7 @@ public class ExtractionState extends AgentState {
         data.put(Key.TOTAL_REPAIR_ITERATIONS.value(), 0);
         data.put(Key.REPAIR_EXHAUSTED.value(), false);
         data.put(Key.REPAIRABLE_COMPONENTS.value(), Map.of());
+        data.put(Key.VLM_TABLES.value(), Map.of());
 
         return data;
     }
@@ -184,6 +185,29 @@ public class ExtractionState extends AgentState {
                     ));
     }
 
+    public Map<Integer, List<TableExtractionResult>> vlmTables() {
+        Map<?, ?> value = readMapOrDefault(Key.VLM_TABLES, Map.of());
+
+        return value.entrySet().stream()
+                    .filter(this::hasIntegerStringKey)
+                    .filter(entry -> isTableExtractionResultList(entry.getValue()))
+                    .collect(Collectors.toMap(
+                        entry -> Integer.parseInt((String) entry.getKey()),
+                        entry -> toTableExtractionResults(entry.getValue())
+                    ));
+    }
+
+    private boolean isTableExtractionResultList(Object value) {
+        return value instanceof List<?> list
+               && list.stream().allMatch(TableExtractionResult.class::isInstance);
+    }
+
+    private List<TableExtractionResult> toTableExtractionResults(Object value) {
+        return ((List<?>) value).stream()
+                                .map(TableExtractionResult.class::cast)
+                                .toList();
+    }
+
     public RulePackResults rulePackResults() {
         return this.<RulePackResults>value(Key.RULE_PACK_RESULTS.value())
                    .orElse(null);
@@ -287,6 +311,7 @@ public class ExtractionState extends AgentState {
         PAGE_EXTRACTION_METHODS("pageExtractionMethods"),
         REPAIR_EXHAUSTED("repairExhausted"),
         REPAIRABLE_COMPONENTS("repairableComponents"),
+        VLM_TABLES("vlmTables"),
         RULE_PACK_RESULTS("rulePackResults");
 
         private final String stateKey;
