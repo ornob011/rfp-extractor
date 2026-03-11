@@ -64,7 +64,7 @@ class ScannedTableReconstructorTest {
 
         List<TableExtractionResult> result = reconstructor.reconstructTables(
             "/tmp/sample.pdf",
-            "OCR text",
+            "page text",
             1,
             0.8
         );
@@ -88,7 +88,7 @@ class ScannedTableReconstructorTest {
 
         List<TableExtractionResult> result = reconstructor.reconstructTables(
             "/tmp/sample.pdf",
-            "OCR table text",
+            "page table text",
             3,
             0.75
         );
@@ -110,7 +110,7 @@ class ScannedTableReconstructorTest {
 
         List<TableExtractionResult> result = reconstructor.reconstructTables(
             "/tmp/sample.pdf",
-            "OCR text",
+            "page text",
             2,
             0.7
         );

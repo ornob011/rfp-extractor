@@ -5,7 +5,7 @@ strategies:
   TABLE:
     defaultStrategy: SWITCH_TABLE_MODE
     byConfidenceSource:
-      OCR_LLM_RECONSTRUCT: RETRY_SCANNED_TABLE_OCR_AT_HIGHER_DPI
+      VLM_TABLE_RECONSTRUCT: RETRY_SCANNED_TABLE_AT_HIGHER_DPI
   ENTITY:
     defaultStrategy: WIDEN_ENTITY_CONTEXT
 scannedTable:

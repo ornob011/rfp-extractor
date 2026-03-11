@@ -1,6 +1,6 @@
 package com.dsi.rfp.adapter.extraction;
 
-import com.dsi.rfp.adapter.ocr.OcrExtractionConfig;
+import com.dsi.rfp.adapter.vision.VisionPageExtractionConfig;
 import com.dsi.rfp.domain.model.TextBlock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -11,7 +11,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TextLayerQualityPolicy {
 
-    private final OcrExtractionConfig config;
+    private final VisionPageExtractionConfig config;
 
     public double score(
         List<TextBlock> blocks

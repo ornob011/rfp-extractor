@@ -80,7 +80,7 @@ class ConfidenceScoringConfigTest {
         Map<String, Double> provenance = config.tableProvenanceConfidence();
 
         assertThat(provenance).containsKeys(
-            "LATTICE", "STREAM", "OCR_LLM_RECONSTRUCT", "UNKNOWN"
+            "LATTICE", "STREAM", "VLM_TABLE_RECONSTRUCT", "UNKNOWN"
         );
         assertThat(provenance.get("LATTICE")).isEqualTo(0.85);
         assertThat(provenance.get("UNKNOWN")).isEqualTo(0.50);

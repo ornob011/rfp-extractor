@@ -32,7 +32,7 @@ public record MixedPageContent(
         );
     }
 
-    public static MixedPageContent textPlusOcr(
+    public static MixedPageContent textPlusVlm(
         String text,
         double confidence,
         List<VisionTableResult> tables
@@ -40,7 +40,7 @@ public record MixedPageContent(
         return new MixedPageContent(
             text,
             confidence,
-            PageExtractionMethod.TEXT_PLUS_OCR,
+            PageExtractionMethod.TEXT_PLUS_VLM,
             tables
         );
     }

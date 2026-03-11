@@ -222,8 +222,8 @@ public class RfpController {
     private PageExtractionMethod defaultMethod(PageSummary page) {
         return switch (page.getClassification()) {
             case DIGITAL -> PageExtractionMethod.TEXT_LAYER;
-            case SCANNED -> PageExtractionMethod.OCR;
-            case MIXED -> PageExtractionMethod.TEXT_PLUS_OCR;
+            case SCANNED -> PageExtractionMethod.VLM;
+            case MIXED -> PageExtractionMethod.TEXT_PLUS_VLM;
         };
     }
 

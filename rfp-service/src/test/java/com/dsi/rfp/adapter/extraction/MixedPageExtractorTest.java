@@ -61,7 +61,7 @@ class MixedPageExtractorTest {
 
         assertThat(result.text()).isEqualTo("merged text from VLM");
         assertThat(result.confidence()).isEqualTo(0.85);
-        assertThat(result.method()).isEqualTo(PageExtractionMethod.TEXT_PLUS_OCR);
+        assertThat(result.method()).isEqualTo(PageExtractionMethod.TEXT_PLUS_VLM);
         assertThat(result.tables()).isEmpty();
         verify(visionAdapter).extractFullPage("/tmp/sample.pdf", 1);
     }
@@ -132,15 +132,15 @@ class MixedPageExtractorTest {
     }
 
     @Test
-    void shouldUseEnumMethodForTextPlusOcr() {
-        MixedPageContent content = MixedPageContent.textPlusOcr(
+    void shouldUseEnumMethodForTextPlusVlm() {
+        MixedPageContent content = MixedPageContent.textPlusVlm(
             "text",
             0.6,
             List.of()
         );
 
         assertThat(content.confidence()).isEqualTo(0.6);
-        assertThat(content.method()).isEqualTo(PageExtractionMethod.TEXT_PLUS_OCR);
+        assertThat(content.method()).isEqualTo(PageExtractionMethod.TEXT_PLUS_VLM);
     }
 
     private TextBlock textBlock(String text) {

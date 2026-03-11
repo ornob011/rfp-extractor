@@ -2,9 +2,9 @@ package com.dsi.rfp.agent.node;
 
 import com.dsi.rfp.adapter.extraction.MixedPageExtractor;
 import com.dsi.rfp.adapter.extraction.PdfDocumentLoader;
-import com.dsi.rfp.adapter.ocr.ScannedPageExtractionResult;
-import com.dsi.rfp.adapter.ocr.ScannedPageExtractor;
 import com.dsi.rfp.adapter.table.ScannedTableResultMapper;
+import com.dsi.rfp.adapter.vision.VisionPageExtractionResult;
+import com.dsi.rfp.adapter.vision.VisionPageExtractor;
 import com.dsi.rfp.adapter.vision.VisionTableResult;
 import com.dsi.rfp.agent.ExtractionState;
 import com.dsi.rfp.domain.model.*;
@@ -33,7 +33,7 @@ class ExtractTextNodeTest {
     private PdfDocumentLoader pdfDocumentLoader;
 
     @Mock
-    private ScannedPageExtractor scannedPageExtractor;
+    private VisionPageExtractor visionPageExtractor;
 
     @Mock
     private MixedPageExtractor mixedExtractor;
@@ -47,7 +47,7 @@ class ExtractTextNodeTest {
     void setUp() {
         node = new ExtractTextNode(
             pdfDocumentLoader,
-            scannedPageExtractor,
+            visionPageExtractor,
             mixedExtractor,
             tableResultMapper,
             DIRECT_EXECUTOR
@@ -100,8 +100,8 @@ class ExtractTextNodeTest {
             0.80
         );
 
-        when(scannedPageExtractor.extractPage("/tmp/sample.pdf", 1))
-            .thenReturn(new ScannedPageExtractionResult(
+        when(visionPageExtractor.extractPage("/tmp/sample.pdf", 1))
+            .thenReturn(new VisionPageExtractionResult(
                 1,
                 "scanned text",
                 0.85,
@@ -145,8 +145,8 @@ class ExtractTextNodeTest {
             0.5
         );
 
-        when(scannedPageExtractor.extractPage("/tmp/sample.pdf", 1))
-            .thenReturn(new ScannedPageExtractionResult(
+        when(visionPageExtractor.extractPage("/tmp/sample.pdf", 1))
+            .thenReturn(new VisionPageExtractionResult(
                 1,
                 "scanned text",
                 0.85,

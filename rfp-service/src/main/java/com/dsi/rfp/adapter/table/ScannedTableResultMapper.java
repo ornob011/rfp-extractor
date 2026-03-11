@@ -21,13 +21,13 @@ public class ScannedTableResultMapper {
     public TableExtractionResult fromLlm(
         ScannedTableResponse response,
         int pageNum,
-        double ocrPageConfidence
+        double pageConfidence
     ) {
         return buildResult(
             response.headers(),
             response.rows(),
             pageNum,
-            ocrPageConfidence * config.scannedConfidenceFactor(),
+            pageConfidence * config.scannedConfidenceFactor(),
             config.scannedLlmMethod()
         );
     }

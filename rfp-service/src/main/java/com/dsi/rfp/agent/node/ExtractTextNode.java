@@ -3,11 +3,11 @@ package com.dsi.rfp.agent.node;
 import com.dsi.rfp.adapter.extraction.MixedPageContent;
 import com.dsi.rfp.adapter.extraction.MixedPageExtractor;
 import com.dsi.rfp.adapter.extraction.PdfDocumentLoader;
-import com.dsi.rfp.adapter.ocr.ScannedPageExtractionResult;
-import com.dsi.rfp.adapter.ocr.ScannedPageExtractor;
 import com.dsi.rfp.adapter.table.ScannedTableResponse;
 import com.dsi.rfp.adapter.table.ScannedTableResultMapper;
 import com.dsi.rfp.adapter.vision.VisionTableResult;
+import com.dsi.rfp.adapter.vision.VisionPageExtractionResult;
+import com.dsi.rfp.adapter.vision.VisionPageExtractor;
 import com.dsi.rfp.agent.ExtractionState;
 import com.dsi.rfp.domain.exception.LlmResponseParseException;
 import com.dsi.rfp.domain.exception.LlmUnavailableException;
@@ -32,20 +32,20 @@ import java.util.stream.Collectors;
 public class ExtractTextNode implements NodeAction<ExtractionState> {
 
     private final PdfDocumentLoader pdfDocumentLoader;
-    private final ScannedPageExtractor scannedPageExtractor;
+    private final VisionPageExtractor visionPageExtractor;
     private final MixedPageExtractor mixedExtractor;
     private final ScannedTableResultMapper tableResultMapper;
     private final Executor pageExecutor;
 
     public ExtractTextNode(
         PdfDocumentLoader pdfDocumentLoader,
-        ScannedPageExtractor scannedPageExtractor,
+        VisionPageExtractor visionPageExtractor,
         MixedPageExtractor mixedExtractor,
         ScannedTableResultMapper tableResultMapper,
         @Qualifier("pageExtractionExecutor") Executor pageExecutor
     ) {
         this.pdfDocumentLoader = pdfDocumentLoader;
-        this.scannedPageExtractor = scannedPageExtractor;
+        this.visionPageExtractor = visionPageExtractor;
         this.mixedExtractor = mixedExtractor;
         this.tableResultMapper = tableResultMapper;
         this.pageExecutor = pageExecutor;
@@ -154,7 +154,7 @@ public class ExtractTextNode implements NodeAction<ExtractionState> {
         String documentPath,
         PageSummary page
     ) throws IOException {
-        ScannedPageExtractionResult result = scannedPageExtractor.extractPage(
+        VisionPageExtractionResult result = visionPageExtractor.extractPage(
             documentPath,
             page.getPageNumber()
         );

@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -78,8 +79,16 @@ class EntityExtractorTest {
         );
 
         extractor = new EntityExtractor(
-            general, submission, financial, ict,
-            staffing, support, evaluation, mapper
+            general,
+            submission,
+            financial,
+            ict,
+            staffing,
+            support,
+            evaluation,
+            chunkingService,
+            mapper,
+            Executors.newFixedThreadPool(2)
         );
     }
 

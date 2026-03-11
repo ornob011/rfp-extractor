@@ -1,7 +1,7 @@
 version: 1
 render:
   dpi: 300
-ocr:
+vision:
   language: eng+ben
 merge:
   textQualityBlockDivisor: 50.0
