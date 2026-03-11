@@ -15,8 +15,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.MimeType;
 
 import java.util.List;
-import java.util.concurrent.*;
-import java.util.function.Supplier;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 @Component
 class LlmResilientCaller {
@@ -58,15 +59,13 @@ class LlmResilientCaller {
         String userContent
     ) {
         return CompletableFuture.supplyAsync(
-            () -> executeWithTimeout(callTimeoutSeconds,
-                () -> chatClient.prompt()
-                                .system(systemPrompt)
-                                .user(userContent)
-                                .call()
-                                .content()
-            ),
+            () -> chatClient.prompt()
+                            .system(systemPrompt)
+                            .user(userContent)
+                            .call()
+                            .content(),
             llmExecutor
-        );
+        ).orTimeout(callTimeoutSeconds, TimeUnit.SECONDS);
     }
 
     @CircuitBreaker(
@@ -83,14 +82,12 @@ class LlmResilientCaller {
         String fullPrompt
     ) {
         return CompletableFuture.supplyAsync(
-            () -> executeWithTimeout(callTimeoutSeconds,
-                () -> judgeChatClient.prompt()
-                                     .user(fullPrompt)
-                                     .call()
-                                     .content()
-            ),
+            () -> judgeChatClient.prompt()
+                                .user(fullPrompt)
+                                .call()
+                                .content(),
             llmExecutor
-        );
+        ).orTimeout(callTimeoutSeconds, TimeUnit.SECONDS);
     }
 
     @CircuitBreaker(
@@ -135,7 +132,7 @@ class LlmResilientCaller {
         List<LlmImageInput> images
     ) {
         return CompletableFuture.supplyAsync(
-            () -> executeWithTimeout(visionCallTimeoutSeconds, () -> {
+            () -> {
                 UserMessage userMessage = UserMessage.builder()
                                                      .text(userContent)
                                                      .media(
@@ -158,27 +155,9 @@ class LlmResilientCaller {
                 return chatClient.prompt(prompt)
                                  .call()
                                  .content();
-            }),
+            },
             llmExecutor
-        );
-    }
-
-    private String executeWithTimeout(
-        long timeoutSeconds,
-        Supplier<String> task
-    ) {
-        CompletableFuture<String> future = CompletableFuture.supplyAsync(task);
-        try {
-            return future.get(timeoutSeconds, TimeUnit.SECONDS);
-        } catch (TimeoutException exception) {
-            future.cancel(true);
-            throw new CompletionException(exception);
-        } catch (ExecutionException exception) {
-            throw new CompletionException(exception.getCause());
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            throw new CompletionException(exception);
-        }
+        ).orTimeout(visionCallTimeoutSeconds, TimeUnit.SECONDS);
     }
 
     public CompletableFuture<String> fallbackWithImage(

@@ -10,36 +10,29 @@ import com.dsi.rfp.domain.model.TableEngineTable;
 import com.dsi.rfp.domain.model.TableExtractionStrategy;
 import com.dsi.rfp.domain.port.out.TableEnginePort;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Component
 @Primary
-@Qualifier("visionTableEngine")
 public class VisionTableEngineClient implements TableEnginePort {
 
     private final VisionExtractionAdapter visionAdapter;
     private final VisionExtractionConfig config;
-    private final Executor pageExecutor;
 
     public VisionTableEngineClient(
         VisionExtractionAdapter visionAdapter,
-        VisionExtractionConfig config,
-        @Qualifier("pageExtractionExecutor") Executor pageExecutor
+        VisionExtractionConfig config
     ) {
         this.visionAdapter = visionAdapter;
         this.config = config;
-        this.pageExecutor = pageExecutor;
     }
 
     private static List<List<TableEngineCell>> buildGrid(
@@ -151,24 +144,16 @@ public class VisionTableEngineClient implements TableEnginePort {
                            pageNumber -> List.<TableEngineTable>of()
                        ));
 
-        Map<Integer, CompletableFuture<List<TableEngineTable>>> tableFutures =
-            candidatePages.stream()
-                          .collect(Collectors.toMap(
-                              Function.identity(),
-                              pageNumber -> CompletableFuture.supplyAsync(
-                                  () -> extractTables(
-                                      documentPath,
-                                      pageNumber,
-                                      TableExtractionStrategy.LATTICE
-                                  ),
-                                  pageExecutor
-                              )
-                          ));
-
-        candidatePages.forEach(pageNumber -> results.put(
-            pageNumber,
-            tableFutures.get(pageNumber).join()
-        ));
+        for (Integer pageNumber : candidatePages) {
+            results.put(
+                pageNumber,
+                extractTables(
+                    documentPath,
+                    pageNumber,
+                    TableExtractionStrategy.LATTICE
+                )
+            );
+        }
 
         log.info(
             "event=vision.tableBatch component=VisionTableEngineClient"
@@ -189,28 +174,18 @@ public class VisionTableEngineClient implements TableEnginePort {
             config.tablePresenceBatchSize()
         );
 
-        Map<Integer, CompletableFuture<Map<Integer, Boolean>>> batchFutures =
-            pageBatches.stream()
-                       .collect(Collectors.toMap(
-                           batch -> batch.hashCode(),
-                           batch -> CompletableFuture.supplyAsync(
-                               () -> detectTablePresenceForBatch(
-                                   documentPath,
-                                   batch
-                               ),
-                               pageExecutor
-                           )
-                       ));
+        Map<Integer, Boolean> tablePresence = new java.util.LinkedHashMap<>();
 
-        return pageBatches.stream()
-                          .map(List::hashCode)
-                          .map(batchFutures::get)
-                          .map(CompletableFuture::join)
-                          .flatMap(map -> map.entrySet().stream())
-                          .collect(Collectors.toMap(
-                              Map.Entry::getKey,
-                              Map.Entry::getValue
-                          ));
+        for (List<Integer> batch : pageBatches) {
+            tablePresence.putAll(
+                detectTablePresenceForBatch(
+                    documentPath,
+                    batch
+                )
+            );
+        }
+
+        return tablePresence;
     }
 
     private Map<Integer, Boolean> detectTablePresenceForBatch(
