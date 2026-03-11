@@ -62,13 +62,13 @@ public abstract class BaseEntityExtractor {
                 state.jobId()
             );
 
-            validateFields(parsed);
-
             mergeInto(
                 accumulated,
                 parsed
             );
         }
+
+        validateFields(accumulated);
 
         log.info(
             "event=entity.extract.done component={} jobId={} fields={}",

@@ -57,6 +57,17 @@ public class AsyncConfig implements AsyncConfigurer {
         return executor;
     }
 
+    @Bean(name = "entityExtractionExecutor")
+    public Executor entityExtractionExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(7);
+        executor.setMaxPoolSize(7);
+        executor.setQueueCapacity(14);
+        executor.setThreadNamePrefix("entity-extract-");
+        executor.initialize();
+        return executor;
+    }
+
     @Bean(name = "pageExtractionExecutor")
     public Executor pageExtractionExecutor(
         @Value("${app.extraction.page-processing-threads:4}") int threadCount

@@ -23,7 +23,7 @@ public class EntityExtractor {
     private final List<BaseEntityExtractor> extractors;
     private final DocumentChunkingService chunkingService;
     private final RfpEntitiesMapper entitiesMapper;
-    private final Executor llmTaskExecutor;
+    private final Executor entityExtractionExecutor;
 
     public EntityExtractor(
         GeneralEntityExtractor generalExtractor,
@@ -35,7 +35,7 @@ public class EntityExtractor {
         EvaluationEntityExtractor evaluationExtractor,
         DocumentChunkingService chunkingService,
         RfpEntitiesMapper entitiesMapper,
-        @Qualifier("llmTaskExecutor") Executor llmTaskExecutor
+        @Qualifier("entityExtractionExecutor") Executor entityExtractionExecutor
     ) {
         this.extractors = List.of(
             generalExtractor,
@@ -48,7 +48,7 @@ public class EntityExtractor {
         );
         this.chunkingService = chunkingService;
         this.entitiesMapper = entitiesMapper;
-        this.llmTaskExecutor = llmTaskExecutor;
+        this.entityExtractionExecutor = entityExtractionExecutor;
     }
 
     public RfpEntities extractAll(
@@ -70,7 +70,7 @@ public class EntityExtractor {
             extractors.stream()
                       .map(extractor -> CompletableFuture.supplyAsync(
                           () -> extractor.extract(chunks, state),
-                          llmTaskExecutor
+                          entityExtractionExecutor
                       ))
                       .toList();
 
