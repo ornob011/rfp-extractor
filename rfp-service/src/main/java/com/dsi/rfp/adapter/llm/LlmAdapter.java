@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.converter.*;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MimeType;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
@@ -62,6 +63,26 @@ public class LlmAdapter {
                 caller.call(
                     loadResource(systemPromptResource),
                     sanitized
+                )
+            ),
+            responseType
+        );
+    }
+
+    public <T> Optional<T> extractStructuredWithImage(
+        Resource systemPromptResource,
+        String userContent,
+        byte[] imageBytes,
+        MimeType mimeType,
+        Class<T> responseType
+    ) {
+        return parseResponse(
+            joinAndUnwrap(
+                caller.callWithImage(
+                    loadResource(systemPromptResource),
+                    userContent,
+                    imageBytes,
+                    mimeType
                 )
             ),
             responseType

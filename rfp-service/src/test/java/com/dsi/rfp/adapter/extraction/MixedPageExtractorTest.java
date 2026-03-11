@@ -1,8 +1,9 @@
 package com.dsi.rfp.adapter.extraction;
 
-import com.dsi.rfp.adapter.ocr.*;
+import com.dsi.rfp.adapter.vision.VisionExtractionAdapter;
+import com.dsi.rfp.adapter.vision.VisionPageResult;
+import com.dsi.rfp.adapter.vision.VisionTableResult;
 import com.dsi.rfp.domain.model.PageExtractionMethod;
-import com.dsi.rfp.domain.model.ReadingOrderMethod;
 import com.dsi.rfp.domain.model.TextBlock;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,13 +29,7 @@ class MixedPageExtractorTest {
     private PdfDocumentLoader loader;
 
     @Mock
-    private OcrSidecarClient ocrClient;
-
-    @Mock
-    private PageImageRenderer pageImageRenderer;
-
-    @Mock
-    private MixedPageMergeService mergeService;
+    private VisionExtractionAdapter visionAdapter;
 
     @Mock
     private TextLayerQualityPolicy qualityPolicy;
@@ -43,59 +38,94 @@ class MixedPageExtractorTest {
     private MixedPageExtractor extractor;
 
     @Test
-    void shouldDelegateToCollaborators() throws IOException {
+    void shouldMergeTextLayerAndVlmResult() throws IOException {
         List<TextBlock> blocks = List.of(textBlock("Hello"));
-        OcrPageWithLayoutResultDto sidecarResult = new OcrPageWithLayoutResultDto(
-            new OcrResultDto(
-                "table text",
-                List.of(),
-                0.8,
-                2,
-                "easyocr"
-            ),
-            new LayoutDetectionDto(
-                true,
-                List.of(),
-                List.of()
-            ),
-            new ReadingOrderDto(
-                "ordered text",
-                ReadingOrderMethod.PDFPLUMBER_LAYOUT
-            ),
-            List.of()
-        );
-        MixedPageContent merged = MixedPageContent.textPlusOcr(
-            "merged text",
-            0.7
+        VisionPageResult vlmResult = new VisionPageResult(
+            "merged text from VLM",
+            0.85,
+            List.of(),
+            false
         );
 
         when(loader.loadPageBoundingBoxes(any(Path.class), eq(1)))
             .thenReturn(blocks);
         when(qualityPolicy.score(blocks))
             .thenReturn(0.9);
-        when(pageImageRenderer.renderPage("/tmp/sample.pdf", 1))
-            .thenReturn("png".getBytes());
-        when(ocrClient.extractPageWithLayout(any(), eq("/tmp/sample.pdf"), eq(1)))
-            .thenReturn(sidecarResult);
-        when(mergeService.merge(any()))
-            .thenReturn(merged);
+        when(visionAdapter.extractFullPage("/tmp/sample.pdf", 1))
+            .thenReturn(vlmResult);
 
-        MixedPageContent result = extractor.extractPage("/tmp/sample.pdf", 1);
+        MixedPageContent result = extractor.extractPage(
+            "/tmp/sample.pdf",
+            1
+        );
 
-        assertThat(result.text()).isEqualTo("merged text");
-        verify(pageImageRenderer).renderPage("/tmp/sample.pdf", 1);
-        verify(ocrClient).extractPageWithLayout(any(), eq("/tmp/sample.pdf"), eq(1));
-        verify(mergeService).merge(any());
+        assertThat(result.text()).isEqualTo("merged text from VLM");
+        assertThat(result.confidence()).isEqualTo(0.85);
+        assertThat(result.method()).isEqualTo(PageExtractionMethod.TEXT_PLUS_OCR);
+        assertThat(result.tables()).isEmpty();
+        verify(visionAdapter).extractFullPage("/tmp/sample.pdf", 1);
     }
 
     @Test
-    void shouldPropagateIOExceptionFromRenderer() throws IOException {
+    void shouldPassThroughVlmTables() throws IOException {
+        VisionTableResult table = new VisionTableResult(
+            "Budget",
+            List.of("Item", "Cost"),
+            List.of(List.of("Server", "50000")),
+            0.80
+        );
+
+        List<TextBlock> blocks = List.of(textBlock("Hello"));
+
+        when(loader.loadPageBoundingBoxes(any(Path.class), eq(1)))
+            .thenReturn(blocks);
+        when(qualityPolicy.score(blocks))
+            .thenReturn(0.9);
+        when(visionAdapter.extractFullPage("/tmp/sample.pdf", 1))
+            .thenReturn(new VisionPageResult(
+                "text with table",
+                0.85,
+                List.of(table),
+                true
+            ));
+
+        MixedPageContent result = extractor.extractPage(
+            "/tmp/sample.pdf",
+            1
+        );
+
+        assertThat(result.tables()).hasSize(1);
+        assertThat(result.tables().getFirst().headers())
+            .containsExactly("Item", "Cost");
+    }
+
+    @Test
+    void shouldUseMinConfidence() throws IOException {
+        List<TextBlock> blocks = List.of(textBlock("Hello"));
+
+        when(loader.loadPageBoundingBoxes(any(Path.class), eq(1)))
+            .thenReturn(blocks);
+        when(qualityPolicy.score(blocks))
+            .thenReturn(0.5);
+        when(visionAdapter.extractFullPage("/tmp/sample.pdf", 1))
+            .thenReturn(new VisionPageResult("text", 0.85, List.of(), false));
+
+        MixedPageContent result = extractor.extractPage(
+            "/tmp/sample.pdf",
+            1
+        );
+
+        assertThat(result.confidence()).isEqualTo(0.5);
+    }
+
+    @Test
+    void shouldPropagateIOExceptionFromVlm() throws IOException {
         when(loader.loadPageBoundingBoxes(any(Path.class), eq(1)))
             .thenReturn(List.of(textBlock("Hello")));
         when(qualityPolicy.score(any()))
             .thenReturn(0.9);
-        when(pageImageRenderer.renderPage("/tmp/sample.pdf", 1))
-            .thenThrow(new IOException("render failed"));
+        when(visionAdapter.extractFullPage("/tmp/sample.pdf", 1))
+            .thenThrow(new IOException("VLM failed"));
 
         assertThatThrownBy(() -> extractor.extractPage("/tmp/sample.pdf", 1))
             .isInstanceOf(IOException.class);
@@ -103,7 +133,11 @@ class MixedPageExtractorTest {
 
     @Test
     void shouldUseEnumMethodForTextPlusOcr() {
-        MixedPageContent content = MixedPageContent.textPlusOcr("text", 0.6);
+        MixedPageContent content = MixedPageContent.textPlusOcr(
+            "text",
+            0.6,
+            List.of()
+        );
 
         assertThat(content.confidence()).isEqualTo(0.6);
         assertThat(content.method()).isEqualTo(PageExtractionMethod.TEXT_PLUS_OCR);

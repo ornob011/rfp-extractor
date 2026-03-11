@@ -1,0 +1,15 @@
+version: 1
+render:
+  fullPageDpi: 150
+  tableOnlyDpi: 150
+  jpegQuality: 0.85
+prompts:
+  fullPageSystem: prompts/vision-page-extract-system-v1.md
+  fullPageUser: prompts/vision-page-extract-user-v1.md
+  tableOnlySystem: prompts/vision-table-extract-system-v1.md
+  tableOnlyUser: prompts/vision-table-extract-user-v1.md
+methods:
+  table: vlm
+confidence:
+  defaultVlm: 0.85
+  tableVlm: 0.80

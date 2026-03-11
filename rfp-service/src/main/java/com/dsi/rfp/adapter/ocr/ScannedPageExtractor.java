@@ -1,50 +1,81 @@
 package com.dsi.rfp.adapter.ocr;
 
-import com.dsi.rfp.adapter.extraction.PageImageRenderer;
+import com.dsi.rfp.adapter.vision.VisionExtractionAdapter;
+import com.dsi.rfp.adapter.vision.VisionPageResult;
 import com.dsi.rfp.domain.model.PageExtractionMethod;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.text.BreakIterator;
+import java.util.Locale;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class ScannedPageExtractor {
 
-    private final OcrSidecarClient ocrClient;
-    private final OcrExtractionConfig config;
-    private final PageImageRenderer pageImageRenderer;
+    private final VisionExtractionAdapter visionAdapter;
+
+    public ScannedPageExtractor(
+        VisionExtractionAdapter visionAdapter
+    ) {
+        this.visionAdapter = visionAdapter;
+    }
 
     public ScannedPageExtractionResult extractPage(
         String documentPath,
         int pageNum
     ) throws IOException {
-        byte[] pngBytes = pageImageRenderer.renderPage(
+        VisionPageResult result = visionAdapter.extractFullPage(
             documentPath,
             pageNum
         );
 
-        OcrResultDto result = ocrClient.extractPage(
-            pngBytes,
-            config.language()
-        );
+        int wordCount = countWords(result.text());
 
         log.info(
-            "event=ocr.scanned component=ScannedPageExtractor"
+            "event=vlm.scanned component=ScannedPageExtractor"
             + " page={} confidence={} words={}",
             pageNum,
-            result.pageConfidence(),
-            result.wordCount()
+            result.confidence(),
+            wordCount
         );
 
         return new ScannedPageExtractionResult(
             pageNum,
             result.text(),
-            result.pageConfidence(),
-            result.wordCount(),
-            PageExtractionMethod.OCR
+            result.confidence(),
+            wordCount,
+            PageExtractionMethod.VLM,
+            result.tables()
         );
+    }
+
+    private int countWords(
+        String text
+    ) {
+        BreakIterator iterator = BreakIterator.getWordInstance(
+            Locale.ROOT
+        );
+        iterator.setText(text);
+
+        int count = 0;
+        int start = iterator.first();
+
+        for (int end = iterator.next();
+             end != BreakIterator.DONE;
+             start = end, end = iterator.next()) {
+            String token = text.substring(start, end).trim();
+
+            if (token.isEmpty()) {
+                continue;
+            }
+
+            if (Character.isLetterOrDigit(token.codePointAt(0))) {
+                count++;
+            }
+        }
+
+        return count;
     }
 }
