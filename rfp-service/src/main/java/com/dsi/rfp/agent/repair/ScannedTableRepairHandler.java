@@ -1,6 +1,5 @@
 package com.dsi.rfp.agent.repair;
 
-import com.dsi.rfp.adapter.extraction.RepairPolicyConfig;
 import com.dsi.rfp.adapter.table.ScannedTableReconstructor;
 import com.dsi.rfp.agent.ExtractionState;
 import com.dsi.rfp.domain.model.RepairStrategy;
@@ -14,16 +13,13 @@ import java.util.Map;
 public class ScannedTableRepairHandler implements RepairHandler {
 
     private final ScannedTableReconstructor scannedTableReconstructor;
-    private final RepairPolicyConfig repairPolicyConfig;
     private final TableRepairSupport tableRepairSupport;
 
     public ScannedTableRepairHandler(
         ScannedTableReconstructor scannedTableReconstructor,
-        RepairPolicyConfig repairPolicyConfig,
         TableRepairSupport tableRepairSupport
     ) {
         this.scannedTableReconstructor = scannedTableReconstructor;
-        this.repairPolicyConfig = repairPolicyConfig;
         this.tableRepairSupport = tableRepairSupport;
     }
 
@@ -43,12 +39,11 @@ public class ScannedTableRepairHandler implements RepairHandler {
             state
         );
 
-        List<TableExtractionResult> repaired = scannedTableReconstructor.reconstructTablesAtDpi(
+        List<TableExtractionResult> repaired = scannedTableReconstructor.reconstructTables(
             state.documentPath(),
             state.pageTexts().get(current.getPageStart()),
             current.getPageStart(),
-            state.pageConfidences().getOrDefault(current.getPageStart(), 0.0),
-            repairPolicyConfig.scannedTableHigherDpi()
+            state.pageConfidences().getOrDefault(current.getPageStart(), 0.0)
         );
 
         return Map.of(

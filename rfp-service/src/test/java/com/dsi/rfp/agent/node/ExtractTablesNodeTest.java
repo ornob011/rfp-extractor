@@ -18,10 +18,8 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ExtractTablesNodeTest {
@@ -99,7 +97,41 @@ class ExtractTablesNodeTest {
     }
 
     @Test
-    void shouldReconstructTablesForScannedPages() throws Exception {
+    void shouldUseCachedVlmTablesForScannedPages() throws Exception {
+        TableExtractionResult cachedTable = TableExtractionResult.builder()
+                                                                 .pageStart(2)
+                                                                 .pageEnd(2)
+                                                                 .provenance(TableProvenance.SCANNED)
+                                                                 .type(TableType.OTHER)
+                                                                 .headers(List.of("X", "Y"))
+                                                                 .confidence(ExtractionConfidence.builder()
+                                                                                                 .score(0.7)
+                                                                                                 .method("vlm")
+                                                                                                 .build())
+                                                                 .build();
+
+        ExtractionState state = buildStateWithScannedPageAndCachedTables(
+            List.of(cachedTable)
+        );
+
+        TableExtractionResult digitalTable = sampleTable();
+        when(tableExtractor.extractFromDocument(anyString(), anyList()))
+            .thenReturn(List.of(digitalTable));
+        when(continuationDetector.detect(anyList()))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Map<String, Object> result = node.apply(state);
+
+        List<?> tables = (List<?>) result.get(
+            ExtractionState.Key.TABLES.value()
+        );
+        assertThat(tables).hasSize(2);
+
+        verifyNoInteractions(scannedTableReconstructor);
+    }
+
+    @Test
+    void shouldFallbackToReconstructorWhenNoCachedTables() throws Exception {
         ExtractionState state = buildStateWithScannedPage();
 
         TableExtractionResult digitalTable = sampleTable();
@@ -120,8 +152,8 @@ class ExtractTablesNodeTest {
         when(scannedTableReconstructor.reconstructTables(
             anyString(),
             anyString(),
-            org.mockito.ArgumentMatchers.anyInt(),
-            org.mockito.ArgumentMatchers.anyDouble()
+            anyInt(),
+            anyDouble()
         )).thenReturn(List.of(scannedTable));
         when(continuationDetector.detect(anyList()))
             .thenAnswer(invocation -> invocation.getArgument(0));
@@ -132,6 +164,37 @@ class ExtractTablesNodeTest {
             ExtractionState.Key.TABLES.value()
         );
         assertThat(tables).hasSize(2);
+    }
+
+    private ExtractionState buildStateWithScannedPageAndCachedTables(
+        List<TableExtractionResult> cachedTables
+    ) {
+        Map<String, Object> data = new HashMap<>(
+            ExtractionState.initial(42L, "/tmp/sample.pdf")
+        );
+
+        PageSummary scannedPage = PageSummary.builder()
+                                             .pageNumber(2)
+                                             .classification(PageClassification.SCANNED)
+                                             .build();
+        data.put(
+            ExtractionState.Key.PAGE_CLASSIFICATIONS.value(),
+            List.of(scannedPage)
+        );
+        data.put(
+            ExtractionState.Key.PAGE_TEXTS.value(),
+            Map.of("2", "Col1\tCol2\nA\tB")
+        );
+        data.put(
+            ExtractionState.Key.PAGE_CONFIDENCES.value(),
+            Map.of("2", 0.75)
+        );
+        data.put(
+            ExtractionState.Key.VLM_TABLES.value(),
+            Map.of("2", cachedTables)
+        );
+
+        return new ExtractionState(data);
     }
 
     private ExtractionState buildStateWithScannedPage() {
