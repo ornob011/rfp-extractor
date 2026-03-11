@@ -1,12 +1,11 @@
-package com.dsi.rfp.adapter.ocr;
+package com.dsi.rfp.adapter.vision;
 
-import com.dsi.rfp.adapter.vision.VisionTableResult;
 import com.dsi.rfp.domain.model.PageExtractionMethod;
 
 import java.util.List;
 import java.util.Objects;
 
-public record ScannedPageExtractionResult(
+public record VisionPageExtractionResult(
     int pageNum,
     String text,
     double confidence,
@@ -15,7 +14,7 @@ public record ScannedPageExtractionResult(
     List<VisionTableResult> tables
 ) {
 
-    public ScannedPageExtractionResult {
+    public VisionPageExtractionResult {
         tables = Objects.requireNonNullElseGet(
             tables,
             List::of

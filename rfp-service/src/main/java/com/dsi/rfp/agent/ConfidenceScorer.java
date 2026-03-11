@@ -141,7 +141,7 @@ public class ConfidenceScorer {
                        .filter(value -> value.equalsIgnoreCase(
                            tableExtractionConfig.scannedLlmMethod()
                        ))
-                       .map(value -> ConfidenceSource.OCR_LLM_RECONSTRUCT)
+                       .map(value -> ConfidenceSource.VLM_TABLE_RECONSTRUCT)
                        .orElseGet(() -> switch (TableExtractionStrategy.fromString(method)) {
                            case LATTICE -> ConfidenceSource.LATTICE;
                            case STREAM -> ConfidenceSource.STREAM;

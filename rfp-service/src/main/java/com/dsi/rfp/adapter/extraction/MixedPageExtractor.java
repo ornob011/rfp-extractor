@@ -57,7 +57,7 @@ public class MixedPageExtractor {
             vlmResult.confidence()
         );
 
-        return MixedPageContent.textPlusOcr(
+        return MixedPageContent.textPlusVlm(
             vlmResult.text(),
             confidence,
             vlmResult.tables()

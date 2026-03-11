@@ -1,8 +1,5 @@
-package com.dsi.rfp.adapter.ocr;
+package com.dsi.rfp.adapter.vision;
 
-import com.dsi.rfp.adapter.vision.VisionExtractionAdapter;
-import com.dsi.rfp.adapter.vision.VisionPageResult;
-import com.dsi.rfp.adapter.vision.VisionTableResult;
 import com.dsi.rfp.domain.model.PageExtractionMethod;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,13 +15,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ScannedPageExtractorTest {
+class VisionPageExtractorTest {
 
     @Mock
     private VisionExtractionAdapter visionAdapter;
 
     @InjectMocks
-    private ScannedPageExtractor extractor;
+    private VisionPageExtractor extractor;
 
     @Test
     void shouldExtractPageUsingVlm() throws IOException {
@@ -38,7 +35,7 @@ class ScannedPageExtractorTest {
         when(visionAdapter.extractFullPage("/tmp/sample.pdf", 1))
             .thenReturn(vlmResult);
 
-        ScannedPageExtractionResult result = extractor.extractPage(
+        VisionPageExtractionResult result = extractor.extractPage(
             "/tmp/sample.pdf",
             1
         );
@@ -69,7 +66,7 @@ class ScannedPageExtractorTest {
         when(visionAdapter.extractFullPage("/tmp/sample.pdf", 3))
             .thenReturn(vlmResult);
 
-        ScannedPageExtractionResult result = extractor.extractPage(
+        VisionPageExtractionResult result = extractor.extractPage(
             "/tmp/sample.pdf",
             3
         );
@@ -90,7 +87,7 @@ class ScannedPageExtractorTest {
 
     @Test
     void shouldExposeVlmExtractionMethodContract() {
-        ScannedPageExtractionResult result = new ScannedPageExtractionResult(
+        VisionPageExtractionResult result = new VisionPageExtractionResult(
             5,
             "text",
             0.4,

@@ -25,7 +25,7 @@ public class ScannedTableRepairHandler implements RepairHandler {
 
     @Override
     public RepairStrategy strategy() {
-        return RepairStrategy.RETRY_SCANNED_TABLE_OCR_AT_HIGHER_DPI;
+        return RepairStrategy.RETRY_SCANNED_TABLE_AT_HIGHER_DPI;
     }
 
     @Override

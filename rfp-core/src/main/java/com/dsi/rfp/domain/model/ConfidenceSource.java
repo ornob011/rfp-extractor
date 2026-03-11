@@ -10,7 +10,7 @@ public enum ConfidenceSource {
     BOOKMARK,
     LATTICE,
     STREAM,
-    OCR_LLM_RECONSTRUCT,
+    VLM_TABLE_RECONSTRUCT,
     LLM,
     UNKNOWN
 }

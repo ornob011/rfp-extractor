@@ -1,7 +1,5 @@
-package com.dsi.rfp.adapter.ocr;
+package com.dsi.rfp.adapter.vision;
 
-import com.dsi.rfp.adapter.vision.VisionExtractionAdapter;
-import com.dsi.rfp.adapter.vision.VisionPageResult;
 import com.dsi.rfp.domain.model.PageExtractionMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -12,17 +10,17 @@ import java.util.Locale;
 
 @Slf4j
 @Component
-public class ScannedPageExtractor {
+public class VisionPageExtractor {
 
     private final VisionExtractionAdapter visionAdapter;
 
-    public ScannedPageExtractor(
+    public VisionPageExtractor(
         VisionExtractionAdapter visionAdapter
     ) {
         this.visionAdapter = visionAdapter;
     }
 
-    public ScannedPageExtractionResult extractPage(
+    public VisionPageExtractionResult extractPage(
         String documentPath,
         int pageNum
     ) throws IOException {
@@ -34,14 +32,14 @@ public class ScannedPageExtractor {
         int wordCount = countWords(result.text());
 
         log.info(
-            "event=vlm.scanned component=ScannedPageExtractor"
+            "event=vlm.page component=VisionPageExtractor"
             + " page={} confidence={} words={}",
             pageNum,
             result.confidence(),
             wordCount
         );
 
-        return new ScannedPageExtractionResult(
+        return new VisionPageExtractionResult(
             pageNum,
             result.text(),
             result.confidence(),

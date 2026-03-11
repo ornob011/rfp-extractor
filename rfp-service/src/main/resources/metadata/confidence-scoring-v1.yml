@@ -339,7 +339,7 @@ sectionStrategyConfidence:
 tableProvenanceConfidence:
   LATTICE: 0.85
   STREAM: 0.65
-  OCR_LLM_RECONSTRUCT: 0.55
+  VLM_TABLE_RECONSTRUCT: 0.55
   UNKNOWN: 0.50
 
 # --- Repair Limits (Sprint 7) ---

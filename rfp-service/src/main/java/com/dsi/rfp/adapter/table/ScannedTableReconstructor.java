@@ -27,9 +27,9 @@ public class ScannedTableReconstructor {
 
     public List<TableExtractionResult> reconstructTables(
         String documentPath,
-        String ocrText,
+        String pageText,
         int pageNum,
-        double ocrPageConfidence
+        double pageConfidence
     ) {
         VisionPageResult result = extractFullPage(
             documentPath,

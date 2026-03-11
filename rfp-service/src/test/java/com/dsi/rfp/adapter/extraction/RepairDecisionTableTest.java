@@ -32,9 +32,9 @@ class RepairDecisionTableTest {
     }
 
     @Test
-    void shouldReturnRetryHigherDpiForOcrLlmReconstructTable() {
-        assertThat(table.strategyFor(RepairComponentType.TABLE, ConfidenceSource.OCR_LLM_RECONSTRUCT))
-            .isEqualTo(RepairStrategy.RETRY_SCANNED_TABLE_OCR_AT_HIGHER_DPI);
+    void shouldReturnRetryHigherDpiForVlmTableReconstructTable() {
+        assertThat(table.strategyFor(RepairComponentType.TABLE, ConfidenceSource.VLM_TABLE_RECONSTRUCT))
+            .isEqualTo(RepairStrategy.RETRY_SCANNED_TABLE_AT_HIGHER_DPI);
     }
 
     @Test

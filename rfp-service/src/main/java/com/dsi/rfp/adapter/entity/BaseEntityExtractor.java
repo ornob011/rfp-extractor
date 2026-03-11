@@ -45,6 +45,13 @@ public abstract class BaseEntityExtractor {
             clauses
         );
 
+        return extract(chunks, state);
+    }
+
+    public final Map<String, Object> extract(
+        List<DocumentChunk> chunks,
+        ExtractionState state
+    ) {
         Map<String, Object> accumulated = new LinkedHashMap<>();
 
         for (DocumentChunk chunk : chunks) {
