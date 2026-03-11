@@ -29,7 +29,9 @@ class LlmResilientCallerTest {
         caller = new LlmResilientCaller(
             chatClient,
             judgeChatClient,
-            DIRECT_EXECUTOR
+            DIRECT_EXECUTOR,
+            45,
+            120
         );
     }
 

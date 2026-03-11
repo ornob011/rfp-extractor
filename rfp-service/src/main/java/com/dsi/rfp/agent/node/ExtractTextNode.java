@@ -9,6 +9,8 @@ import com.dsi.rfp.adapter.table.ScannedTableResponse;
 import com.dsi.rfp.adapter.table.ScannedTableResultMapper;
 import com.dsi.rfp.adapter.vision.VisionTableResult;
 import com.dsi.rfp.agent.ExtractionState;
+import com.dsi.rfp.domain.exception.LlmResponseParseException;
+import com.dsi.rfp.domain.exception.LlmUnavailableException;
 import com.dsi.rfp.domain.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bsc.langgraph4j.action.NodeAction;
@@ -22,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
@@ -243,31 +244,37 @@ public class ExtractTextNode implements NodeAction<ExtractionState> {
                 page.getPageNumber(),
                 result
             );
-        } catch (IOException exception) {
-            throw new com.dsi.rfp.domain.exception.SystemIoException(
-                String.format(
-                    "Page extraction failed for page %d",
-                    page.getPageNumber()
-                ),
-                exception
+        } catch (IOException
+                 | LlmUnavailableException
+                 | LlmResponseParseException exception) {
+            log.warn(
+                "event=page.extraction.failed"
+                + " component=ExtractTextNode page={}"
+                + " error={} message={}",
+                page.getPageNumber(),
+                exception.getClass().getSimpleName(),
+                exception.getMessage()
+            );
+
+            return new IndexedPageResult(
+                page.getPageNumber(),
+                new PageResult(
+                    buildClause(page, ""),
+                    "",
+                    0.0,
+                    PageExtractionMethod.VLM,
+                    List.of()
+                )
             );
         }
     }
 
     private List<IndexedPageResult> collectResults(
         List<CompletableFuture<IndexedPageResult>> futures
-    ) throws ExecutionException, InterruptedException {
-        CompletableFuture.allOf(
-            futures.toArray(CompletableFuture[]::new)
-        ).join();
-
-        List<IndexedPageResult> results = new ArrayList<>();
-
-        for (CompletableFuture<IndexedPageResult> future : futures) {
-            results.add(future.get());
-        }
-
-        return results;
+    ) {
+        return futures.stream()
+                      .map(CompletableFuture::join)
+                      .toList();
     }
 
     private record PageResult(

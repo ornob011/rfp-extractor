@@ -105,13 +105,8 @@ public class VisionExtractionAdapter {
             VisionPageResult.class
         );
 
-        VisionPageResult pageResult = result.orElseThrow(
-            () -> new LlmUnavailableException(
-                String.format(
-                    "VLM returned empty table result for page %d",
-                    pageNum
-                )
-            )
+        VisionPageResult pageResult = result.orElseGet(
+            () -> noTablesDetected(pageNum)
         );
 
         log.info(
@@ -123,5 +118,22 @@ public class VisionExtractionAdapter {
         );
 
         return pageResult;
+    }
+
+    private VisionPageResult noTablesDetected(
+        int pageNum
+    ) {
+        log.info(
+            "event=vision.tableOnly.empty component=VisionExtractionAdapter"
+            + " page={} action=return_empty_tables",
+            pageNum
+        );
+
+        return new VisionPageResult(
+            "",
+            config.tableVlmConfidence(),
+            java.util.List.of(),
+            false
+        );
     }
 }

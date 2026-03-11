@@ -142,4 +142,31 @@ class VisionExtractionAdapterTest {
         assertThatThrownBy(() -> adapter.extractFullPage("/tmp/sample.pdf", 1))
             .isInstanceOf(LlmUnavailableException.class);
     }
+
+    @Test
+    void shouldReturnEmptyTableResultWhenTableOnlyVlmReturnsEmpty() throws IOException {
+        when(pageImageRenderer.renderPageJpeg(
+            "/tmp/sample.pdf",
+            3,
+            config.tableOnlyDpi(),
+            config.jpegQuality()
+        )).thenReturn("jpeg".getBytes());
+
+        when(llmAdapter.extractStructuredWithImage(
+            any(),
+            anyString(),
+            any(byte[].class),
+            any(MimeType.class),
+            eq(VisionPageResult.class)
+        )).thenReturn(Optional.empty());
+
+        VisionPageResult result = adapter.extractTablesOnly(
+            "/tmp/sample.pdf",
+            3
+        );
+
+        assertThat(result.tables()).isEmpty();
+        assertThat(result.hasTable()).isFalse();
+        assertThat(result.confidence()).isEqualTo(config.tableVlmConfidence());
+    }
 }

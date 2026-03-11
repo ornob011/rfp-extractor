@@ -51,7 +51,7 @@ public class AsyncConfig implements AsyncConfigurer {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(poolSize);
         executor.setMaxPoolSize(poolSize);
-        executor.setQueueCapacity(0);
+        executor.setQueueCapacity(Integer.MAX_VALUE);
         executor.setThreadNamePrefix("llm-caller-");
         executor.initialize();
         return executor;
@@ -64,7 +64,7 @@ public class AsyncConfig implements AsyncConfigurer {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(threadCount);
         executor.setMaxPoolSize(threadCount);
-        executor.setQueueCapacity(0);
+        executor.setQueueCapacity(Integer.MAX_VALUE);
         executor.setThreadNamePrefix("page-extract-");
         executor.initialize();
         return executor;

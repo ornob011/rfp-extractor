@@ -213,6 +213,22 @@ public class ExtractionState extends AgentState {
                    .orElse(null);
     }
 
+    public Long executionId() {
+        return readOrDefault(
+            Key.EXECUTION_ID,
+            0L,
+            Long.class
+        );
+    }
+
+    public int stepSequence() {
+        return readOrDefault(
+            Key.STEP_SEQUENCE,
+            0,
+            Integer.class
+        );
+    }
+
     private <T> List<T> listValue(
         Key stateKey,
         Class<T> type
@@ -312,7 +328,9 @@ public class ExtractionState extends AgentState {
         REPAIR_EXHAUSTED("repairExhausted"),
         REPAIRABLE_COMPONENTS("repairableComponents"),
         VLM_TABLES("vlmTables"),
-        RULE_PACK_RESULTS("rulePackResults");
+        RULE_PACK_RESULTS("rulePackResults"),
+        EXECUTION_ID("executionId"),
+        STEP_SEQUENCE("stepSequence");
 
         private final String stateKey;
 

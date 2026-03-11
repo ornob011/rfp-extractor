@@ -1,8 +1,10 @@
 package com.dsi.rfp.agent;
 
+import com.dsi.rfp.adapter.persistence.AgentExecutionTracker;
 import com.dsi.rfp.adapter.persistence.ExtractionStateCheckpointRepository;
 import com.dsi.rfp.agent.checkpoint.CheckpointingNodeAction;
 import com.dsi.rfp.agent.node.*;
+import com.dsi.rfp.domain.model.AgentStepType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bsc.langgraph4j.CompiledGraph;
@@ -33,6 +35,7 @@ public class ExtractionGraph {
     private final FinalizeNode finalizeNode;
     private final RepairRouter repairRouter;
     private final ExtractionStateCheckpointRepository checkpointRepository;
+    private final AgentExecutionTracker executionTracker;
 
     public CompiledGraph<ExtractionState> compile() throws GraphStateException {
         StateGraph<ExtractionState> graph = new StateGraph<>(ExtractionState::new);
@@ -50,16 +53,16 @@ public class ExtractionGraph {
     private void registerNodes(
         StateGraph<ExtractionState> graph
     ) throws GraphStateException {
-        graph.addNode(NodeId.VALIDATE.code(), async(validateNode));
-        graph.addNode(NodeId.CLASSIFY_PAGES.code(), async(classifyPagesNode));
-        graph.addNode(NodeId.EXTRACT_TEXT.code(), async(extractTextNode));
-        graph.addNode(NodeId.SEGMENT_SECTIONS.code(), async(segmentSectionsNode));
-        graph.addNode(NodeId.EXTRACT_TABLES.code(), async(extractTablesNode));
-        graph.addNode(NodeId.EXTRACT_ENTITIES.code(), async(extractEntitiesNode));
-        graph.addNode(NodeId.SCORE_CONFIDENCE.code(), async(scoreConfidenceNode));
-        graph.addNode(NodeId.REPAIR_LOOP.code(), async(repairLoopNode));
-        graph.addNode(NodeId.RUN_RULE_PACK.code(), async(runRulePackNode));
-        graph.addNode(NodeId.FINALIZE.code(), async(finalizeNode));
+        graph.addNode(NodeId.VALIDATE.code(), async(validateNode, AgentStepType.VALIDATE));
+        graph.addNode(NodeId.CLASSIFY_PAGES.code(), async(classifyPagesNode, AgentStepType.CLASSIFY_PAGES));
+        graph.addNode(NodeId.EXTRACT_TEXT.code(), async(extractTextNode, AgentStepType.EXTRACT_TEXT));
+        graph.addNode(NodeId.SEGMENT_SECTIONS.code(), async(segmentSectionsNode, AgentStepType.SEGMENT_SECTIONS));
+        graph.addNode(NodeId.EXTRACT_TABLES.code(), async(extractTablesNode, AgentStepType.EXTRACT_TABLES));
+        graph.addNode(NodeId.EXTRACT_ENTITIES.code(), async(extractEntitiesNode, AgentStepType.EXTRACT_ENTITIES));
+        graph.addNode(NodeId.SCORE_CONFIDENCE.code(), async(scoreConfidenceNode, AgentStepType.SCORE_CONFIDENCE));
+        graph.addNode(NodeId.REPAIR_LOOP.code(), async(repairLoopNode, AgentStepType.REPAIR));
+        graph.addNode(NodeId.RUN_RULE_PACK.code(), async(runRulePackNode, AgentStepType.RUN_RULES));
+        graph.addNode(NodeId.FINALIZE.code(), async(finalizeNode, AgentStepType.FINALIZE));
     }
 
     private void registerEdges(
@@ -113,12 +116,15 @@ public class ExtractionGraph {
     }
 
     private AsyncNodeAction<ExtractionState> async(
-        NodeAction<ExtractionState> action
+        NodeAction<ExtractionState> action,
+        AgentStepType stepType
     ) {
         return AsyncNodeAction.node_async(
             new CheckpointingNodeAction(
                 action,
-                checkpointRepository
+                checkpointRepository,
+                executionTracker,
+                stepType
             )
         );
     }
