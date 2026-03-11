@@ -1,4 +1,4 @@
-package com.dsi.rfp.adapter.table;
+package com.dsi.rfp.domain.model;
 
 public record TableEngineCell(
     int row,
@@ -9,4 +9,3 @@ public record TableEngineCell(
     boolean isHeader
 ) {
 }
-

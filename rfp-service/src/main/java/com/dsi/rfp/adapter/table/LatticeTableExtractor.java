@@ -1,6 +1,7 @@
 package com.dsi.rfp.adapter.table;
 
 import com.dsi.rfp.domain.model.*;
+import com.dsi.rfp.domain.port.out.TableEnginePort;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -9,12 +10,12 @@ import java.util.Optional;
 @Component
 public class LatticeTableExtractor {
 
-    private final TableEngineClient tableEngineClient;
+    private final TableEnginePort tableEngineClient;
     private final TableTypeClassifier classifier;
     private final TableExtractionConfig config;
 
     public LatticeTableExtractor(
-        TableEngineClient tableEngineClient,
+        TableEnginePort tableEngineClient,
         TableTypeClassifier classifier,
         TableExtractionConfig config
     ) {

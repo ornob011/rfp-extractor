@@ -1,4 +1,4 @@
-package com.dsi.rfp.adapter.table;
+package com.dsi.rfp.domain.model;
 
 import java.util.List;
 
@@ -10,4 +10,3 @@ public record TableEngineTable(
     String method
 ) {
 }
-
