@@ -44,6 +44,32 @@ public class AsyncConfig implements AsyncConfigurer {
         return executor;
     }
 
+    @Bean(name = "llmTaskExecutor")
+    public Executor llmTaskExecutor(
+        @Value("${app.llm.executor-pool-size:2}") int poolSize
+    ) {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(poolSize);
+        executor.setMaxPoolSize(poolSize);
+        executor.setQueueCapacity(0);
+        executor.setThreadNamePrefix("llm-caller-");
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean(name = "pageExtractionExecutor")
+    public Executor pageExtractionExecutor(
+        @Value("${app.extraction.page-processing-threads:4}") int threadCount
+    ) {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(threadCount);
+        executor.setMaxPoolSize(threadCount);
+        executor.setQueueCapacity(0);
+        executor.setThreadNamePrefix("page-extract-");
+        executor.initialize();
+        return executor;
+    }
+
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
         return exceptionHandler;

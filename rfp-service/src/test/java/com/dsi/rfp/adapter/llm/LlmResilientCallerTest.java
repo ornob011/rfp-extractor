@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -15,6 +16,8 @@ import static org.mockito.Mockito.when;
 
 class LlmResilientCallerTest {
 
+    private static final Executor DIRECT_EXECUTOR = Runnable::run;
+
     private ChatClient chatClient;
     private ChatClient judgeChatClient;
     private LlmResilientCaller caller;
@@ -23,7 +26,11 @@ class LlmResilientCallerTest {
     void setUp() {
         chatClient = mock(ChatClient.class);
         judgeChatClient = mock(ChatClient.class);
-        caller = new LlmResilientCaller(chatClient, judgeChatClient);
+        caller = new LlmResilientCaller(
+            chatClient,
+            judgeChatClient,
+            DIRECT_EXECUTOR
+        );
     }
 
     @Test
