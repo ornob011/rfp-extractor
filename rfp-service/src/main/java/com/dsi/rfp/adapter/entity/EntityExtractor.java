@@ -186,6 +186,10 @@ public class EntityExtractor {
             return retrieval.items();
         }
 
+        if (domainConfig.alwaysRun() && !retrieval.rankedItems().isEmpty()) {
+            return retrieval.rankedItems();
+        }
+
         return chunks.stream()
                      .limit(domainConfig.topK())
                      .toList();

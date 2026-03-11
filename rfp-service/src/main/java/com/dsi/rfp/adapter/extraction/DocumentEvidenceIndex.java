@@ -134,18 +134,22 @@ public class DocumentEvidenceIndex {
                                  .max(Comparator.naturalOrder())
                                  .orElse(0.0);
 
-        List<ScoredPayload<T>> matches = scores.entrySet()
-                                               .stream()
-                                               .filter(entry -> entry.getValue() >= minimumScore)
-                                               .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                                               .limit(topK)
-                                               .map(entry -> new ScoredPayload<>(
-                                                   context.payloadById().get(entry.getKey()),
-                                                   entry.getValue()
-                                               ))
+        List<ScoredPayload<T>> ranked = scores.entrySet()
+                                              .stream()
+                                              .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                                              .limit(topK)
+                                              .map(entry -> new ScoredPayload<>(
+                                                  context.payloadById().get(entry.getKey()),
+                                                  entry.getValue()
+                                              ))
+                                              .toList();
+
+        List<ScoredPayload<T>> matches = ranked.stream()
+                                               .filter(entry -> entry.score() >= minimumScore)
                                                .toList();
 
         return new RetrievalResult<>(
+            ranked.stream().map(ScoredPayload::payload).toList(),
             matches.stream().map(ScoredPayload::payload).toList(),
             bestScore
         );
@@ -216,6 +220,7 @@ public class DocumentEvidenceIndex {
     }
 
     public record RetrievalResult<T>(
+        List<T> rankedItems,
         List<T> items,
         double bestScore
     ) {

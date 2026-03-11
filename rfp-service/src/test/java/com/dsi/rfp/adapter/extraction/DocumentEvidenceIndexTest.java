@@ -28,6 +28,7 @@ class DocumentEvidenceIndexTest {
         );
 
         assertThat(result.items()).isEmpty();
+        assertThat(result.rankedItems()).containsExactly(chunk);
         assertThat(result.bestScore()).isGreaterThan(0.0);
     }
 }
