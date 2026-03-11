@@ -1,6 +1,5 @@
 package com.dsi.rfp.adapter.table;
 
-import com.dsi.rfp.adapter.ocr.OcrScannedTableDto;
 import com.dsi.rfp.domain.model.ExtractionConfidence;
 import com.dsi.rfp.domain.model.TableCell;
 import com.dsi.rfp.domain.model.TableExtractionResult;
@@ -19,20 +18,7 @@ public class ScannedTableResultMapper {
     private final TableTypeClassifier typeClassifier;
     private final TableExtractionConfig config;
 
-    public TableExtractionResult fromSidecar(
-        OcrScannedTableDto table,
-        int pageNum
-    ) {
-        return buildResult(
-            table.headers(),
-            table.rows(),
-            pageNum,
-            table.confidence(),
-            table.method()
-        );
-    }
-
-    TableExtractionResult fromLlm(
+    public TableExtractionResult fromLlm(
         ScannedTableResponse response,
         int pageNum,
         double ocrPageConfidence

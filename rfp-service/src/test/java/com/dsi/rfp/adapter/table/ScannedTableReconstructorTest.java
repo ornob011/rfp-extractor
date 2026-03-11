@@ -1,10 +1,8 @@
 package com.dsi.rfp.adapter.table;
 
-import com.dsi.rfp.adapter.extraction.PageImageRenderer;
-import com.dsi.rfp.adapter.llm.LlmAdapter;
-import com.dsi.rfp.adapter.llm.PromptTemplateRenderer;
-import com.dsi.rfp.adapter.ocr.*;
-import com.dsi.rfp.domain.model.ReadingOrderMethod;
+import com.dsi.rfp.adapter.vision.VisionExtractionAdapter;
+import com.dsi.rfp.adapter.vision.VisionPageResult;
+import com.dsi.rfp.adapter.vision.VisionTableResult;
 import com.dsi.rfp.domain.model.TableExtractionResult;
 import com.dsi.rfp.domain.model.TableProvenance;
 import com.dsi.rfp.domain.model.TableType;
@@ -17,23 +15,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ScannedTableReconstructorTest {
 
     @Mock
-    private LlmAdapter llmAdapter;
-
-    @Mock
-    private OcrSidecarClient ocrSidecarClient;
-
-    @Mock
-    private PageImageRenderer pageImageRenderer;
+    private VisionExtractionAdapter visionAdapter;
 
     @Mock
     private TableTypeClassifier typeClassifier;
@@ -46,34 +38,28 @@ class ScannedTableReconstructorTest {
     @BeforeEach
     void setUp() {
         reconstructor = new ScannedTableReconstructor(
-            llmAdapter,
-            ocrSidecarClient,
-            pageImageRenderer,
-            new ScannedTableResultMapper(typeClassifier, config),
-            new PromptTemplateRenderer(),
-            config
+            visionAdapter,
+            new ScannedTableResultMapper(typeClassifier, config)
         );
     }
 
     @Test
-    void shouldUseSidecarTablesBeforeLlm() throws IOException {
+    void shouldExtractTablesFromVlm() throws IOException {
         when(typeClassifier.classify(anyList(), anyString()))
             .thenReturn(TableType.OTHER);
-        when(pageImageRenderer.renderPage("/tmp/sample.pdf", 1))
-            .thenReturn("png".getBytes());
-        when(ocrSidecarClient.extractPageWithLayout(any(), anyString(), anyInt()))
-            .thenReturn(new OcrPageWithLayoutResultDto(
-                new OcrResultDto("ocr", List.of(), 0.8, 1, "easyocr"),
-                new LayoutDetectionDto(false, List.of(), List.of()),
-                new ReadingOrderDto("ordered", ReadingOrderMethod.OCR_TEXT_FLOW),
+        when(visionAdapter.extractFullPage("/tmp/sample.pdf", 1))
+            .thenReturn(new VisionPageResult(
+                "page text",
+                0.85,
                 List.of(
-                    new OcrScannedTableDto(
+                    new VisionTableResult(
+                        "",
                         List.of("Name", "Value"),
                         List.of(List.of("A", "1")),
-                        0.7,
-                        "lattice"
+                        0.80
                     )
-                )
+                ),
+                true
             ));
 
         List<TableExtractionResult> result = reconstructor.reconstructTables(
@@ -84,36 +70,21 @@ class ScannedTableReconstructorTest {
         );
 
         assertThat(result).hasSize(1);
-        assertThat(result.getFirst().getProvenance()).isEqualTo(TableProvenance.SCANNED);
-        verify(llmAdapter, never()).extractStructured(any(), anyString(), any());
+        assertThat(result.getFirst().getProvenance())
+            .isEqualTo(TableProvenance.SCANNED);
+        assertThat(result.getFirst().getHeaders())
+            .containsExactly("Name", "Value");
     }
 
     @Test
-    void shouldFallbackToLlmWhenSidecarReturnsNoTables() throws IOException {
-        when(typeClassifier.classify(anyList(), anyString()))
-            .thenReturn(TableType.OTHER);
-        when(pageImageRenderer.renderPage("/tmp/sample.pdf", 3))
-            .thenReturn("png".getBytes());
-        when(ocrSidecarClient.extractPageWithLayout(any(), anyString(), anyInt()))
-            .thenReturn(new OcrPageWithLayoutResultDto(
-                new OcrResultDto("ocr", List.of(), 0.8, 1, "easyocr"),
-                new LayoutDetectionDto(false, List.of(), List.of()),
-                new ReadingOrderDto("ordered", ReadingOrderMethod.OCR_TEXT_FLOW),
-                List.of()
+    void shouldReturnEmptyWhenVlmFindsNoTables() throws IOException {
+        when(visionAdapter.extractFullPage("/tmp/sample.pdf", 3))
+            .thenReturn(new VisionPageResult(
+                "page text",
+                0.85,
+                List.of(),
+                false
             ));
-        doReturn(Optional.of(
-            new ScannedTableResponse(
-                List.of("Name", "Value"),
-                List.of(
-                    List.of("Item1", "100"),
-                    List.of("Item2", "200")
-                )
-            )
-        )).when(llmAdapter).extractStructured(
-            any(),
-            anyString(),
-            any()
-        );
 
         List<TableExtractionResult> result = reconstructor.reconstructTables(
             "/tmp/sample.pdf",
@@ -122,12 +93,28 @@ class ScannedTableReconstructorTest {
             0.75
         );
 
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().getHeaders())
-            .containsExactly("Name", "Value");
-        assertThat(result.getFirst().getConfidence().getScore())
-            .isEqualTo(0.8 * config.scannedConfidenceFactor());
-        assertThat(result.getFirst().getConfidence().getMethod())
-            .isEqualTo(config.scannedLlmMethod());
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldFilterTablesWithEmptyHeaders() throws IOException {
+        when(visionAdapter.extractFullPage("/tmp/sample.pdf", 2))
+            .thenReturn(new VisionPageResult(
+                "page text",
+                0.85,
+                List.of(
+                    new VisionTableResult("", List.of(), List.of(), 0.5)
+                ),
+                true
+            ));
+
+        List<TableExtractionResult> result = reconstructor.reconstructTables(
+            "/tmp/sample.pdf",
+            "OCR text",
+            2,
+            0.7
+        );
+
+        assertThat(result).isEmpty();
     }
 }

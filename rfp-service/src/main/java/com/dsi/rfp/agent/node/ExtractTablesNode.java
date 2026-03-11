@@ -9,17 +9,14 @@ import com.dsi.rfp.domain.model.PageClassification;
 import com.dsi.rfp.domain.model.PageSummary;
 import com.dsi.rfp.domain.model.TableExtractionResult;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.bsc.langgraph4j.action.NodeAction;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -84,6 +81,7 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
         ExtractionState state,
         List<TableExtractionResult> tables
     ) {
+        Map<Integer, List<TableExtractionResult>> cachedVlmTables = state.vlmTables();
         Map<Integer, String> pageTexts = state.pageTexts();
         Map<Integer, Double> pageConfidences = state.pageConfidences();
 
@@ -92,23 +90,42 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
                                               .filter(p -> p.getClassification() == PageClassification.SCANNED)
                                               .toList();
 
-        try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
-            List<CompletableFuture<List<TableExtractionResult>>> futures = scannedPages.stream()
-                                                                                       .map(page -> CompletableFuture.supplyAsync(
-                                                                                           () -> reconstructForPage(
-                                                                                               state.documentPath(),
-                                                                                               page.getPageNumber(),
-                                                                                               pageTexts.getOrDefault(page.getPageNumber(), StringUtils.EMPTY),
-                                                                                               pageConfidences.getOrDefault(page.getPageNumber(), 0.0)
-                                                                                           ),
-                                                                                           executor
-                                                                                       ))
-                                                                                       .toList();
+        Set<Integer> cachedPages = cachedVlmTables.entrySet()
+                                                  .stream()
+                                                  .filter(entry -> !entry.getValue().isEmpty())
+                                                  .map(Map.Entry::getKey)
+                                                  .collect(Collectors.toSet());
 
-            futures.stream()
-                   .map(CompletableFuture::join)
-                   .forEach(tables::addAll);
-        }
+        scannedPages.stream()
+                    .filter(page -> cachedPages.contains(page.getPageNumber()))
+                    .forEach(page -> {
+                        log.info(
+                            "event=table.vlmCacheHit page={}",
+                            page.getPageNumber()
+                        );
+                        tables.addAll(
+                            cachedVlmTables.get(page.getPageNumber())
+                        );
+                    });
+
+        List<PageSummary> uncachedPages = scannedPages.stream()
+                                                      .filter(page -> !cachedPages.contains(page.getPageNumber()))
+                                                      .toList();
+
+        uncachedPages.forEach(page -> tables.addAll(
+            reconstructForPage(
+                state.documentPath(),
+                page.getPageNumber(),
+                pageTexts.getOrDefault(
+                    page.getPageNumber(),
+                    ""
+                ),
+                pageConfidences.getOrDefault(
+                    page.getPageNumber(),
+                    0.0
+                )
+            )
+        ));
     }
 
     private List<TableExtractionResult> reconstructForPage(
@@ -117,22 +134,11 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
         String ocrText,
         double confidence
     ) {
-        try {
-            return scannedTableReconstructor.reconstructTables(
-                documentPath,
-                ocrText,
-                pageNum,
-                confidence
-            );
-        } catch (IOException exception) {
-            log.warn(
-                "event=table.scannedReconstructFailed page={} error={}",
-                pageNum,
-                exception.getMessage(),
-                exception
-            );
-
-            return List.of();
-        }
+        return scannedTableReconstructor.reconstructTables(
+            documentPath,
+            ocrText,
+            pageNum,
+            confidence
+        );
     }
 }
