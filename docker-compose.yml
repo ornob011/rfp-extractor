@@ -16,24 +16,6 @@ services:
             retries: 5
             start_period: 20s
 
-    rfp-python-sidecar:
-        build:
-            context: ./rfp-python-sidecar
-            dockerfile: Dockerfile
-        ports:
-            - "8000:8000"
-        environment:
-            PYTHONUNBUFFERED: "1"
-        volumes:
-            - rfp_storage:/app/rfp-storage
-        runtime: nvidia
-        healthcheck:
-            test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-            interval: 15s
-            timeout: 5s
-            retries: 3
-            start_period: 10s
-
     rfp-service:
         build:
             context: .
@@ -48,8 +30,6 @@ services:
             POSTGRES_DB: ${POSTGRES_DB:-rfpdb}
         depends_on:
             postgres:
-                condition: service_healthy
-            rfp-python-sidecar:
                 condition: service_healthy
         healthcheck:
             test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
