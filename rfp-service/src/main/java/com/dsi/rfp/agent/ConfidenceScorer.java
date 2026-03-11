@@ -143,6 +143,7 @@ public class ConfidenceScorer {
                        ))
                        .map(value -> ConfidenceSource.VLM_TABLE_RECONSTRUCT)
                        .orElseGet(() -> switch (TableExtractionStrategy.fromString(method)) {
+                           case VLM -> ConfidenceSource.VLM;
                            case LATTICE -> ConfidenceSource.LATTICE;
                            case STREAM -> ConfidenceSource.STREAM;
                        });
