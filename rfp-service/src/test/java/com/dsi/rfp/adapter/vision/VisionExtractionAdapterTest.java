@@ -3,6 +3,7 @@ package com.dsi.rfp.adapter.vision;
 import com.dsi.rfp.adapter.extraction.PageImageRenderer;
 import com.dsi.rfp.adapter.llm.LlmAdapter;
 import com.dsi.rfp.adapter.llm.PromptTemplateRenderer;
+import com.dsi.rfp.config.YamlConfigLoader;
 import com.dsi.rfp.domain.exception.LlmUnavailableException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,9 @@ class VisionExtractionAdapterTest {
     private PromptTemplateRenderer promptTemplateRenderer = new PromptTemplateRenderer();
 
     @Spy
-    private VisionExtractionConfig config = new VisionExtractionConfig();
+    private VisionExtractionConfig config = new VisionExtractionConfig(
+        new YamlConfigLoader()
+    );
 
     private VisionExtractionAdapter adapter;
 
@@ -168,5 +171,41 @@ class VisionExtractionAdapterTest {
         assertThat(result.tables()).isEmpty();
         assertThat(result.hasTable()).isFalse();
         assertThat(result.confidence()).isEqualTo(config.tableVlmConfidence());
+    }
+
+    @Test
+    void shouldDetectTablePresenceBatch() throws IOException {
+        when(pageImageRenderer.renderPageJpeg(
+            "/tmp/sample.pdf",
+            2,
+            config.tablePresenceDpi(),
+            config.jpegQuality()
+        )).thenReturn("page-2".getBytes());
+        when(pageImageRenderer.renderPageJpeg(
+            "/tmp/sample.pdf",
+            5,
+            config.tablePresenceDpi(),
+            config.jpegQuality()
+        )).thenReturn("page-5".getBytes());
+
+        when(llmAdapter.extractStructuredWithImages(
+            any(),
+            anyString(),
+            anyList(),
+            eq(VisionTablePresenceBatchResult.class)
+        )).thenReturn(Optional.of(
+            new VisionTablePresenceBatchResult(
+                List.of(
+                    new VisionTablePresenceBatchResult.PagePresence(2, true),
+                    new VisionTablePresenceBatchResult.PagePresence(5, false)
+                )
+            )
+        ));
+
+        assertThat(adapter.detectTablePresenceBatch(
+            "/tmp/sample.pdf",
+            List.of(2, 5)
+        )).containsEntry(2, true)
+          .containsEntry(5, false);
     }
 }

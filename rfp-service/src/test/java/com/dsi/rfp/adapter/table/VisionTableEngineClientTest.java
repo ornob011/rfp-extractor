@@ -4,6 +4,7 @@ import com.dsi.rfp.adapter.vision.VisionExtractionAdapter;
 import com.dsi.rfp.adapter.vision.VisionExtractionConfig;
 import com.dsi.rfp.adapter.vision.VisionPageResult;
 import com.dsi.rfp.adapter.vision.VisionTableResult;
+import com.dsi.rfp.config.YamlConfigLoader;
 import com.dsi.rfp.domain.model.TableEngineTable;
 import com.dsi.rfp.domain.model.TableExtractionStrategy;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +28,9 @@ class VisionTableEngineClientTest {
     private VisionExtractionAdapter visionAdapter;
 
     @Spy
-    private VisionExtractionConfig config = new VisionExtractionConfig();
+    private VisionExtractionConfig config = new VisionExtractionConfig(
+        new YamlConfigLoader()
+    );
 
     private VisionTableEngineClient client;
 
@@ -35,7 +38,8 @@ class VisionTableEngineClientTest {
     void setUp() {
         client = new VisionTableEngineClient(
             visionAdapter,
-            config
+            config,
+            Runnable::run
         );
     }
 
@@ -91,6 +95,13 @@ class VisionTableEngineClientTest {
 
     @Test
     void shouldExtractBatchAcrossPages() throws IOException {
+        when(visionAdapter.detectTablePresenceBatch(
+            "/tmp/sample.pdf",
+            List.of(1, 3)
+        )).thenReturn(Map.of(
+            1, true,
+            3, false
+        ));
         when(visionAdapter.extractTablesOnly("/tmp/sample.pdf", 1))
             .thenReturn(new VisionPageResult(
                 "",
@@ -105,14 +116,6 @@ class VisionTableEngineClientTest {
                 ),
                 true
             ));
-        when(visionAdapter.extractTablesOnly("/tmp/sample.pdf", 3))
-            .thenReturn(new VisionPageResult(
-                "",
-                0.80,
-                List.of(),
-                false
-            ));
-
         Map<Integer, List<TableEngineTable>> results =
             client.extractTablesBatch(
                 "/tmp/sample.pdf",
@@ -122,5 +125,20 @@ class VisionTableEngineClientTest {
         assertThat(results).hasSize(2);
         assertThat(results.get(1)).hasSize(1);
         assertThat(results.get(3)).isEmpty();
+    }
+
+    @Test
+    void shouldSkipExtractionForPagesWithoutTables() throws IOException {
+        when(visionAdapter.detectTablePresenceBatch(
+            "/tmp/sample.pdf",
+            List.of(5)
+        )).thenReturn(Map.of(5, false));
+
+        Map<Integer, List<TableEngineTable>> results = client.extractTablesBatch(
+            "/tmp/sample.pdf",
+            List.of(5)
+        );
+
+        assertThat(results.get(5)).isEmpty();
     }
 }

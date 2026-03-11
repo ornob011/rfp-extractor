@@ -1,6 +1,7 @@
 package com.dsi.rfp.adapter.vision;
 
 import com.dsi.rfp.adapter.extraction.PageImageRenderer;
+import com.dsi.rfp.adapter.llm.LlmImageInput;
 import com.dsi.rfp.adapter.llm.LlmAdapter;
 import com.dsi.rfp.adapter.llm.PromptTemplateRenderer;
 import com.dsi.rfp.domain.exception.LlmUnavailableException;
@@ -12,6 +13,7 @@ import org.springframework.util.MimeTypeUtils;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -118,6 +120,89 @@ public class VisionExtractionAdapter {
         );
 
         return pageResult;
+    }
+
+    public boolean detectTablePresence(
+        String documentPath,
+        int pageNum
+    ) throws IOException {
+        return detectTablePresenceBatch(
+            documentPath,
+            java.util.List.of(pageNum)
+        ).getOrDefault(
+            pageNum,
+            false
+        );
+    }
+
+    public Map<Integer, Boolean> detectTablePresenceBatch(
+        String documentPath,
+        java.util.List<Integer> pageNumbers
+    ) throws IOException {
+        java.util.List<LlmImageInput> images = new java.util.ArrayList<>();
+
+        for (Integer pageNum : pageNumbers) {
+            images.add(renderPresenceImage(
+                documentPath,
+                pageNum
+            ));
+        }
+
+        Optional<VisionTablePresenceBatchResult> result =
+            llmAdapter.extractStructuredWithImages(
+                config.tablePresenceBatchSystemPromptResource(),
+                promptTemplateRenderer.render(
+                    config.tablePresenceBatchUserPromptTemplate(),
+                    Map.of(
+                        "page_list",
+                        pageNumbers.stream()
+                                   .map(String::valueOf)
+                                   .collect(Collectors.joining(", "))
+                    )
+                ),
+                images,
+                VisionTablePresenceBatchResult.class
+            );
+
+        Map<Integer, Boolean> tablePresence =
+            pageNumbers.stream()
+                       .collect(Collectors.toMap(
+                           pageNum -> pageNum,
+                           pageNum -> false
+                       ));
+
+        result.map(VisionTablePresenceBatchResult::pages)
+              .orElseGet(java.util.List::of)
+              .forEach(page -> tablePresence.put(
+                  page.page(),
+                  page.hasTable()
+              ));
+
+        log.info(
+            "event=vision.tablePresence.batch component=VisionExtractionAdapter"
+            + " pages={} candidatePages={}",
+            pageNumbers.size(),
+            tablePresence.values().stream().filter(Boolean::booleanValue).count()
+        );
+
+        return tablePresence;
+    }
+
+    private LlmImageInput renderPresenceImage(
+        String documentPath,
+        int pageNum
+    ) throws IOException {
+        byte[] imageBytes = pageImageRenderer.renderPageJpeg(
+            documentPath,
+            pageNum,
+            config.tablePresenceDpi(),
+            config.jpegQuality()
+        );
+
+        return new LlmImageInput(
+            imageBytes,
+            MimeTypeUtils.IMAGE_JPEG
+        );
     }
 
     private VisionPageResult noTablesDetected(

@@ -55,6 +55,7 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
             )
         );
 
+        reuseVisionTables(state, tables);
         reconstructScannedTables(state, tables);
 
         tables = continuationDetector.detect(tables);
@@ -77,40 +78,41 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
         );
     }
 
-    private void reconstructScannedTables(
+    private void reuseVisionTables(
         ExtractionState state,
         List<TableExtractionResult> tables
     ) {
         Map<Integer, List<TableExtractionResult>> cachedVlmTables = state.vlmTables();
+        Set<Integer> cachedPages = cachedPages(cachedVlmTables);
+
+        state.pageClassifications()
+             .stream()
+             .filter(page -> page.getClassification() != PageClassification.DIGITAL)
+             .filter(page -> cachedPages.contains(page.getPageNumber()))
+             .forEach(page -> {
+                 log.info(
+                     "event=table.vlmCacheHit page={}",
+                     page.getPageNumber()
+                 );
+                 tables.addAll(
+                     cachedVlmTables.get(page.getPageNumber())
+                 );
+             });
+    }
+
+    private void reconstructScannedTables(
+        ExtractionState state,
+        List<TableExtractionResult> tables
+    ) {
         Map<Integer, String> pageTexts = state.pageTexts();
         Map<Integer, Double> pageConfidences = state.pageConfidences();
+        Set<Integer> cachedPages = cachedPages(state.vlmTables());
 
-        List<PageSummary> scannedPages = state.pageClassifications()
+        List<PageSummary> uncachedPages = state.pageClassifications()
                                               .stream()
-                                              .filter(p -> p.getClassification() == PageClassification.SCANNED)
+                                              .filter(page -> page.getClassification() == PageClassification.SCANNED)
+                                              .filter(page -> !cachedPages.contains(page.getPageNumber()))
                                               .toList();
-
-        Set<Integer> cachedPages = cachedVlmTables.entrySet()
-                                                  .stream()
-                                                  .filter(entry -> !entry.getValue().isEmpty())
-                                                  .map(Map.Entry::getKey)
-                                                  .collect(Collectors.toSet());
-
-        scannedPages.stream()
-                    .filter(page -> cachedPages.contains(page.getPageNumber()))
-                    .forEach(page -> {
-                        log.info(
-                            "event=table.vlmCacheHit page={}",
-                            page.getPageNumber()
-                        );
-                        tables.addAll(
-                            cachedVlmTables.get(page.getPageNumber())
-                        );
-                    });
-
-        List<PageSummary> uncachedPages = scannedPages.stream()
-                                                      .filter(page -> !cachedPages.contains(page.getPageNumber()))
-                                                      .toList();
 
         uncachedPages.forEach(page -> tables.addAll(
             reconstructForPage(
@@ -128,15 +130,25 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
         ));
     }
 
+    private Set<Integer> cachedPages(
+        Map<Integer, List<TableExtractionResult>> cachedVlmTables
+    ) {
+        return cachedVlmTables.entrySet()
+                              .stream()
+                              .filter(entry -> !entry.getValue().isEmpty())
+                              .map(Map.Entry::getKey)
+                              .collect(Collectors.toSet());
+    }
+
     private List<TableExtractionResult> reconstructForPage(
         String documentPath,
         int pageNum,
-        String ocrText,
+        String pageText,
         double confidence
     ) {
         return scannedTableReconstructor.reconstructTables(
             documentPath,
-            ocrText,
+            pageText,
             pageNum,
             confidence
         );

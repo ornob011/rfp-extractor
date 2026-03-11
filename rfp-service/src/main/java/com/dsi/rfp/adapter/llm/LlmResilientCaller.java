@@ -114,16 +114,43 @@ class LlmResilientCaller {
         byte[] imageBytes,
         MimeType mimeType
     ) {
+        return callWithImages(
+            systemPrompt,
+            userContent,
+            List.of(new LlmImageInput(
+                imageBytes,
+                mimeType
+            ))
+        );
+    }
+
+    @CircuitBreaker(
+        name = RESILIENCE_INSTANCE,
+        fallbackMethod = "fallbackWithImages"
+    )
+    @RateLimiter(
+        name = RESILIENCE_INSTANCE
+    )
+    @Retry(
+        name = RESILIENCE_INSTANCE
+    )
+    public CompletableFuture<String> callWithImages(
+        String systemPrompt,
+        String userContent,
+        List<LlmImageInput> images
+    ) {
         return CompletableFuture.supplyAsync(
             () -> executeWithTimeout(visionCallTimeoutSeconds, () -> {
-                Media imageMedia = Media.builder()
-                                        .mimeType(mimeType)
-                                        .data(imageBytes)
-                                        .build();
-
                 UserMessage userMessage = UserMessage.builder()
                                                      .text(userContent)
-                                                     .media(imageMedia)
+                                                     .media(
+                                                         images.stream()
+                                                               .map(image -> Media.builder()
+                                                                                  .mimeType(image.mimeType())
+                                                                                  .data(image.data())
+                                                                                  .build())
+                                                               .toList()
+                                                     )
                                                      .build();
 
                 Prompt prompt = new Prompt(
@@ -164,6 +191,23 @@ class LlmResilientCaller {
         String userContent,
         byte[] imageBytes,
         MimeType mimeType,
+        Throwable cause
+    ) {
+        return fallbackWithImages(
+            systemPrompt,
+            userContent,
+            List.of(new LlmImageInput(
+                imageBytes,
+                mimeType
+            )),
+            cause
+        );
+    }
+
+    public CompletableFuture<String> fallbackWithImages(
+        String systemPrompt,
+        String userContent,
+        List<LlmImageInput> images,
         Throwable cause
     ) {
         return CompletableFuture.failedFuture(

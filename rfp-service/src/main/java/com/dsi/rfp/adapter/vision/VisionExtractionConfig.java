@@ -1,12 +1,9 @@
 package com.dsi.rfp.adapter.vision;
 
+import com.dsi.rfp.config.YamlConfigLoader;
 import com.dsi.rfp.domain.exception.EntityMetadataContractException;
 import com.dsi.rfp.domain.exception.SystemIoException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
-import org.springframework.boot.context.properties.bind.Bindable;
-import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
@@ -14,9 +11,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.stream.Collectors;
 
 @Component
 public class VisionExtractionConfig {
@@ -25,8 +19,14 @@ public class VisionExtractionConfig {
 
     private final ConfigDocument config;
 
-    public VisionExtractionConfig() {
-        config = loadConfig();
+    public VisionExtractionConfig(
+        YamlConfigLoader yamlConfigLoader
+    ) {
+        config = yamlConfigLoader.load(
+            CONFIG_PATH,
+            ConfigDocument.class,
+            "vision extraction config"
+        );
     }
 
     public int fullPageDpi() {
@@ -35,6 +35,10 @@ public class VisionExtractionConfig {
 
     public int tableOnlyDpi() {
         return config.render().tableOnlyDpi();
+    }
+
+    public int tablePresenceDpi() {
+        return config.render().tablePresenceDpi();
     }
 
     public float jpegQuality() {
@@ -65,8 +69,28 @@ public class VisionExtractionConfig {
         return new ClassPathResource(config.prompts().tableOnlySystem());
     }
 
+    public Resource tablePresenceSystemPromptResource() {
+        return new ClassPathResource(config.prompts().tablePresenceSystem());
+    }
+
+    public String tablePresenceUserPromptTemplate() {
+        return loadPromptTemplate(config.prompts().tablePresenceUser());
+    }
+
+    public Resource tablePresenceBatchSystemPromptResource() {
+        return new ClassPathResource(config.prompts().tablePresenceBatchSystem());
+    }
+
+    public String tablePresenceBatchUserPromptTemplate() {
+        return loadPromptTemplate(config.prompts().tablePresenceBatchUser());
+    }
+
     public String tableOnlyUserPromptTemplate() {
         return loadPromptTemplate(config.prompts().tableOnlyUser());
+    }
+
+    public int tablePresenceBatchSize() {
+        return config.batch().tablePresenceBatchSize();
     }
 
     private String loadPromptTemplate(String path) {
@@ -85,48 +109,14 @@ public class VisionExtractionConfig {
         }
     }
 
-    private ConfigDocument loadConfig() {
-        YamlPropertiesFactoryBean factory = new YamlPropertiesFactoryBean();
-        factory.setResources(new ClassPathResource(CONFIG_PATH));
-        Properties properties = Optional.ofNullable(factory.getObject())
-                                        .orElseThrow(() -> new SystemIoException(
-                                            String.format(
-                                                "Failed to load vision extraction config: %s",
-                                                CONFIG_PATH
-                                            ),
-                                            new IllegalStateException("Missing YAML properties")
-                                        ));
-        Binder binder = new Binder(
-            new MapConfigurationPropertySource(
-                properties.entrySet()
-                          .stream()
-                          .collect(Collectors.toUnmodifiableMap(
-                              entry -> entry.getKey().toString(),
-                              Map.Entry::getValue
-                          ))
-            )
-        );
-
-        return binder.bind(
-                         "",
-                         Bindable.of(ConfigDocument.class)
-                     )
-                     .orElseThrow(() -> new SystemIoException(
-                         String.format(
-                             "Failed to bind vision extraction config: %s",
-                             CONFIG_PATH
-                         ),
-                         new IllegalStateException("Vision extraction config binder returned empty result")
-                     ));
-    }
-
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ConfigDocument(
         Integer version,
         Render render,
         Prompts prompts,
         Methods methods,
-        Confidence confidence
+        Confidence confidence,
+        Batch batch
     ) {
 
         ConfigDocument {
@@ -159,11 +149,18 @@ public class VisionExtractionConfig {
                     "Vision extraction config must define methods"
                 );
             }
+
+            if (batch == null) {
+                throw new EntityMetadataContractException(
+                    "Vision extraction config must define batch"
+                );
+            }
         }
     }
 
     record Render(
         int fullPageDpi,
+        int tablePresenceDpi,
         int tableOnlyDpi,
         float jpegQuality
     ) {
@@ -172,6 +169,10 @@ public class VisionExtractionConfig {
     record Prompts(
         String fullPageSystem,
         String fullPageUser,
+        String tablePresenceSystem,
+        String tablePresenceUser,
+        String tablePresenceBatchSystem,
+        String tablePresenceBatchUser,
         String tableOnlySystem,
         String tableOnlyUser
     ) {
@@ -185,6 +186,11 @@ public class VisionExtractionConfig {
     record Confidence(
         double defaultVlm,
         double tableVlm
+    ) {
+    }
+
+    record Batch(
+        int tablePresenceBatchSize
     ) {
     }
 }
