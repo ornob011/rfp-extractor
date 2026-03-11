@@ -76,13 +76,29 @@ public class LlmAdapter {
         MimeType mimeType,
         Class<T> responseType
     ) {
+        return extractStructuredWithImages(
+            systemPromptResource,
+            userContent,
+            java.util.List.of(new LlmImageInput(
+                imageBytes,
+                mimeType
+            )),
+            responseType
+        );
+    }
+
+    public <T> Optional<T> extractStructuredWithImages(
+        Resource systemPromptResource,
+        String userContent,
+        java.util.List<LlmImageInput> images,
+        Class<T> responseType
+    ) {
         return parseResponse(
             joinAndUnwrap(
-                caller.callWithImage(
+                caller.callWithImages(
                     loadResource(systemPromptResource),
                     userContent,
-                    imageBytes,
-                    mimeType
+                    images
                 )
             ),
             responseType

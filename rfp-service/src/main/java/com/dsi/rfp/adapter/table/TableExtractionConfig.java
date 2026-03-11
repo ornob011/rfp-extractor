@@ -106,8 +106,8 @@ public class TableExtractionConfig {
         return new ClassPathResource(config.scanned().systemPromptResourcePath());
     }
 
-    public int scannedMaxOcrTextLength() {
-        return config.scanned().maxOcrTextLength();
+    public int scannedMaxPageTextLength() {
+        return config.scanned().maxPageTextLength();
     }
 
     public double scannedConfidenceFactor() {
@@ -213,7 +213,7 @@ public class TableExtractionConfig {
     private record Scanned(
         String promptResourcePath,
         String systemPromptResourcePath,
-        int maxOcrTextLength,
+        int maxPageTextLength,
         double confidenceFactor,
         String llmMethod
     ) {

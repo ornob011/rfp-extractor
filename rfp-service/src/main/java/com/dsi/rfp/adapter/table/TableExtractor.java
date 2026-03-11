@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
-
 @Slf4j
 @Component
 public class TableExtractor {
@@ -30,21 +29,26 @@ public class TableExtractor {
         String documentPath,
         List<PageSummary> pageClassifications
     ) {
-        List<Integer> digitalPages = pageClassifications.stream()
-                                                        .filter(p -> p.getClassification() != PageClassification.SCANNED)
-                                                        .map(PageSummary::getPageNumber)
-                                                        .toList();
+        List<Integer> candidatePages = pageClassifications.stream()
+                                                          .filter(page -> page.getClassification() == PageClassification.DIGITAL)
+                                                          .map(PageSummary::getPageNumber)
+                                                          .toList();
 
         log.info(
             "event=table.extract component=TableExtractor"
-            + " digitalPages={}",
-            digitalPages.size()
+            + " digitalPages={} candidatePages={}",
+            candidatePages.size(),
+            candidatePages.size()
         );
+
+        if (candidatePages.isEmpty()) {
+            return List.of();
+        }
 
         Map<Integer, List<TableEngineTable>> results =
             tableEngineClient.extractTablesBatch(
                 documentPath,
-                digitalPages
+                candidatePages
             );
 
         return results.entrySet()

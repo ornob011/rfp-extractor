@@ -15,9 +15,12 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -27,13 +30,16 @@ public class VisionTableEngineClient implements TableEnginePort {
 
     private final VisionExtractionAdapter visionAdapter;
     private final VisionExtractionConfig config;
+    private final Executor pageExecutor;
 
     public VisionTableEngineClient(
         VisionExtractionAdapter visionAdapter,
-        VisionExtractionConfig config
+        VisionExtractionConfig config,
+        @Qualifier("pageExtractionExecutor") Executor pageExecutor
     ) {
         this.visionAdapter = visionAdapter;
         this.config = config;
+        this.pageExecutor = pageExecutor;
     }
 
     private static List<List<TableEngineCell>> buildGrid(
@@ -118,25 +124,130 @@ public class VisionTableEngineClient implements TableEnginePort {
         String documentPath,
         List<Integer> pageNumbers
     ) {
-        Map<Integer, List<TableEngineTable>> results = new HashMap<>();
-
-        for (int pageNumber : pageNumbers) {
-            List<TableEngineTable> tables = extractTables(
-                documentPath,
-                pageNumber,
-                TableExtractionStrategy.LATTICE
+        if (pageNumbers.isEmpty()) {
+            log.info(
+                "event=vision.tableBatch component=VisionTableEngineClient"
+                + " pages=0 candidatePages=0"
             );
-
-            results.put(pageNumber, tables);
+            return Map.of();
         }
+
+        Map<Integer, Boolean> tablePresence = detectTablePresenceByBatch(
+            documentPath,
+            pageNumbers
+        );
+
+        List<Integer> candidatePages = pageNumbers.stream()
+                                                  .filter(pageNumber -> tablePresence.getOrDefault(
+                                                      pageNumber,
+                                                      false
+                                                  ))
+                                                  .toList();
+
+        Map<Integer, List<TableEngineTable>> results =
+            pageNumbers.stream()
+                       .collect(Collectors.toMap(
+                           Function.identity(),
+                           pageNumber -> List.<TableEngineTable>of()
+                       ));
+
+        Map<Integer, CompletableFuture<List<TableEngineTable>>> tableFutures =
+            candidatePages.stream()
+                          .collect(Collectors.toMap(
+                              Function.identity(),
+                              pageNumber -> CompletableFuture.supplyAsync(
+                                  () -> extractTables(
+                                      documentPath,
+                                      pageNumber,
+                                      TableExtractionStrategy.LATTICE
+                                  ),
+                                  pageExecutor
+                              )
+                          ));
+
+        candidatePages.forEach(pageNumber -> results.put(
+            pageNumber,
+            tableFutures.get(pageNumber).join()
+        ));
 
         log.info(
             "event=vision.tableBatch component=VisionTableEngineClient"
-            + " pages={}",
-            pageNumbers.size()
+            + " pages={} candidatePages={}",
+            pageNumbers.size(),
+            candidatePages.size()
         );
 
         return results;
+    }
+
+    private Map<Integer, Boolean> detectTablePresenceByBatch(
+        String documentPath,
+        List<Integer> pageNumbers
+    ) {
+        List<List<Integer>> pageBatches = partition(
+            pageNumbers,
+            config.tablePresenceBatchSize()
+        );
+
+        Map<Integer, CompletableFuture<Map<Integer, Boolean>>> batchFutures =
+            pageBatches.stream()
+                       .collect(Collectors.toMap(
+                           batch -> batch.hashCode(),
+                           batch -> CompletableFuture.supplyAsync(
+                               () -> detectTablePresenceForBatch(
+                                   documentPath,
+                                   batch
+                               ),
+                               pageExecutor
+                           )
+                       ));
+
+        return pageBatches.stream()
+                          .map(List::hashCode)
+                          .map(batchFutures::get)
+                          .map(CompletableFuture::join)
+                          .flatMap(map -> map.entrySet().stream())
+                          .collect(Collectors.toMap(
+                              Map.Entry::getKey,
+                              Map.Entry::getValue
+                          ));
+    }
+
+    private Map<Integer, Boolean> detectTablePresenceForBatch(
+        String documentPath,
+        List<Integer> pageNumbers
+    ) {
+        try {
+            return visionAdapter.detectTablePresenceBatch(
+                documentPath,
+                pageNumbers
+            );
+        } catch (IOException exception) {
+            throw new LlmUnavailableException(
+                String.format(
+                    "Vision table presence detection failed for pages %s",
+                    pageNumbers
+                ),
+                exception
+            );
+        }
+    }
+
+    private List<List<Integer>> partition(
+        List<Integer> pageNumbers,
+        int batchSize
+    ) {
+        List<List<Integer>> batches = new java.util.ArrayList<>();
+
+        for (int start = 0; start < pageNumbers.size(); start += batchSize) {
+            int end = Math.min(
+                start + batchSize,
+                pageNumbers.size()
+            );
+            batches.add(pageNumbers.subList(start, end));
+        }
+
+        return batches;
     }
 
     private TableEngineTable toEngineTable(

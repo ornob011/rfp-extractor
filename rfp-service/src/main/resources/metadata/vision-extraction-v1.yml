@@ -1,11 +1,16 @@
 version: 1
 render:
   fullPageDpi: 150
+  tablePresenceDpi: 96
   tableOnlyDpi: 150
   jpegQuality: 0.85
 prompts:
   fullPageSystem: prompts/vision-page-extract-system-v1.md
   fullPageUser: prompts/vision-page-extract-user-v1.md
+  tablePresenceSystem: prompts/vision-table-presence-system-v1.md
+  tablePresenceUser: prompts/vision-table-presence-user-v1.md
+  tablePresenceBatchSystem: prompts/vision-table-presence-batch-system-v1.md
+  tablePresenceBatchUser: prompts/vision-table-presence-batch-user-v1.md
   tableOnlySystem: prompts/vision-table-extract-system-v1.md
   tableOnlyUser: prompts/vision-table-extract-user-v1.md
 methods:
@@ -13,3 +18,5 @@ methods:
 confidence:
   defaultVlm: 0.85
   tableVlm: 0.80
+batch:
+  tablePresenceBatchSize: 4

@@ -14,6 +14,8 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,15 +37,13 @@ class TableExtractorTest {
             pageSummary(2, PageClassification.SCANNED)
         );
 
-        when(tableEngineClient.extractTablesBatch(any(), eq(List.of())))
-            .thenReturn(Map.of());
-
         List<TableExtractionResult> result = extractor.extractFromDocument(
             "/tmp/sample.pdf",
             pages
         );
 
         assertThat(result).isEmpty();
+        verifyNoInteractions(tableEngineClient, latticeExtractor);
     }
 
     @Test
@@ -82,15 +82,10 @@ class TableExtractorTest {
     }
 
     @Test
-    void shouldProcessMixedPagesAsDigital() {
+    void shouldSkipMixedPagesForDigitalBatchExtraction() {
         List<PageSummary> pages = List.of(
             pageSummary(1, PageClassification.MIXED)
         );
-
-        when(tableEngineClient.extractTablesBatch(any(), eq(List.of(1))))
-            .thenReturn(Map.of(1, List.of()));
-        when(latticeExtractor.toDomainList(List.of(), 1))
-            .thenReturn(List.of());
 
         List<TableExtractionResult> result = extractor.extractFromDocument(
             "/tmp/sample.pdf",
@@ -98,6 +93,7 @@ class TableExtractorTest {
         );
 
         assertThat(result).isEmpty();
+        verifyNoInteractions(tableEngineClient, latticeExtractor);
     }
 
     @Test
