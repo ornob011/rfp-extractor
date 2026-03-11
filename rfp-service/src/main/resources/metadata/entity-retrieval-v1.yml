@@ -10,7 +10,7 @@ extractionOrder:
 domains:
   GENERAL:
     alwaysRun: true
-    topK: 5
+    topK: 3
     minimumScore: 0.10
     queries:
       - 'request for proposal'
@@ -30,7 +30,7 @@ domains:
       - 'completion period'
   SUBMISSION:
     alwaysRun: true
-    topK: 5
+    topK: 3
     minimumScore: 0.10
     queries:
       - 'technical proposal'
@@ -49,7 +49,7 @@ domains:
       - 'proposal preparation'
   FINANCIAL:
     alwaysRun: true
-    topK: 5
+    topK: 3
     minimumScore: 0.10
     queries:
       - 'technical financial split'
@@ -68,7 +68,7 @@ domains:
       - 'remuneration'
   EVALUATION:
     alwaysRun: true
-    topK: 6
+    topK: 4
     minimumScore: 0.10
     queries:
       - 'evaluation criteria'
@@ -86,9 +86,9 @@ domains:
       - 'evaluation committee'
       - 'minimum qualifying marks'
   ICT:
-    alwaysRun: true
-    topK: 6
-    minimumScore: 0.18
+    alwaysRun: false
+    topK: 4
+    minimumScore: 0.22
     queries:
       - 'software modules'
       - 'software development'
@@ -115,9 +115,9 @@ domains:
       - 'reporting dashboard'
       - 'analytics'
   STAFFING:
-    alwaysRun: true
-    topK: 5
-    minimumScore: 0.16
+    alwaysRun: false
+    topK: 3
+    minimumScore: 0.20
     queries:
       - 'key personnel'
       - 'staff-month'
@@ -134,9 +134,9 @@ domains:
       - 'person-month'
       - 'man-month'
   SUPPORT:
-    alwaysRun: true
-    topK: 5
-    minimumScore: 0.16
+    alwaysRun: false
+    topK: 3
+    minimumScore: 0.20
     queries:
       - 'training'
       - 'maintenance'
