@@ -8,6 +8,7 @@ public enum ConfidenceSource {
     FONT_SIZE,
     ALL_CAPS,
     BOOKMARK,
+    VLM,
     LATTICE,
     STREAM,
     VLM_TABLE_RECONSTRUCT,

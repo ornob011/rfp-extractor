@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 
 public enum TableExtractionStrategy {
+    VLM("vlm"),
     LATTICE("lattice"),
     STREAM("stream");
 
@@ -31,4 +32,3 @@ public enum TableExtractionStrategy {
         return jsonValue;
     }
 }
-
