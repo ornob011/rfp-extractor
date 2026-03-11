@@ -1,8 +1,8 @@
 package com.dsi.rfp.adapter.vision;
 
 import com.dsi.rfp.adapter.extraction.PageImageRenderer;
-import com.dsi.rfp.adapter.llm.LlmImageInput;
 import com.dsi.rfp.adapter.llm.LlmAdapter;
+import com.dsi.rfp.adapter.llm.LlmImageInput;
 import com.dsi.rfp.adapter.llm.PromptTemplateRenderer;
 import com.dsi.rfp.domain.exception.LlmUnavailableException;
 import lombok.extern.slf4j.Slf4j;
