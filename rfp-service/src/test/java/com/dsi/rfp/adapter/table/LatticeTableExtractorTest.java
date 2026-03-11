@@ -1,8 +1,11 @@
 package com.dsi.rfp.adapter.table;
 
+import com.dsi.rfp.domain.model.TableEngineCell;
+import com.dsi.rfp.domain.model.TableEngineTable;
 import com.dsi.rfp.domain.model.TableExtractionResult;
 import com.dsi.rfp.domain.model.TableExtractionStrategy;
 import com.dsi.rfp.domain.model.TableType;
+import com.dsi.rfp.domain.port.out.TableEnginePort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,7 +23,7 @@ import static org.mockito.Mockito.when;
 class LatticeTableExtractorTest {
 
     @Mock
-    private TableEngineClient tableEngineClient;
+    private TableEnginePort tableEngineClient;
 
     @Mock
     private TableTypeClassifier classifier;

@@ -2,7 +2,9 @@ package com.dsi.rfp.adapter.table;
 
 import com.dsi.rfp.domain.model.PageClassification;
 import com.dsi.rfp.domain.model.PageSummary;
+import com.dsi.rfp.domain.model.TableEngineTable;
 import com.dsi.rfp.domain.model.TableExtractionResult;
+import com.dsi.rfp.domain.port.out.TableEnginePort;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -13,11 +15,11 @@ import java.util.Map;
 @Component
 public class TableExtractor {
 
-    private final TableEngineClient tableEngineClient;
+    private final TableEnginePort tableEngineClient;
     private final LatticeTableExtractor latticeExtractor;
 
     public TableExtractor(
-        TableEngineClient tableEngineClient,
+        TableEnginePort tableEngineClient,
         LatticeTableExtractor latticeExtractor
     ) {
         this.tableEngineClient = tableEngineClient;

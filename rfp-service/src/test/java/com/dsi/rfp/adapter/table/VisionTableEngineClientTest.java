@@ -4,6 +4,7 @@ import com.dsi.rfp.adapter.vision.VisionExtractionAdapter;
 import com.dsi.rfp.adapter.vision.VisionExtractionConfig;
 import com.dsi.rfp.adapter.vision.VisionPageResult;
 import com.dsi.rfp.adapter.vision.VisionTableResult;
+import com.dsi.rfp.domain.model.TableEngineTable;
 import com.dsi.rfp.domain.model.TableExtractionStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -5,7 +5,10 @@ import com.dsi.rfp.adapter.vision.VisionExtractionConfig;
 import com.dsi.rfp.adapter.vision.VisionPageResult;
 import com.dsi.rfp.adapter.vision.VisionTableResult;
 import com.dsi.rfp.domain.exception.LlmUnavailableException;
+import com.dsi.rfp.domain.model.TableEngineCell;
+import com.dsi.rfp.domain.model.TableEngineTable;
 import com.dsi.rfp.domain.model.TableExtractionStrategy;
+import com.dsi.rfp.domain.port.out.TableEnginePort;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Primary;
@@ -20,7 +23,7 @@ import java.util.Map;
 @Component
 @Primary
 @Qualifier("visionTableEngine")
-public class VisionTableEngineClient implements TableEngineClient {
+public class VisionTableEngineClient implements TableEnginePort {
 
     private final VisionExtractionAdapter visionAdapter;
     private final VisionExtractionConfig config;
