@@ -35,14 +35,14 @@ public class VisionPageExtractionConfig {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record ConfigDocument(
+    record ConfigDocument(
         Integer version,
         Render render,
         Vision vision,
         Merge merge
     ) {
 
-        private ConfigDocument {
+        ConfigDocument {
             if (version == null) {
                 throw new EntityMetadataContractException("Vision page extraction config must define version");
             }
@@ -61,17 +61,17 @@ public class VisionPageExtractionConfig {
         }
     }
 
-    private record Render(
+    record Render(
         int dpi
     ) {
     }
 
-    private record Vision(
+    record Vision(
         String language
     ) {
     }
 
-    private record Merge(
+    record Merge(
         double textQualityBlockDivisor
     ) {
     }
