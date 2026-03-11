@@ -30,13 +30,11 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class LlmAdapterTest {
 
-    @Mock
-    private LlmResilientCaller caller;
-
     private static final Resource SYSTEM_RESOURCE = new ByteArrayResource(
         "system prompt".getBytes(StandardCharsets.UTF_8)
     );
-
+    @Mock
+    private LlmResilientCaller caller;
     private LlmAdapter llmAdapter;
 
     @BeforeEach
