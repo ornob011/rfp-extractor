@@ -10,13 +10,18 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.content.Media;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MimeType;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 @Component
 class LlmResilientCaller {
@@ -26,15 +31,21 @@ class LlmResilientCaller {
     private final ChatClient chatClient;
     private final ChatClient judgeChatClient;
     private final Executor llmExecutor;
+    private final long callTimeoutSeconds;
+    private final long visionCallTimeoutSeconds;
 
     LlmResilientCaller(
         ChatClient chatClient,
         @Qualifier("judgeChatClient") ChatClient judgeChatClient,
-        @Qualifier("llmTaskExecutor") Executor llmExecutor
+        @Qualifier("llmTaskExecutor") Executor llmExecutor,
+        @Value("${app.llm.call-timeout-seconds:45}") long callTimeoutSeconds,
+        @Value("${app.llm.vision-call-timeout-seconds:120}") long visionCallTimeoutSeconds
     ) {
         this.chatClient = chatClient;
         this.judgeChatClient = judgeChatClient;
         this.llmExecutor = llmExecutor;
+        this.callTimeoutSeconds = callTimeoutSeconds;
+        this.visionCallTimeoutSeconds = visionCallTimeoutSeconds;
     }
 
     @CircuitBreaker(
@@ -52,13 +63,15 @@ class LlmResilientCaller {
         String userContent
     ) {
         return CompletableFuture.supplyAsync(
-            () -> chatClient.prompt()
-                            .system(systemPrompt)
-                            .user(userContent)
-                            .call()
-                            .content(),
+            () -> executeWithTimeout(callTimeoutSeconds,
+                () -> chatClient.prompt()
+                                .system(systemPrompt)
+                                .user(userContent)
+                                .call()
+                                .content()
+            ),
             llmExecutor
-        ).orTimeout(45, TimeUnit.SECONDS);
+        );
     }
 
     @CircuitBreaker(
@@ -75,12 +88,14 @@ class LlmResilientCaller {
         String fullPrompt
     ) {
         return CompletableFuture.supplyAsync(
-            () -> judgeChatClient.prompt()
-                                 .user(fullPrompt)
-                                 .call()
-                                 .content(),
+            () -> executeWithTimeout(callTimeoutSeconds,
+                () -> judgeChatClient.prompt()
+                                     .user(fullPrompt)
+                                     .call()
+                                     .content()
+            ),
             llmExecutor
-        ).orTimeout(45, TimeUnit.SECONDS);
+        );
     }
 
     @CircuitBreaker(
@@ -100,7 +115,7 @@ class LlmResilientCaller {
         MimeType mimeType
     ) {
         return CompletableFuture.supplyAsync(
-            () -> {
+            () -> executeWithTimeout(visionCallTimeoutSeconds, () -> {
                 Media imageMedia = Media.builder()
                                         .mimeType(mimeType)
                                         .data(imageBytes)
@@ -121,9 +136,27 @@ class LlmResilientCaller {
                 return chatClient.prompt(prompt)
                                  .call()
                                  .content();
-            },
+            }),
             llmExecutor
-        ).orTimeout(45, TimeUnit.SECONDS);
+        );
+    }
+
+    private String executeWithTimeout(
+        long timeoutSeconds,
+        Supplier<String> task
+    ) {
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(task);
+        try {
+            return future.get(timeoutSeconds, TimeUnit.SECONDS);
+        } catch (TimeoutException exception) {
+            future.cancel(true);
+            throw new CompletionException(exception);
+        } catch (ExecutionException exception) {
+            throw new CompletionException(exception.getCause());
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new CompletionException(exception);
+        }
     }
 
     public CompletableFuture<String> fallbackWithImage(

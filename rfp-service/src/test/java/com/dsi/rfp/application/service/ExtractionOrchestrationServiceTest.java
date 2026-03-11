@@ -1,9 +1,11 @@
 package com.dsi.rfp.application.service;
 
+import com.dsi.rfp.adapter.persistence.AgentExecutionTracker;
 import com.dsi.rfp.adapter.persistence.ExtractionStateCheckpointRepository;
 import com.dsi.rfp.agent.ExtractionGraph;
 import com.dsi.rfp.agent.ExtractionState;
 import com.dsi.rfp.domain.model.AnalysisStatus;
+import com.dsi.rfp.domain.model.TerminationReason;
 import com.dsi.rfp.domain.port.out.JobStatePort;
 import org.bsc.langgraph4j.CompiledGraph;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +36,9 @@ class ExtractionOrchestrationServiceTest {
     private ExtractionStateCheckpointRepository checkpointRepository;
 
     @Mock
+    private AgentExecutionTracker executionTracker;
+
+    @Mock
     private CompiledGraph<ExtractionState> compiledGraph;
 
     private ExtractionOrchestrationService service;
@@ -43,15 +48,18 @@ class ExtractionOrchestrationServiceTest {
         service = new ExtractionOrchestrationService(
             extractionGraph,
             jobStatePort,
-            checkpointRepository
+            checkpointRepository,
+            executionTracker
         );
     }
 
     @Test
     void shouldSetRunningThenCompleted() throws Exception {
         when(checkpointRepository.load(42L)).thenReturn(Optional.empty());
+        when(executionTracker.startExecution(42L)).thenReturn(100L);
         when(extractionGraph.compile()).thenReturn(compiledGraph);
-        when(compiledGraph.invoke(argThat(this::isStateMap))).thenReturn(Optional.empty());
+        when(compiledGraph.invoke(argThat(this::isStateMap)))
+            .thenReturn(Optional.empty());
 
         service.runExtraction(42L, Path.of("/tmp/x.pdf"));
 
@@ -61,10 +69,49 @@ class ExtractionOrchestrationServiceTest {
     }
 
     @Test
+    void shouldCreateAndCompleteExecution() throws Exception {
+        when(checkpointRepository.load(42L)).thenReturn(Optional.empty());
+        when(executionTracker.startExecution(42L)).thenReturn(100L);
+        when(extractionGraph.compile()).thenReturn(compiledGraph);
+        when(compiledGraph.invoke(argThat(this::isStateMap)))
+            .thenReturn(Optional.empty());
+
+        service.runExtraction(42L, Path.of("/tmp/x.pdf"));
+
+        verify(executionTracker).startExecution(42L);
+        verify(executionTracker).completeExecution(
+            eq(100L),
+            eq(TerminationReason.SUCCESS),
+            eq(0),
+            eq(0),
+            eq(0)
+        );
+    }
+
+    @Test
+    void shouldPassExecutionIdInInitialState() throws Exception {
+        when(checkpointRepository.load(42L)).thenReturn(Optional.empty());
+        when(executionTracker.startExecution(42L)).thenReturn(100L);
+        when(extractionGraph.compile()).thenReturn(compiledGraph);
+        when(compiledGraph.invoke(argThat(this::isStateMap)))
+            .thenReturn(Optional.empty());
+
+        service.runExtraction(42L, Path.of("/tmp/doc.pdf"));
+
+        verify(compiledGraph).invoke(argThat(state -> {
+            assertThat(state.get(ExtractionState.Key.EXECUTION_ID.value()))
+                .isEqualTo(100L);
+            return true;
+        }));
+    }
+
+    @Test
     void shouldPassInitialStateToGraph() throws Exception {
         when(checkpointRepository.load(42L)).thenReturn(Optional.empty());
+        when(executionTracker.startExecution(42L)).thenReturn(100L);
         when(extractionGraph.compile()).thenReturn(compiledGraph);
-        when(compiledGraph.invoke(argThat(this::isStateMap))).thenReturn(Optional.empty());
+        when(compiledGraph.invoke(argThat(this::isStateMap)))
+            .thenReturn(Optional.empty());
 
         service.runExtraction(42L, Path.of("/tmp/doc.pdf"));
 
@@ -76,8 +123,10 @@ class ExtractionOrchestrationServiceTest {
     }
 
     private boolean matchesInitialState(Map<String, Object> state) {
-        assertThat(state.get(ExtractionState.Key.JOB_ID.value())).isEqualTo(42L);
-        assertThat(state.get(ExtractionState.Key.DOCUMENT_PATH.value())).isEqualTo("/tmp/doc.pdf");
+        assertThat(state.get(ExtractionState.Key.JOB_ID.value()))
+            .isEqualTo(42L);
+        assertThat(state.get(ExtractionState.Key.DOCUMENT_PATH.value()))
+            .isEqualTo("/tmp/doc.pdf");
 
         return true;
     }
