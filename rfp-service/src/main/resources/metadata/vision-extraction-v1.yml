@@ -19,4 +19,4 @@ confidence:
   defaultVlm: 0.85
   tableVlm: 0.80
 batch:
-  tablePresenceBatchSize: 4
+  tablePresenceBatchSize: 2

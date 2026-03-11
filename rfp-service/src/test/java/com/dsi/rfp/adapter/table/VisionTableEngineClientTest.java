@@ -38,8 +38,7 @@ class VisionTableEngineClientTest {
     void setUp() {
         client = new VisionTableEngineClient(
             visionAdapter,
-            config,
-            Runnable::run
+            config
         );
     }
 
