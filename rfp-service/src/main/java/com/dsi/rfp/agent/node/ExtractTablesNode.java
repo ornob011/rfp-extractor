@@ -51,7 +51,8 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
         List<TableExtractionResult> tables = new ArrayList<>(
             tableExtractor.extractFromDocument(
                 state.documentPath(),
-                state.pageClassifications()
+                state.pageClassifications(),
+                state.pageTexts()
             )
         );
 
@@ -109,10 +110,10 @@ public class ExtractTablesNode implements NodeAction<ExtractionState> {
         Set<Integer> cachedPages = cachedPages(state.vlmTables());
 
         List<PageSummary> uncachedPages = state.pageClassifications()
-                                              .stream()
-                                              .filter(page -> page.getClassification() == PageClassification.SCANNED)
-                                              .filter(page -> !cachedPages.contains(page.getPageNumber()))
-                                              .toList();
+                                               .stream()
+                                               .filter(page -> page.getClassification() == PageClassification.SCANNED)
+                                               .filter(page -> !cachedPages.contains(page.getPageNumber()))
+                                               .toList();
 
         uncachedPages.forEach(page -> tables.addAll(
             reconstructForPage(

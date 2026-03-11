@@ -1,8 +1,10 @@
 package com.dsi.rfp.adapter.entity;
 
 import com.dsi.rfp.adapter.extraction.DocumentChunkingService;
+import com.dsi.rfp.adapter.extraction.DocumentEvidenceIndex;
 import com.dsi.rfp.adapter.llm.LlmAdapter;
 import com.dsi.rfp.agent.ExtractionState;
+import com.dsi.rfp.config.YamlConfigLoader;
 import com.dsi.rfp.domain.model.RfpEntities;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -34,6 +35,8 @@ class EntityExtractorTest {
         ObjectMapper objectMapper = new ObjectMapper();
         RfpEntitiesMapper mapper = new RfpEntitiesMapper(new ObjectMapper(), new RfpEntitiesMapperConfigRegistry());
         EntityExtractorMetadataRegistry metadataRegistry = new EntityExtractorMetadataRegistry();
+        DocumentEvidenceIndex evidenceIndex = new DocumentEvidenceIndex();
+        EntityRetrievalConfig retrievalConfig = new EntityRetrievalConfig(new YamlConfigLoader());
 
         GeneralEntityExtractor general = new GeneralEntityExtractor(
             llmAdapter,
@@ -88,7 +91,9 @@ class EntityExtractorTest {
             evaluation,
             chunkingService,
             mapper,
-            Executors.newFixedThreadPool(2)
+            evidenceIndex,
+            retrievalConfig,
+            metadataRegistry
         );
     }
 

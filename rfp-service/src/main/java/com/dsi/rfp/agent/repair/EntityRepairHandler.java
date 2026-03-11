@@ -28,7 +28,8 @@ public class EntityRepairHandler implements RepairHandler {
         ExtractionState state,
         int attemptNumber
     ) {
-        RfpEntities updated = entityExtractor.extractAll(
+        RfpEntities updated = entityExtractor.extractTargeted(
+            componentId,
             state.sections(),
             state.clauses(),
             state

@@ -1,29 +1,30 @@
 package com.dsi.rfp.adapter.entity;
 
 import com.dsi.rfp.adapter.extraction.DocumentChunkingService;
+import com.dsi.rfp.adapter.extraction.DocumentEvidenceIndex;
 import com.dsi.rfp.agent.ExtractionState;
 import com.dsi.rfp.domain.model.Clause;
 import com.dsi.rfp.domain.model.DocumentChunk;
 import com.dsi.rfp.domain.model.RfpEntities;
 import com.dsi.rfp.domain.model.Section;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 @Slf4j
 @Service
 public class EntityExtractor {
 
-    private final List<BaseEntityExtractor> extractors;
+    private final Map<PromptKey, BaseEntityExtractor> extractors;
     private final DocumentChunkingService chunkingService;
     private final RfpEntitiesMapper entitiesMapper;
-    private final Executor entityExtractionExecutor;
+    private final DocumentEvidenceIndex evidenceIndex;
+    private final EntityRetrievalConfig retrievalConfig;
+    private final EntityExtractorMetadataRegistry metadataRegistry;
 
     public EntityExtractor(
         GeneralEntityExtractor generalExtractor,
@@ -35,9 +36,11 @@ public class EntityExtractor {
         EvaluationEntityExtractor evaluationExtractor,
         DocumentChunkingService chunkingService,
         RfpEntitiesMapper entitiesMapper,
-        @Qualifier("entityExtractionExecutor") Executor entityExtractionExecutor
+        DocumentEvidenceIndex evidenceIndex,
+        EntityRetrievalConfig retrievalConfig,
+        EntityExtractorMetadataRegistry metadataRegistry
     ) {
-        this.extractors = List.of(
+        this.extractors = extractorMap(
             generalExtractor,
             submissionExtractor,
             financialExtractor,
@@ -48,7 +51,9 @@ public class EntityExtractor {
         );
         this.chunkingService = chunkingService;
         this.entitiesMapper = entitiesMapper;
-        this.entityExtractionExecutor = entityExtractionExecutor;
+        this.evidenceIndex = evidenceIndex;
+        this.retrievalConfig = retrievalConfig;
+        this.metadataRegistry = metadataRegistry;
     }
 
     public RfpEntities extractAll(
@@ -66,19 +71,15 @@ public class EntityExtractor {
             clauses
         );
 
-        List<CompletableFuture<Map<String, Object>>> futures =
-            extractors.stream()
-                      .map(extractor -> CompletableFuture.supplyAsync(
-                          () -> extractor.extract(chunks, state),
-                          entityExtractionExecutor
-                      ))
-                      .toList();
-
         Map<String, Object> merged = new HashMap<>();
 
-        futures.stream()
-               .map(CompletableFuture::join)
-               .forEach(merged::putAll);
+        retrievalConfig.extractionOrder()
+                       .forEach(promptKey -> mergeDomain(
+                           merged,
+                           promptKey,
+                           chunks,
+                           state
+                       ));
 
         log.info(
             "event=entity.extractAll.done component=EntityExtractor jobId={} fields={}",
@@ -87,5 +88,106 @@ public class EntityExtractor {
         );
 
         return entitiesMapper.fromMap(merged);
+    }
+
+    public RfpEntities extractTargeted(
+        String fieldName,
+        List<Section> sections,
+        List<Clause> clauses,
+        ExtractionState state
+    ) {
+        PromptKey promptKey = metadataRegistry.promptKeyForField(fieldName);
+
+        if (promptKey == null) {
+            return extractAll(
+                sections,
+                clauses,
+                state
+            );
+        }
+
+        List<DocumentChunk> chunks = chunkingService.chunkDocument(
+            sections,
+            clauses
+        );
+
+        Map<String, Object> merged = new HashMap<>();
+
+        mergeDomain(
+            merged,
+            promptKey,
+            chunks,
+            state
+        );
+
+        return entitiesMapper.fromMap(merged);
+    }
+
+    private Map<PromptKey, BaseEntityExtractor> extractorMap(
+        BaseEntityExtractor... extractors
+    ) {
+        Map<PromptKey, BaseEntityExtractor> mapping = new EnumMap<>(PromptKey.class);
+
+        for (BaseEntityExtractor extractor : extractors) {
+            mapping.put(
+                extractor.key(),
+                extractor
+            );
+        }
+
+        return Map.copyOf(mapping);
+    }
+
+    private void mergeDomain(
+        Map<String, Object> merged,
+        PromptKey promptKey,
+        List<DocumentChunk> chunks,
+        ExtractionState state
+    ) {
+        EntityRetrievalConfig.DomainConfig domainConfig = retrievalConfig.domain(promptKey);
+        DocumentEvidenceIndex.RetrievalResult<DocumentChunk> retrieval = evidenceIndex.retrieveChunks(
+            chunks,
+            domainConfig.queries(),
+            domainConfig.topK(),
+            domainConfig.minimumScore()
+        );
+
+        if (!domainConfig.alwaysRun() && retrieval.items().isEmpty()) {
+            log.info(
+                "event=entity.domain.skip component=EntityExtractor jobId={} domain={} bestScore={}",
+                state.jobId(),
+                promptKey,
+                retrieval.bestScore()
+            );
+
+            return;
+        }
+
+        List<DocumentChunk> evidenceChunks = evidenceChunks(
+            chunks,
+            retrieval,
+            domainConfig
+        );
+
+        merged.putAll(
+            extractors.get(promptKey).extract(
+                evidenceChunks,
+                state
+            )
+        );
+    }
+
+    private List<DocumentChunk> evidenceChunks(
+        List<DocumentChunk> chunks,
+        DocumentEvidenceIndex.RetrievalResult<DocumentChunk> retrieval,
+        EntityRetrievalConfig.DomainConfig domainConfig
+    ) {
+        if (!retrieval.items().isEmpty()) {
+            return retrieval.items();
+        }
+
+        return chunks.stream()
+                     .limit(domainConfig.topK())
+                     .toList();
     }
 }

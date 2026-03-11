@@ -60,6 +60,15 @@ public class EntityExtractorMetadataRegistry {
                                   ));
     }
 
+    public PromptKey promptKeyForField(String fieldName) {
+        return metadataByPromptKey.entrySet()
+                                  .stream()
+                                  .filter(entry -> entry.getValue().requiredFields().contains(fieldName))
+                                  .map(Map.Entry::getKey)
+                                  .findFirst()
+                                  .orElse(null);
+    }
+
     private ExtractorMetadata metadata(PromptKey key) {
         ExtractorMetadata metadata = metadataByPromptKey.get(key);
 

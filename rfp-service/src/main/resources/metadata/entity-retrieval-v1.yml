@@ -1,0 +1,154 @@
+version: 1
+extractionOrder:
+  - GENERAL
+  - SUBMISSION
+  - FINANCIAL
+  - EVALUATION
+  - ICT
+  - STAFFING
+  - SUPPORT
+domains:
+  GENERAL:
+    alwaysRun: true
+    topK: 5
+    minimumScore: 0.10
+    queries:
+      - 'request for proposal'
+      - 'terms of reference'
+      - 'invitation for proposal'
+      - 'submission deadline'
+      - 'closing date and time'
+      - 'issue date'
+      - 'proposal validity'
+      - 'method of selection'
+      - 'procurement method'
+      - 'pre-proposal meeting'
+      - 'pre-bid meeting'
+      - 'contact details'
+      - 'contact person'
+      - 'project duration'
+      - 'completion period'
+  SUBMISSION:
+    alwaysRun: true
+    topK: 5
+    minimumScore: 0.10
+    queries:
+      - 'technical proposal'
+      - 'financial proposal'
+      - 'proposal submission'
+      - 'submission instructions'
+      - 'submission address'
+      - 'sealed envelope'
+      - 'soft copy'
+      - 'hard copy'
+      - 'original and copies'
+      - 'number of copies'
+      - 'proposal validity'
+      - 'submission deadline'
+      - 'forms and procedures'
+      - 'proposal preparation'
+  FINANCIAL:
+    alwaysRun: true
+    topK: 5
+    minimumScore: 0.10
+    queries:
+      - 'technical financial split'
+      - 'financial proposal'
+      - 'performance security'
+      - 'bank guarantee'
+      - 'payment schedule'
+      - 'payment terms'
+      - 'reimbursable expenses'
+      - 'bid validity'
+      - 'proposal validity'
+      - 'advance payment'
+      - 'interim payment'
+      - 'final payment'
+      - 'contract price'
+      - 'remuneration'
+  EVALUATION:
+    alwaysRun: true
+    topK: 6
+    minimumScore: 0.10
+    queries:
+      - 'evaluation criteria'
+      - 'technical evaluation'
+      - 'financial evaluation'
+      - 'combined evaluation'
+      - 'qcbs'
+      - 'eligibility'
+      - 'similar experience'
+      - 'methodology'
+      - 'oral presentation'
+      - 'presentation'
+      - 'scope of work'
+      - 'scope of services'
+      - 'evaluation committee'
+      - 'minimum qualifying marks'
+  ICT:
+    alwaysRun: true
+    topK: 6
+    minimumScore: 0.18
+    queries:
+      - 'software modules'
+      - 'software development'
+      - 'system development'
+      - 'system design'
+      - 'software requirement specification'
+      - 'system design document'
+      - 'srs'
+      - 'sdd'
+      - 'integration'
+      - 'api'
+      - 'database'
+      - 'dbms'
+      - 'rdbms'
+      - 'deployment'
+      - 'implementation'
+      - 'data migration'
+      - 'hosting'
+      - 'mobile app'
+      - 'ui mock'
+      - 'security testing'
+      - 'load testing'
+      - 'user acceptance test'
+      - 'reporting dashboard'
+      - 'analytics'
+  STAFFING:
+    alwaysRun: true
+    topK: 5
+    minimumScore: 0.16
+    queries:
+      - 'key personnel'
+      - 'staff-month'
+      - 'staff months'
+      - 'team leader'
+      - 'curriculum vitae'
+      - 'cv'
+      - 'professional staff'
+      - 'staffing schedule'
+      - 'team composition'
+      - 'task assignments'
+      - 'deployment schedule of staff'
+      - 'qualification and competence'
+      - 'person-month'
+      - 'man-month'
+  SUPPORT:
+    alwaysRun: true
+    topK: 5
+    minimumScore: 0.16
+    queries:
+      - 'training'
+      - 'maintenance'
+      - 'support'
+      - 'maintenance support'
+      - 'support services'
+      - 'warranty'
+      - 'training plan'
+      - 'user training'
+      - 'maintenance period'
+      - 'operational support'
+      - 'post implementation support'
+      - 'bug fixing'
+      - 'service level'
+      - 'handholding support'
