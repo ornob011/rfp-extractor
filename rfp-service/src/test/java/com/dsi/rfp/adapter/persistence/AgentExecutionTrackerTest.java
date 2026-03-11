@@ -6,7 +6,10 @@ import com.dsi.rfp.adapter.persistence.entity.AnalysisJobEntity;
 import com.dsi.rfp.adapter.persistence.repository.AgentExecutionRepository;
 import com.dsi.rfp.adapter.persistence.repository.AgentStepRepository;
 import com.dsi.rfp.adapter.persistence.repository.AnalysisJobRepository;
-import com.dsi.rfp.domain.model.*;
+import com.dsi.rfp.domain.model.AgentStepType;
+import com.dsi.rfp.domain.model.ExecutionStatus;
+import com.dsi.rfp.domain.model.StepOutcome;
+import com.dsi.rfp.domain.model.TerminationReason;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,8 +52,8 @@ class AgentExecutionTrackerTest {
         when(jobRepository.getReferenceById(42L)).thenReturn(job);
 
         AgentExecutionEntity saved = AgentExecutionEntity.builder()
-            .status(ExecutionStatus.RUNNING)
-            .build();
+                                                         .status(ExecutionStatus.RUNNING)
+                                                         .build();
         saved.setId(100L);
 
         when(executionRepository.save(any())).thenReturn(saved);
@@ -104,8 +107,8 @@ class AgentExecutionTrackerTest {
     @Test
     void completeExecutionShouldUpdateToCompleted() {
         AgentExecutionEntity execution = AgentExecutionEntity.builder()
-            .status(ExecutionStatus.RUNNING)
-            .build();
+                                                             .status(ExecutionStatus.RUNNING)
+                                                             .build();
         when(executionRepository.findById(100L))
             .thenReturn(Optional.of(execution));
 
@@ -130,8 +133,8 @@ class AgentExecutionTrackerTest {
     @Test
     void failExecutionShouldUpdateToFailed() {
         AgentExecutionEntity execution = AgentExecutionEntity.builder()
-            .status(ExecutionStatus.RUNNING)
-            .build();
+                                                             .status(ExecutionStatus.RUNNING)
+                                                             .build();
         when(executionRepository.findById(100L))
             .thenReturn(Optional.of(execution));
 
