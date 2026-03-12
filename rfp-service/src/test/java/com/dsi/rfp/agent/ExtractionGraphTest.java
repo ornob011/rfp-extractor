@@ -59,6 +59,7 @@ class ExtractionGraphTest {
             runRulePackNode,
             finalizeNode,
             repairRouter,
+            new ConfidenceScoringConfig(),
             checkpointRepository,
             executionTracker
         );

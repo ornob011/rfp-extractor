@@ -98,13 +98,7 @@ public class ConfidenceScorer {
                                     .map(String::strip)
                                     .orElse(StringUtils.EMPTY);
 
-        return switch (normalized.length()) {
-            case 0 -> 0.0;
-            default -> Optional.of(normalized)
-                               .filter(text -> text.length() < scoringConfig.shortTextLengthThreshold())
-                               .map(text -> 0.5)
-                               .orElse(1.0);
-        };
+        return normalized.isEmpty() ? 0.0 : 1.0;
     }
 
     public double completeness(Map<String, Double> scores) {

@@ -3,6 +3,7 @@ package com.dsi.rfp.adapter.entity;
 import com.dsi.rfp.domain.exception.EntityMetadataContractException;
 import com.dsi.rfp.domain.exception.SystemIoException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.google.common.base.CaseFormat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -61,9 +62,16 @@ public class EntityExtractorMetadataRegistry {
     }
 
     public PromptKey promptKeyForField(String fieldName) {
+        String snakeCase = CaseFormat.LOWER_CAMEL.to(
+            CaseFormat.LOWER_UNDERSCORE,
+            fieldName
+        );
+
         return metadataByPromptKey.entrySet()
                                   .stream()
-                                  .filter(entry -> entry.getValue().requiredFields().contains(fieldName))
+                                  .filter(entry -> entry.getValue()
+                                                        .requiredFields()
+                                                        .contains(snakeCase))
                                   .map(Map.Entry::getKey)
                                   .findFirst()
                                   .orElse(null);

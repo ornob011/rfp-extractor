@@ -7,6 +7,7 @@ import com.dsi.rfp.agent.node.*;
 import com.dsi.rfp.domain.model.AgentStepType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bsc.langgraph4j.CompileConfig;
 import org.bsc.langgraph4j.CompiledGraph;
 import org.bsc.langgraph4j.GraphStateException;
 import org.bsc.langgraph4j.StateGraph;
@@ -23,6 +24,9 @@ import static org.bsc.langgraph4j.StateGraph.START;
 @RequiredArgsConstructor
 public class ExtractionGraph {
 
+    private static final int LINEAR_NODE_COUNT = 10;
+    private static final int RECURSION_HEADROOM = 5;
+
     private final ValidateNode validateNode;
     private final ClassifyPagesNode classifyPagesNode;
     private final ExtractTextNode extractTextNode;
@@ -34,6 +38,7 @@ public class ExtractionGraph {
     private final RunRulePackNode runRulePackNode;
     private final FinalizeNode finalizeNode;
     private final RepairRouter repairRouter;
+    private final ConfidenceScoringConfig scoringConfig;
     private final ExtractionStateCheckpointRepository checkpointRepository;
     private final AgentExecutionTracker executionTracker;
 
@@ -47,7 +52,15 @@ public class ExtractionGraph {
             "event=graph.compiled component=ExtractionGraph nodes=10"
         );
 
-        return graph.compile();
+        int recursionLimit = LINEAR_NODE_COUNT
+            + scoringConfig.maxTotalRepairIterations()
+            + RECURSION_HEADROOM;
+
+        CompileConfig compileConfig = CompileConfig.builder()
+                                                   .recursionLimit(recursionLimit)
+                                                   .build();
+
+        return graph.compile(compileConfig);
     }
 
     private void registerNodes(

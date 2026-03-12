@@ -61,6 +61,14 @@ public class RepairLoopNode implements NodeAction<ExtractionState> {
         String componentId = queue.removeFirst();
         RepairableComponent component = state.repairableComponents().get(componentId);
 
+        log.info(
+            "event=repair.dequeue component=RepairLoopNode componentId={} confidence={} queueSize={} iteration={}",
+            componentId,
+            state.confidenceMap().getOrDefault(componentId, 0.0),
+            queue.size(),
+            state.totalRepairIterations() + 1
+        );
+
         if (component == null) {
             return missingComponentResult(
                 state,
