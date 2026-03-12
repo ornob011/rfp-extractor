@@ -88,7 +88,7 @@ class ConfidenceScoringConfigTest {
 
     @Test
     void shouldLoadMaxTotalRepairIterations() {
-        assertThat(config.maxTotalRepairIterations()).isEqualTo(20);
+        assertThat(config.maxTotalRepairIterations()).isEqualTo(10);
     }
 
     @Test

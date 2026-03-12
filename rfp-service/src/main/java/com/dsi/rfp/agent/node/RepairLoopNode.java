@@ -188,10 +188,14 @@ public class RepairLoopNode implements NodeAction<ExtractionState> {
             componentType
         ).ifPresent(repairable -> repairables.put(componentId, repairable));
 
+        List<String> manualReview = new ArrayList<>(originalState.manualReviewRequired());
+
         queueFor(
             after,
             componentId,
-            queue
+            attemptNumber,
+            queue,
+            manualReview
         );
 
         List<RepairLogEntry> repairLog = new ArrayList<>(originalState.repairLog());
@@ -213,6 +217,7 @@ public class RepairLoopNode implements NodeAction<ExtractionState> {
         updates.put(ExtractionState.Key.CONFIDENCE_MAP.value(), confidenceMap);
         updates.put(ExtractionState.Key.REPAIR_LOG.value(), repairLog);
         updates.put(ExtractionState.Key.REPAIRABLE_COMPONENTS.value(), repairables);
+        updates.put(ExtractionState.Key.MANUAL_REVIEW_REQUIRED.value(), manualReview);
         updates.put(
             ExtractionState.Key.TOTAL_REPAIR_ITERATIONS.value(),
             originalState.totalRepairIterations() + 1
@@ -358,11 +363,20 @@ public class RepairLoopNode implements NodeAction<ExtractionState> {
     private void queueFor(
         double after,
         String componentId,
-        List<String> queue
+        int attemptNumber,
+        List<String> queue,
+        List<String> manualReview
     ) {
-        if (after < scoringConfig.lowConfidenceThreshold()) {
-            queue.add(componentId);
+        if (after >= scoringConfig.lowConfidenceThreshold()) {
+            return;
         }
+
+        if (attemptNumber >= scoringConfig.maxRetriesPerItem()) {
+            manualReview.add(componentId);
+            return;
+        }
+
+        queue.add(componentId);
     }
 
     private Map<RepairStrategy, RepairHandler> indexHandlers(List<RepairHandler> repairHandlers) {

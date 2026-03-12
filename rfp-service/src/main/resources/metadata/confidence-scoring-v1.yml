@@ -345,5 +345,5 @@ tableProvenanceConfidence:
 
 # --- Repair Limits (Sprint 7) ---
 repair:
-  maxTotalIterations: 20
+  maxTotalIterations: 10
   maxRetriesPerItem: 3
