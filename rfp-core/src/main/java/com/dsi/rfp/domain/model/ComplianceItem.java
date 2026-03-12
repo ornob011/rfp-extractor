@@ -14,4 +14,5 @@ public class ComplianceItem {
     private int serialNumber;
     private String title;
     private String answer;
+    private String source;
 }

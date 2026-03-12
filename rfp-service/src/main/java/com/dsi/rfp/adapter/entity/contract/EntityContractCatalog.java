@@ -56,7 +56,12 @@ public class EntityContractCatalog {
         return includedPromptKeys().stream()
                                    .collect(Collectors.toUnmodifiableMap(
                                        key -> key,
-                                       key -> promptContractParser.parseFieldKeys(metadataRegistry.promptResource(key))
+                                       key -> declaredPromptFields(
+                                           key,
+                                           promptContractParser.parseFieldKeys(
+                                               metadataRegistry.promptResource(key)
+                                           )
+                                       )
                                    ));
     }
 
@@ -70,5 +75,14 @@ public class EntityContractCatalog {
 
     public Map<String, RfpEntitiesMapper.ValueKind> mapperKeys() {
         return entitiesMapper.supportedPayloadKeys();
+    }
+
+    private Set<String> declaredPromptFields(
+        PromptKey key,
+        Set<String> promptFields
+    ) {
+        return promptFields.stream()
+                           .filter(metadataRegistry.requiredFields(key)::contains)
+                           .collect(Collectors.toUnmodifiableSet());
     }
 }

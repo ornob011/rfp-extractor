@@ -8,7 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -42,11 +44,28 @@ public class ComplianceItemProjector {
             entities
         );
 
+        String source = resolveFieldSource(
+            itemDef.entityField(),
+            entities
+        );
+
         return ComplianceItem.builder()
                              .serialNumber(serialNumber)
                              .title(itemDef.title())
                              .answer(answer)
+                             .source(source)
                              .build();
+    }
+
+    private String resolveFieldSource(
+        String fieldName,
+        RfpEntities entities
+    ) {
+        Map<String, String> sources = Optional.ofNullable(entities)
+                                              .map(RfpEntities::getFieldSources)
+                                              .orElse(Collections.emptyMap());
+
+        return sources.getOrDefault(fieldName, "");
     }
 
     private String resolveEntityValue(

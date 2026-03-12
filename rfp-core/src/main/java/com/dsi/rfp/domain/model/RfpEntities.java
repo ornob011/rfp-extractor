@@ -6,12 +6,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class RfpEntities implements Serializable {
+
+    @Builder.Default
+    private Map<String, String> fieldSources = new HashMap<>();
 
     // General
     private String rfpTitle;

@@ -18,13 +18,20 @@ public class RfpEntitiesMapperConfigRegistry {
     private static final String CONFIG_PATH = "metadata/rfp-entities-mapper-v1.yml";
 
     private final Map<String, RfpEntitiesMapper.ValueKind> fields;
+    private final Map<String, String> fieldSources;
 
     public RfpEntitiesMapperConfigRegistry() {
-        fields = Map.copyOf(loadConfig().fields());
+        ConfigDocument config = loadConfig();
+        fields = Map.copyOf(config.fields());
+        fieldSources = Map.copyOf(config.fieldSources());
     }
 
     public Map<String, RfpEntitiesMapper.ValueKind> fields() {
         return fields;
+    }
+
+    public Map<String, String> fieldSources() {
+        return fieldSources;
     }
 
     private ConfigDocument loadConfig() {
@@ -43,7 +50,8 @@ public class RfpEntitiesMapperConfigRegistry {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record ConfigDocument(
         Integer version,
-        Map<String, RfpEntitiesMapper.ValueKind> fields
+        Map<String, RfpEntitiesMapper.ValueKind> fields,
+        Map<String, String> fieldSources
     ) {
 
         private ConfigDocument {
@@ -53,6 +61,10 @@ public class RfpEntitiesMapperConfigRegistry {
 
             if (fields == null) {
                 throw new EntityMetadataContractException("Entities mapper config must define fields");
+            }
+
+            if (fieldSources == null) {
+                throw new EntityMetadataContractException("Entities mapper config must define fieldSources");
             }
         }
     }

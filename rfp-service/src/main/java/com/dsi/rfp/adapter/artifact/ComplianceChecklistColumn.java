@@ -4,7 +4,8 @@ enum ComplianceChecklistColumn {
 
     SERIAL_NUMBER("Sl."),
     TITLE("Title"),
-    ANSWER("Answer");
+    ANSWER("Answer"),
+    SOURCE("Source");
 
     private final String header;
 

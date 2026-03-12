@@ -55,3 +55,57 @@ fields:
   scope_summary: STRING
   scope_of_work: STRING
   similar_project_experience: STRING
+fieldSources:
+  client_name: client_name_source
+  submission_deadline: submission_deadline_source
+  issue_date: issue_date_source
+  method_of_selection: method_of_selection_source
+  procurement_method: procurement_method_source
+  project_duration: project_duration_source
+  pre_bid_meeting: pre_bid_meeting_source
+  contact: contact_source
+  other_information: other_information_source
+  guidelines_summary: guidelines_summary_source
+  number_of_copies: number_of_copies_source
+  soft_submission_required: soft_submission_required_source
+  submission_address: submission_address_source
+  technical_financial_split: technical_financial_split_source
+  performance_security: performance_security_source
+  bank_guarantee: bank_guarantee_source
+  payment_terms: payment_terms_source
+  reimbursable_expenses: reimbursable_expenses_source
+  bid_validity_period: bid_validity_period_source
+  total_users: total_users_source
+  concurrent_users: concurrent_users_source
+  programming_language_preference: programming_language_preference_source
+  system_language: system_language_source
+  architecture: architecture_source
+  tech_stack: tech_stack_source
+  database: database_source
+  hosting: hosting_source
+  data_migration_required: data_migration_required_source
+  data_migration: data_migration_source
+  legacy_system: legacy_system_source
+  hardware_requirements: hardware_requirements_source
+  integrations: integrations_source
+  mobile_app_required: mobile_app_required_source
+  ui_mock_required: ui_mock_required_source
+  presentation_required: presentation_required_source
+  gantt_chart_required: gantt_chart_required_source
+  e_governance_compliance: e_governance_compliance_source
+  staff_months: staff_months_source
+  onsite_resource_requirements: onsite_resource_requirements_source
+  marking_criteria: marking_criteria_source
+  key_personnel: key_personnel_source
+  cv_requirements: cv_requirements_source
+  training: training_source
+  support_maintenance: support_maintenance_source
+  warranty_period: warranty_period_source
+  pricing_factors: pricing_factors_source
+  rfp_form_changes: rfp_form_changes_source
+  criteria: criteria_source
+  criteria_total_weight: criteria_total_weight_source
+  eligibility_summary: eligibility_summary_source
+  scope_summary: scope_summary_source
+  scope_of_work: scope_of_work_source
+  similar_project_experience: similar_project_experience_source

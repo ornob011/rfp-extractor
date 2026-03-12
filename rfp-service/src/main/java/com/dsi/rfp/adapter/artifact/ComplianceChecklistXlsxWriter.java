@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 @Slf4j
@@ -21,7 +22,8 @@ public class ComplianceChecklistXlsxWriter {
     private static final List<ComplianceChecklistColumn> COLUMNS = List.of(
         ComplianceChecklistColumn.SERIAL_NUMBER,
         ComplianceChecklistColumn.TITLE,
-        ComplianceChecklistColumn.ANSWER
+        ComplianceChecklistColumn.ANSWER,
+        ComplianceChecklistColumn.SOURCE
     );
 
     private final ComplianceItemProjector complianceItemProjector;
@@ -93,6 +95,9 @@ public class ComplianceChecklistXlsxWriter {
         );
         row.createCell(1).setCellValue(item.getTitle());
         row.createCell(2).setCellValue(item.getAnswer());
+        row.createCell(3).setCellValue(
+            Optional.ofNullable(item.getSource()).orElse("")
+        );
     }
 
     private void autoSizeColumns(XSSFSheet sheet) {

@@ -14,6 +14,7 @@ public class RfpEntitiesMapper {
 
     private final ObjectMapper mapper;
     private final Map<String, ValueKind> fieldKinds;
+    private final Map<String, String> fieldSourceKeys;
 
     public RfpEntitiesMapper(
         ObjectMapper objectMapper,
@@ -23,10 +24,12 @@ public class RfpEntitiesMapper {
                              .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         fieldKinds = Map.copyOf(configRegistry.fields());
+        fieldSourceKeys = Map.copyOf(configRegistry.fieldSources());
     }
 
     public RfpEntities fromMap(Map<String, Object> merged) {
         Map<String, Object> normalized = new LinkedHashMap<>();
+        Map<String, String> fieldSources = new LinkedHashMap<>();
 
         fieldKinds.forEach((payloadKey, kind) ->
             normalized.put(
@@ -35,11 +38,44 @@ public class RfpEntitiesMapper {
             )
         );
 
+        extractFieldSources(merged, fieldSources);
+        normalized.put("fieldSources", fieldSources);
+
         return mapper.convertValue(normalized, RfpEntities.class);
+    }
+
+    private void extractFieldSources(
+        Map<String, Object> merged,
+        Map<String, String> fieldSources
+    ) {
+        fieldSourceKeys.forEach((fieldKey, sourceKey) -> addFieldSource(
+            merged,
+            fieldSources,
+            fieldKey,
+            sourceKey
+        ));
     }
 
     public Map<String, ValueKind> supportedPayloadKeys() {
         return fieldKinds;
+    }
+
+    private void addFieldSource(
+        Map<String, Object> merged,
+        Map<String, String> fieldSources,
+        String fieldKey,
+        String sourceKey
+    ) {
+        Object value = merged.get(sourceKey);
+
+        if (value == null) {
+            return;
+        }
+
+        fieldSources.put(
+            toTargetProperty(fieldKey),
+            value.toString()
+        );
     }
 
     private Object normalizeValue(

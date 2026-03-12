@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -93,7 +94,7 @@ class ComplianceChecklistXlsxWriterTest {
     }
 
     @Test
-    void shouldHaveThreeColumns() throws IOException {
+    void shouldHaveFourColumns() throws IOException {
         RfpDocument doc = RfpDocument.builder()
                                      .entities(RfpEntities.builder().build())
                                      .build();
@@ -102,10 +103,33 @@ class ComplianceChecklistXlsxWriterTest {
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
             XSSFSheet sheet = wb.getSheetAt(0);
-            assertThat(sheet.getRow(0).getLastCellNum()).isEqualTo((short) 3);
+            assertThat(sheet.getRow(0).getLastCellNum()).isEqualTo((short) 4);
             assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("Sl.");
             assertThat(sheet.getRow(0).getCell(1).getStringCellValue()).isEqualTo("Title");
             assertThat(sheet.getRow(0).getCell(2).getStringCellValue()).isEqualTo("Answer");
+            assertThat(sheet.getRow(0).getCell(3).getStringCellValue()).isEqualTo("Source");
+        }
+    }
+
+    @Test
+    void shouldPopulateSourceColumn() throws IOException {
+        RfpEntities entities = RfpEntities.builder()
+                                          .rfpTitle("Test RFP")
+                                          .fieldSources(Map.of(
+                                              "rfpTitle", "Cover page (pdf page 1)"
+                                          ))
+                                          .build();
+
+        RfpDocument doc = RfpDocument.builder()
+                                     .entities(entities)
+                                     .build();
+
+        byte[] bytes = writer.write(doc);
+
+        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
+            XSSFSheet sheet = wb.getSheetAt(0);
+            String source = sheet.getRow(1).getCell(3).getStringCellValue();
+            assertThat(source).isEqualTo("Cover page (pdf page 1)");
         }
     }
 }
