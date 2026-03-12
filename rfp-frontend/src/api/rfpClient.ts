@@ -73,6 +73,26 @@ export async function listArtifacts(jobId: string): Promise<ArtifactMetadata[]> 
     return response.data;
 }
 
-export function artifactDownloadUrl(jobId: string, filename: string): string {
-    return `/api/v1/rfp/artifacts/${jobId}/${filename}`;
+export async function downloadArtifact(jobId: string, filename: string): Promise<void> {
+    const response = await rfpClient.get(
+        `/api/v1/rfp/artifacts/${jobId}/${filename}`,
+        { responseType: 'blob' },
+    );
+
+    const url = URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+export async function fetchArtifactBlobUrl(jobId: string, filename: string): Promise<string> {
+    const response = await rfpClient.get(
+        `/api/v1/rfp/artifacts/${jobId}/${filename}`,
+        { responseType: 'blob' },
+    );
+    return URL.createObjectURL(response.data);
 }
