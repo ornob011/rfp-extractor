@@ -39,9 +39,11 @@ public class RfpEntitiesMapper {
         );
 
         extractFieldSources(merged, fieldSources);
-        normalized.put("fieldSources", fieldSources);
 
-        return mapper.convertValue(normalized, RfpEntities.class);
+        RfpEntities entities = mapper.convertValue(normalized, RfpEntities.class);
+        entities.setFieldSources(fieldSources);
+
+        return entities;
     }
 
     private void extractFieldSources(
@@ -94,10 +96,11 @@ public class RfpEntitiesMapper {
     }
 
     private Object normalizeString(Object value) {
-        return switch (value) {
-            case null -> null;
-            default -> value.toString();
-        };
+        if (value == null) {
+            return null;
+        }
+
+        return value.toString();
     }
 
     private Object normalizeBoolean(Object value) {
