@@ -22,6 +22,7 @@ Return ONLY valid JSON. Do not add explanation or markdown fencing.
 | database                        | Database requirements                                       | String               |
 | hosting                         | Hosting requirements (cloud, on-premise, hybrid)            | String               |
 | data_migration_required         | Whether data migration from existing systems is needed      | boolean (true/false) |
+| data_migration                  | Data migration scope, source systems, formats, and plan     | String               |
 | legacy_system                   | Existing legacy systems to integrate with                   | String               |
 | hardware_requirements           | Hardware provisioning requirements                          | String               |
 | integrations                    | Required third-party integrations                           | String               |
@@ -50,6 +51,7 @@ Output:
 "database": "PostgreSQL",
 "hosting": "Cloud (government-approved infrastructure)",
 "data_migration_required": true,
+"data_migration": "Data migration from existing Oracle-based system required",
 "legacy_system": "Existing Oracle-based system",
 "hardware_requirements": null,
 "integrations": null,

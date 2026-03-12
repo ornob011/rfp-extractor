@@ -1,5 +1,7 @@
 version: 1
 fields:
+  rfp_title: STRING
+  procurement_reference: STRING
   client_name: STRING
   submission_deadline: STRING
   issue_date: STRING
@@ -8,6 +10,7 @@ fields:
   project_duration: STRING
   pre_bid_meeting: STRING
   contact: STRING
+  other_information: STRING
   guidelines_summary: STRING
   number_of_copies: STRING
   soft_submission_required: STRING
@@ -27,6 +30,7 @@ fields:
   database: STRING
   hosting: STRING
   data_migration_required: BOOLEAN
+  data_migration: STRING
   legacy_system: STRING
   hardware_requirements: STRING
   integrations: STRING
@@ -43,6 +47,8 @@ fields:
   training: STRING
   support_maintenance: STRING
   warranty_period: STRING
+  pricing_factors: STRING
+  rfp_form_changes: STRING
   criteria: RAW
   criteria_total_weight: STRING
   eligibility_summary: STRING

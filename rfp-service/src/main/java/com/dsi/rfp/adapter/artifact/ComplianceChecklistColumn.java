@@ -2,12 +2,9 @@ package com.dsi.rfp.adapter.artifact;
 
 enum ComplianceChecklistColumn {
 
-    INDEX("#"),
-    REQUIREMENT("Requirement"),
-    SOURCE_CLAUSE("Source Clause"),
-    PAGE("Page"),
-    MANDATORY("Mandatory?"),
-    COMPLIANCE_STATUS("Compliance Status");
+    SERIAL_NUMBER("Sl."),
+    TITLE("Title"),
+    ANSWER("Answer");
 
     private final String header;
 

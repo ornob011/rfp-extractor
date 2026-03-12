@@ -11,10 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ComplianceItem {
 
-    private String id;
-    private String requirement;
-    private String sourceClauseId;
-    private int page;
-    private boolean mandatory;
-    private ComplianceChecklistStatus status;
+    private int serialNumber;
+    private String title;
+    private String answer;
 }
