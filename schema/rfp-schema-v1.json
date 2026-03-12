@@ -255,6 +255,8 @@
         "entities_general": {
             "type": ["object", "null"],
             "properties": {
+                "rfp_title": { "$ref": "#/definitions/entity_field" },
+                "procurement_reference": { "$ref": "#/definitions/entity_field" },
                 "client_name": { "$ref": "#/definitions/entity_field" },
                 "submission_deadline": { "$ref": "#/definitions/entity_field" },
                 "issue_date": { "$ref": "#/definitions/entity_field" },
@@ -282,7 +284,8 @@
                         "page": { "type": ["integer", "null"], "minimum": 0 },
                         "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
                     }
-                }
+                },
+                "other_information": { "$ref": "#/definitions/entity_field_no_page" }
             }
         },
         "entities_submission": {
@@ -365,6 +368,7 @@
                         "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
                     }
                 },
+                "data_migration": { "$ref": "#/definitions/entity_field_no_page" },
                 "legacy_system": { "$ref": "#/definitions/entity_field_no_page" },
                 "hardware_requirements": { "$ref": "#/definitions/entity_field_no_page" },
                 "integrations": {
@@ -460,7 +464,9 @@
                         "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
                     }
                 },
-                "warranty_period": { "$ref": "#/definitions/entity_field_no_page" }
+                "warranty_period": { "$ref": "#/definitions/entity_field_no_page" },
+                "pricing_factors": { "$ref": "#/definitions/entity_field_no_page" },
+                "rfp_form_changes": { "$ref": "#/definitions/entity_field_no_page" }
             }
         },
         "entities_evaluation": {

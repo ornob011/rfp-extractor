@@ -50,10 +50,7 @@ public class ArtifactApplicationService {
             doc
         );
 
-        List<ComplianceItem> complianceItems = buildComplianceItems(
-            results,
-            doc
-        );
+        List<ComplianceItem> complianceItems = buildComplianceItems(doc);
 
         List<RiskItem> riskItems = buildRiskItems(results, doc);
         List<StoredArtifact> artifacts = generateArtifacts(
@@ -136,7 +133,7 @@ public class ArtifactApplicationService {
             ),
             new StoredArtifact(
                 config.complianceChecklistFilename(),
-                complianceWriter.write(results, doc)
+                complianceWriter.write(doc)
             ),
             new StoredArtifact(
                 config.riskLogFilename(),
@@ -179,14 +176,8 @@ public class ArtifactApplicationService {
                             .build();
     }
 
-    List<ComplianceItem> buildComplianceItems(
-        RulePackResults results,
-        RfpDocument doc
-    ) {
-        return complianceItemProjector.project(
-            results,
-            doc
-        );
+    List<ComplianceItem> buildComplianceItems(RfpDocument doc) {
+        return complianceItemProjector.project(doc);
     }
 
     List<RiskItem> buildRiskItems(

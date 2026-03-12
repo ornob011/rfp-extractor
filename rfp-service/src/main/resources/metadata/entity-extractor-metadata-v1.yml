@@ -3,6 +3,8 @@ extractors:
   GENERAL:
     promptResourcePath: prompts/entity-general-v1.md
     requiredFields:
+      - rfp_title
+      - procurement_reference
       - client_name
       - submission_deadline
       - issue_date
@@ -11,6 +13,7 @@ extractors:
       - project_duration
       - pre_bid_meeting
       - contact
+      - other_information
   SUBMISSION:
     promptResourcePath: prompts/entity-submission-v1.md
     requiredFields:
@@ -39,6 +42,7 @@ extractors:
       - database
       - hosting
       - data_migration_required
+      - data_migration
       - legacy_system
       - hardware_requirements
       - integrations
@@ -61,6 +65,8 @@ extractors:
       - training
       - support_maintenance
       - warranty_period
+      - pricing_factors
+      - rfp_form_changes
   EVALUATION:
     promptResourcePath: prompts/entity-evaluation-v1.md
     requiredFields:

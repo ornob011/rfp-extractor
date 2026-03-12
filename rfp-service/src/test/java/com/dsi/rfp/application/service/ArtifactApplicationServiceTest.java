@@ -69,7 +69,7 @@ class ArtifactApplicationServiceTest {
             .thenReturn("docx".getBytes());
         when(ambiguityWriter.write(any()))
             .thenReturn("xlsx".getBytes());
-        when(complianceWriter.write(any(), any()))
+        when(complianceWriter.write(any(RfpDocument.class)))
             .thenReturn("xlsx".getBytes());
         when(riskWriter.write(any(), any()))
             .thenReturn("xlsx".getBytes());
@@ -104,7 +104,7 @@ class ArtifactApplicationServiceTest {
             .thenReturn("docx".getBytes());
         when(ambiguityWriter.write(any()))
             .thenReturn("xlsx".getBytes());
-        when(complianceWriter.write(any(), any()))
+        when(complianceWriter.write(any(RfpDocument.class)))
             .thenReturn("xlsx".getBytes());
         when(riskWriter.write(any(), any()))
             .thenReturn("xlsx".getBytes());

@@ -1,57 +1,120 @@
 package com.dsi.rfp.adapter.artifact;
 
-import com.dsi.rfp.domain.model.*;
+import com.dsi.rfp.domain.model.ComplianceItem;
+import com.dsi.rfp.domain.model.RfpDocument;
+import com.dsi.rfp.domain.model.RfpEntities;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.IntStream;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ComplianceItemProjector {
 
-    private final ClauseReferenceLocator clauseReferenceLocator;
+    private final ArtifactGenerationConfig config;
 
-    public List<ComplianceItem> project(
-        RulePackResults results,
-        RfpDocument document
-    ) {
-        return results.getFindings().stream()
-                      .filter(this::isFatalOrHigh)
-                      .map(finding -> project(
-                          finding,
-                          document
-                      ))
-                      .toList();
+    public List<ComplianceItem> project(RfpDocument document) {
+        RfpEntities entities = document.getEntities();
+        List<ArtifactGenerationConfig.ChecklistItemDef> items = config.complianceChecklistItems();
+
+        return IntStream.range(0, items.size())
+                        .mapToObj(index -> project(
+                            index + 1,
+                            items.get(index),
+                            entities
+                        ))
+                        .toList();
     }
 
-    public ComplianceItem project(
-        RuleFinding finding,
-        RfpDocument document
+    private ComplianceItem project(
+        int serialNumber,
+        ArtifactGenerationConfig.ChecklistItemDef itemDef,
+        RfpEntities entities
     ) {
-        ClauseReference reference = clauseReferenceLocator.locate(
-                                                              finding,
-                                                              document
-                                                          )
-                                                          .orElse(new ClauseReference(
-                                                              null,
-                                                              0
-                                                          ));
+        String answer = resolveEntityValue(
+            itemDef.entityField(),
+            entities
+        );
 
         return ComplianceItem.builder()
-                             .id(finding.getRuleId())
-                             .requirement(finding.getMessage())
-                             .sourceClauseId(reference.clauseId())
-                             .page(reference.pageNumber())
-                             .mandatory(finding.getSeverity() == RuleSeverity.FATAL)
-                             .status(ComplianceChecklistStatus.TO_BE_FILLED)
+                             .serialNumber(serialNumber)
+                             .title(itemDef.title())
+                             .answer(answer)
                              .build();
     }
 
-    private boolean isFatalOrHigh(RuleFinding finding) {
-        return switch (finding.getSeverity()) {
-            case FATAL, HIGH -> true;
-            case MEDIUM, LOW, INFO -> false;
+    private String resolveEntityValue(
+        String fieldName,
+        RfpEntities entities
+    ) {
+        return Optional.ofNullable(entities)
+                       .flatMap(e -> readField(e, fieldName))
+                       .orElse(config.complianceEmptyAnswerLabel());
+    }
+
+    private Optional<String> readField(
+        RfpEntities entities,
+        String fieldName
+    ) {
+        String getterName = String.format(
+            "get%s%s",
+            fieldName.substring(0, 1).toUpperCase(),
+            fieldName.substring(1)
+        );
+
+        try {
+            Method getter = RfpEntities.class.getMethod(getterName);
+            Object value = getter.invoke(entities);
+
+            return Optional.ofNullable(value)
+                           .map(this::formatValue);
+        } catch (NoSuchMethodException exception) {
+            return tryBooleanGetter(entities, fieldName);
+        } catch (ReflectiveOperationException exception) {
+            log.warn(
+                "Failed to read entity field: {}",
+                fieldName,
+                exception
+            );
+            return Optional.empty();
+        }
+    }
+
+    private Optional<String> tryBooleanGetter(
+        RfpEntities entities,
+        String fieldName
+    ) {
+        String isGetterName = String.format(
+            "is%s%s",
+            fieldName.substring(0, 1).toUpperCase(),
+            fieldName.substring(1)
+        );
+
+        try {
+            Method getter = RfpEntities.class.getMethod(isGetterName);
+            Object value = getter.invoke(entities);
+
+            return Optional.ofNullable(value)
+                           .map(this::formatValue);
+        } catch (ReflectiveOperationException exception) {
+            log.warn(
+                "No getter found for entity field: {}",
+                fieldName
+            );
+            return Optional.empty();
+        }
+    }
+
+    private String formatValue(Object value) {
+        return switch (value) {
+            case Boolean b -> b ? "Yes" : "No";
+            default -> value.toString();
         };
     }
 }

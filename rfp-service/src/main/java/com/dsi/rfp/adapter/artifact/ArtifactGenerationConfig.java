@@ -12,6 +12,7 @@ import org.springframework.util.StreamUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -79,24 +80,14 @@ public class ArtifactGenerationConfig {
         return config.complianceChecklist().sheetName();
     }
 
-    public String complianceMandatoryTrueLabel() {
-        return config.complianceChecklist().mandatoryTrueLabel();
+    public String complianceEmptyAnswerLabel() {
+        return config.complianceChecklist().emptyAnswerLabel();
     }
 
-    public String complianceMandatoryFalseLabel() {
-        return config.complianceChecklist().mandatoryFalseLabel();
-    }
-
-    public String complianceEmptyStatusLabel() {
-        return config.complianceChecklist().emptyStatusLabel();
-    }
-
-    public String complianceFailTintColor() {
-        return config.complianceChecklist().failTintColor();
-    }
-
-    public double complianceClauseMatchThreshold() {
-        return config.complianceChecklist().clauseMatchThreshold();
+    public List<ChecklistItemDef> complianceChecklistItems() {
+        return Collections.unmodifiableList(
+            config.complianceChecklist().items()
+        );
     }
 
     public String riskLogSheetName() {
@@ -250,11 +241,14 @@ public class ArtifactGenerationConfig {
 
     private record ComplianceChecklist(
         String sheetName,
-        String mandatoryTrueLabel,
-        String mandatoryFalseLabel,
-        String emptyStatusLabel,
-        String failTintColor,
-        double clauseMatchThreshold
+        String emptyAnswerLabel,
+        List<ChecklistItemDef> items
+    ) {
+    }
+
+    public record ChecklistItemDef(
+        String title,
+        String entityField
     ) {
     }
 

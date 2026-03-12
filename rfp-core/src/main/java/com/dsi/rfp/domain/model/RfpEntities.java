@@ -14,6 +14,8 @@ import java.io.Serializable;
 public class RfpEntities implements Serializable {
 
     // General
+    private String rfpTitle;
+    private String procurementReference;
     private String clientName;
     private String submissionDeadline;
     private String issueDate;
@@ -22,6 +24,7 @@ public class RfpEntities implements Serializable {
     private String projectDuration;
     private String preBidMeeting;
     private String contact;
+    private String otherInformation;
 
     // Submission
     private String guidelinesSummary;
@@ -47,6 +50,7 @@ public class RfpEntities implements Serializable {
     private String database;
     private String hosting;
     private Boolean dataMigrationRequired;
+    private String dataMigration;
     private String legacySystem;
     private String hardwareRequirements;
     private String integrations;
@@ -67,6 +71,8 @@ public class RfpEntities implements Serializable {
     private String training;
     private String supportMaintenance;
     private String warrantyPeriod;
+    private String pricingFactors;
+    private String rfpFormChanges;
 
     // Evaluation
     private Object criteria;

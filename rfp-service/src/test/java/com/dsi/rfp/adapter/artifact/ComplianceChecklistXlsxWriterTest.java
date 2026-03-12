@@ -1,6 +1,7 @@
 package com.dsi.rfp.adapter.artifact;
 
-import com.dsi.rfp.domain.model.*;
+import com.dsi.rfp.domain.model.RfpDocument;
+import com.dsi.rfp.domain.model.RfpEntities;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,8 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.time.Instant;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,108 +20,92 @@ class ComplianceChecklistXlsxWriterTest {
     void setUp() {
         ArtifactGenerationConfig config = new ArtifactGenerationConfig();
         writer = new ComplianceChecklistXlsxWriter(
-            new ComplianceItemProjector(
-                new ClauseReferenceLocator(config)
-            ),
+            new ComplianceItemProjector(config),
             config
         );
     }
 
     @Test
-    void shouldIncludeAllFatalAndHighFindingsAsRows() throws IOException {
-        RulePackResults results = RulePackResults.builder()
-                                                 .packId("test")
-                                                 .findings(List.of(
-                                                     finding("R1", RuleSeverity.FATAL, RuleStatus.FAIL),
-                                                     finding("R2", RuleSeverity.HIGH, RuleStatus.FAIL),
-                                                     finding("R3", RuleSeverity.MEDIUM, RuleStatus.FAIL),
-                                                     finding("R4", RuleSeverity.FATAL, RuleStatus.PASS)
-                                                 ))
-                                                 .build();
+    void shouldGenerateRowForEachChecklistItem() throws IOException {
+        RfpDocument doc = RfpDocument.builder()
+                                     .entities(RfpEntities.builder()
+                                                          .rfpTitle("Test RFP")
+                                                          .clientName("Test Client")
+                                                          .build())
+                                     .build();
 
-        byte[] bytes = writer.write(results, minimalDoc());
+        byte[] bytes = writer.write(doc);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
             XSSFSheet sheet = wb.getSheetAt(0);
-            assertThat(sheet.getLastRowNum()).isEqualTo(3);
+            assertThat(sheet.getSheetName()).isEqualTo("Checklist");
+            assertThat(sheet.getLastRowNum()).isGreaterThanOrEqualTo(42);
         }
     }
 
     @Test
-    void shouldLeaveStatusColumnBlank() throws IOException {
-        RulePackResults results = RulePackResults.builder()
-                                                 .packId("test")
-                                                 .findings(List.of(
-                                                     finding("R1", RuleSeverity.FATAL, RuleStatus.FAIL)
-                                                 ))
-                                                 .build();
+    void shouldPopulateAnswerFromEntityField() throws IOException {
+        RfpDocument doc = RfpDocument.builder()
+                                     .entities(RfpEntities.builder()
+                                                          .rfpTitle("Design and Development of XYZ")
+                                                          .build())
+                                     .build();
 
-        byte[] bytes = writer.write(results, minimalDoc());
+        byte[] bytes = writer.write(doc);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
             XSSFSheet sheet = wb.getSheetAt(0);
-            String statusValue = sheet.getRow(1).getCell(5).getStringCellValue();
-            assertThat(statusValue).isEmpty();
+            String title = sheet.getRow(1).getCell(1).getStringCellValue();
+            String answer = sheet.getRow(1).getCell(2).getStringCellValue();
+            assertThat(title).isEqualTo("RFP Title");
+            assertThat(answer).isEqualTo("Design and Development of XYZ");
         }
     }
 
     @Test
-    void shouldPopulateSourceClauseAndPageWhenEvidenceMatchesClause() throws IOException {
-        RulePackResults results = RulePackResults.builder()
-                                                 .packId("test")
-                                                 .findings(List.of(
-                                                     RuleFinding.builder()
-                                                                .ruleId("R1")
-                                                                .severity(RuleSeverity.FATAL)
-                                                                .status(RuleStatus.FAIL)
-                                                                .message("Submission requirement")
-                                                                .evidence("Bid security shall be submitted with the proposal")
-                                                                .checkedAt(Instant.now())
-                                                                .build()
-                                                 ))
-                                                 .build();
+    void shouldLeaveAnswerEmptyWhenEntityFieldIsNull() throws IOException {
+        RfpDocument doc = RfpDocument.builder()
+                                     .entities(RfpEntities.builder().build())
+                                     .build();
 
-        byte[] bytes = writer.write(results, docWithClause());
+        byte[] bytes = writer.write(doc);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
             XSSFSheet sheet = wb.getSheetAt(0);
-            assertThat(sheet.getRow(1).getCell(2).getStringCellValue()).isEqualTo("proc-1:2.1");
-            assertThat(sheet.getRow(1).getCell(3).getNumericCellValue()).isEqualTo(4);
+            String answer = sheet.getRow(1).getCell(2).getStringCellValue();
+            assertThat(answer).isEmpty();
         }
     }
 
-    private RuleFinding finding(
-        String ruleId,
-        RuleSeverity severity,
-        RuleStatus status
-    ) {
-        return RuleFinding.builder()
-                          .ruleId(ruleId)
-                          .severity(severity)
-                          .status(status)
-                          .message(String.format("Check %s", ruleId))
-                          .checkedAt(Instant.now())
-                          .build();
+    @Test
+    void shouldFormatSerialNumberWithDot() throws IOException {
+        RfpDocument doc = RfpDocument.builder()
+                                     .entities(RfpEntities.builder().build())
+                                     .build();
+
+        byte[] bytes = writer.write(doc);
+
+        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
+            XSSFSheet sheet = wb.getSheetAt(0);
+            String serial = sheet.getRow(1).getCell(0).getStringCellValue();
+            assertThat(serial).isEqualTo("1.");
+        }
     }
 
-    private RfpDocument minimalDoc() {
-        return RfpDocument.builder()
-                          .sections(List.of())
-                          .entities(RfpEntities.builder().build())
-                          .build();
-    }
+    @Test
+    void shouldHaveThreeColumns() throws IOException {
+        RfpDocument doc = RfpDocument.builder()
+                                     .entities(RfpEntities.builder().build())
+                                     .build();
 
-    private RfpDocument docWithClause() {
-        return RfpDocument.builder()
-                          .sections(List.of())
-                          .entities(RfpEntities.builder().build())
-                          .clauses(List.of(
-                              Clause.builder()
-                                    .clauseId("proc-1:2.1")
-                                    .text("Bid security shall be submitted with the proposal")
-                                    .pageNumber(4)
-                                    .build()
-                          ))
-                          .build();
+        byte[] bytes = writer.write(doc);
+
+        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
+            XSSFSheet sheet = wb.getSheetAt(0);
+            assertThat(sheet.getRow(0).getLastCellNum()).isEqualTo((short) 3);
+            assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("Sl.");
+            assertThat(sheet.getRow(0).getCell(1).getStringCellValue()).isEqualTo("Title");
+            assertThat(sheet.getRow(0).getCell(2).getStringCellValue()).isEqualTo("Answer");
+        }
     }
 }

@@ -15,12 +15,93 @@ clarificationDocument:
   sourceSectionFallback: N/A
   closingInstruction: Please respond by [date] to the Procuring Entity.
 complianceChecklist:
-  sheetName: Compliance Checklist
-  mandatoryTrueLabel: Yes
-  mandatoryFalseLabel: No
-  emptyStatusLabel: ""
-  failTintColor: CORAL
-  clauseMatchThreshold: 0.82
+  sheetName: Checklist
+  emptyAnswerLabel: ""
+  items:
+    - title: RFP Title
+      entityField: rfpTitle
+    - title: RFP Identification Number
+      entityField: procurementReference
+    - title: RFP Issued on date
+      entityField: issueDate
+    - title: Client/Procuring Entity
+      entityField: clientName
+    - title: Submission Date & Time
+      entityField: submissionDeadline
+    - title: Method of Selection
+      entityField: methodOfSelection
+    - title: Procurement Method
+      entityField: procurementMethod
+    - title: Project Duration
+      entityField: projectDuration
+    - title: Pre Bid Meeting
+      entityField: preBidMeeting
+    - title: Submission Guideline
+      entityField: guidelinesSummary
+    - title: "Number of copies, soft submission, email etc."
+      entityField: numberOfCopies
+    - title: "Financial (80/20) or 85/15)?"
+      entityField: technicalFinancialSplit
+    - title: Performance Security
+      entityField: performanceSecurity
+    - title: Other Information
+      entityField: otherInformation
+    - title: Client Contact
+      entityField: contact
+    - title: Total User
+      entityField: totalUsers
+    - title: Concurrent user
+      entityField: concurrentUsers
+    - title: Programming Language Preference
+      entityField: programmingLanguagePreference
+    - title: System Language Preference
+      entityField: systemLanguage
+    - title: Architecture
+      entityField: architecture
+    - title: Tech Stack/Platform
+      entityField: techStack
+    - title: Database
+      entityField: database
+    - title: Staff Months Requirement
+      entityField: staffMonths
+    - title: Integration
+      entityField: integrations
+    - title: Hosting
+      entityField: hosting
+    - title: Data Migration
+      entityField: dataMigration
+    - title: Legacy System
+      entityField: legacySystem
+    - title: Hardware Requirements
+      entityField: hardwareRequirements
+    - title: Onsite Resource Requirements
+      entityField: onsiteResourceRequirements
+    - title: UI Mock Requirement?
+      entityField: uiMockRequired
+    - title: Presentation Requirement?
+      entityField: presentationRequired
+    - title: Reimbursable Expenses
+      entityField: reimbursableExpenses
+    - title: Training Information
+      entityField: training
+    - title: Support & Maintenance
+      entityField: supportMaintenance
+    - title: Other things that affect pricing
+      entityField: pricingFactors
+    - title: Gantt Chart
+      entityField: ganttChartRequired
+    - title: Staffing Resources & Marking Criteria
+      entityField: markingCriteria
+    - title: Payment Terms
+      entityField: paymentTerms
+    - title: Bank Guarantee
+      entityField: bankGuarantee
+    - title: Changes in RFP Forms
+      entityField: rfpFormChanges
+    - title: Mobile Application
+      entityField: mobileAppRequired
+    - title: e-Governance Framework Compliance
+      entityField: eGovernanceCompliance
 riskLog:
   sheetName: Risk & Assumptions Log
   emptySourceLabel: ""
