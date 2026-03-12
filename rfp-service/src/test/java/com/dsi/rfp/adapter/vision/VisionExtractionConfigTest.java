@@ -23,6 +23,6 @@ class VisionExtractionConfigTest {
         assertThat(config.fullPageUserPromptTemplate()).contains("additional_instructions");
         assertThat(config.tableOnlyUserPromptTemplate()).contains("additional_instructions");
         assertThat(config.tablePresenceBatchUserPromptTemplate()).contains("page_list");
-        assertThat(config.tablePresenceBatchSize()).isEqualTo(4);
+        assertThat(config.tablePresenceBatchSize()).isEqualTo(2);
     }
 }

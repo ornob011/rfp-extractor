@@ -1,8 +1,10 @@
 version: 1
 extractorOrder:
+  - vlm
   - lattice
   - stream
 methods:
+  vlm: vlm
   lattice: lattice
   stream: stream
 lattice:
