@@ -13,6 +13,7 @@ clarificationDocument:
   dateLabel: Date
   sourceLabel: Source
   sourceSectionFallback: N/A
+  sourceUnavailableLabel: Source unavailable
   closingInstruction: Please respond by [date] to the Procuring Entity.
 complianceChecklist:
   sheetName: Checklist

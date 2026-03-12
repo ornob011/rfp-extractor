@@ -11,9 +11,23 @@ public final class ClarificationQuestionsTemplateModel {
 
     public record DocumentView(
         String title,
+        String projectLabel,
+        String titleValue,
+        String referenceLabel,
         String procurementRef,
+        String dateLabel,
         String generatedDate,
-        List<ClarificationQuestion> questions
+        String sourceLabel,
+        List<QuestionView> questions,
+        String closingInstruction
+    ) {
+    }
+
+    public record QuestionView(
+        int number,
+        String questionText,
+        String sourceText,
+        ClarificationQuestion question
     ) {
     }
 }

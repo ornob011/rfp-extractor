@@ -72,6 +72,10 @@ public class ArtifactGenerationConfig {
         return config.clarificationDocument().sourceSectionFallback();
     }
 
+    public String clarificationSourceUnavailableLabel() {
+        return config.clarificationDocument().sourceUnavailableLabel();
+    }
+
     public String clarificationClosingInstruction() {
         return config.clarificationDocument().closingInstruction();
     }
@@ -235,6 +239,7 @@ public class ArtifactGenerationConfig {
         String dateLabel,
         String sourceLabel,
         String sourceSectionFallback,
+        String sourceUnavailableLabel,
         String closingInstruction
     ) {
     }

@@ -1,9 +1,13 @@
 package com.dsi.rfp.adapter.artifact;
 
 import com.dsi.rfp.domain.model.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import freemarker.template.Configuration;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.time.Clock;
 import java.util.List;
 
@@ -16,12 +20,20 @@ class ClarificationQuestionsDocxWriterTest {
     @BeforeEach
     void setUp() throws Exception {
         ArtifactGenerationConfig config = new ArtifactGenerationConfig();
+        Configuration freemarkerConfiguration = new Configuration(Configuration.VERSION_2_3_33);
+        freemarkerConfiguration.setClassLoaderForTemplateLoading(
+            Thread.currentThread().getContextClassLoader(),
+            "/templates"
+        );
         writer = new ClarificationQuestionsDocxWriter(
+            freemarkerConfiguration,
+            config,
             new ClarificationQuestionsModelFactory(
                 new ArtifactDocumentContextResolver(config),
+                config,
                 Clock.systemDefaultZone()
             ),
-            new ClarificationDocxBlockFactory(config)
+            new ObjectMapper()
         );
     }
 
@@ -39,6 +51,33 @@ class ClarificationQuestionsDocxWriterTest {
 
         assertThat(bytes).isNotEmpty();
         assertThat(bytes.length).isGreaterThan(100);
+    }
+
+    @Test
+    void shouldRenderAllQuestionsAndReadableSources() throws Exception {
+        List<ClarificationQuestion> questions = List.of(
+            question("First question", "1.1", 1),
+            question("Second question", null, 0),
+            question("Third question", "2.2", 7)
+        );
+
+        byte[] bytes = writer.write(questions, minimalDoc());
+
+        try (XWPFDocument document = new XWPFDocument(new ByteArrayInputStream(bytes))) {
+            List<String> paragraphs = document.getParagraphs()
+                                              .stream()
+                                              .map(paragraph -> paragraph.getText().trim())
+                                              .filter(text -> !text.isEmpty())
+                                              .toList();
+
+            assertThat(paragraphs).contains("REQUEST FOR INFORMATION (RFI)");
+            assertThat(paragraphs).contains("Q1: First question");
+            assertThat(paragraphs).contains("Q2: Second question");
+            assertThat(paragraphs).contains("Q3: Third question");
+            assertThat(paragraphs).contains("Source: Section 1.1, Page 1");
+            assertThat(paragraphs).contains("Source: Source unavailable");
+            assertThat(paragraphs).contains("Source: Section 2.2, Page 7");
+        }
     }
 
     @Test

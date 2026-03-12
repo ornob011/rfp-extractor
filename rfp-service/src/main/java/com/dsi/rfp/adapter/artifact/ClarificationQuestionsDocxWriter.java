@@ -3,6 +3,10 @@ package com.dsi.rfp.adapter.artifact;
 import com.dsi.rfp.domain.exception.SystemIoException;
 import com.dsi.rfp.domain.model.ClarificationQuestion;
 import com.dsi.rfp.domain.model.RfpDocument;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -12,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
 
 @Slf4j
@@ -19,8 +24,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ClarificationQuestionsDocxWriter {
 
+    private final Configuration freemarkerConfig;
+    private final ArtifactGenerationConfig config;
     private final ClarificationQuestionsModelFactory modelFactory;
-    private final ClarificationDocxBlockFactory blockFactory;
+    private final ObjectMapper objectMapper;
 
     public byte[] write(
         List<ClarificationQuestion> questions,
@@ -29,7 +36,7 @@ public class ClarificationQuestionsDocxWriter {
         try (XWPFDocument docx = new XWPFDocument()) {
             renderDocument(
                 docx,
-                blockFactory.create(
+                renderTemplate(
                     modelFactory.create(
                         questions,
                         document
@@ -37,7 +44,7 @@ public class ClarificationQuestionsDocxWriter {
                 )
             );
             return toBytes(docx);
-        } catch (IOException exception) {
+        } catch (IOException | TemplateException exception) {
             throw new SystemIoException(
                 "Failed to generate clarification questions DOCX",
                 exception
@@ -47,26 +54,114 @@ public class ClarificationQuestionsDocxWriter {
 
     private void renderDocument(
         XWPFDocument document,
-        List<ClarificationDocxBlock> blocks
+        ClarificationDocxTemplate.Document content
     ) {
-        blocks.forEach(block -> addLine(
+        addTitleParagraph(
             document,
-            block
+            content.title()
+        );
+        content.metadata().forEach(line -> addMetadataParagraph(
+            document,
+            line
         ));
+        content.questions().forEach(line -> addQuestionParagraphs(
+            document,
+            line
+        ));
+        addClosingParagraph(
+            document,
+            content.closingInstruction()
+        );
     }
 
-    private void addLine(
+    private ClarificationDocxTemplate.Document renderTemplate(
+        ClarificationQuestionsTemplateModel.DocumentView view
+    ) throws IOException, TemplateException {
+        Template template = freemarkerConfig.getTemplate(
+            config.clarificationQuestionsTemplateName()
+        );
+        StringWriter writer = new StringWriter();
+        template.process(
+            view,
+            writer
+        );
+
+        return objectMapper.readValue(
+            writer.toString(),
+            ClarificationDocxTemplate.Document.class
+        );
+    }
+
+    private void addTitleParagraph(
         XWPFDocument document,
-        ClarificationDocxBlock block
+        String title
     ) {
         XWPFParagraph paragraph = document.createParagraph();
-        paragraph.setAlignment(block.type().alignment());
+        paragraph.setAlignment(org.apache.poi.xwpf.usermodel.ParagraphAlignment.CENTER);
 
         XWPFRun run = paragraph.createRun();
-        run.setText(block.text());
+        run.setText(title);
         run.setFontSize(11);
-        run.setBold(block.type().bold());
-        run.setItalic(block.type().italic());
+        run.setBold(true);
+    }
+
+    private void addMetadataParagraph(
+        XWPFDocument document,
+        ClarificationDocxTemplate.MetadataLine line
+    ) {
+        XWPFParagraph paragraph = document.createParagraph();
+        paragraph.setAlignment(org.apache.poi.xwpf.usermodel.ParagraphAlignment.LEFT);
+
+        XWPFRun labelRun = paragraph.createRun();
+        labelRun.setText(String.format("%s: ", line.label()));
+        labelRun.setFontSize(11);
+        labelRun.setBold(true);
+
+        XWPFRun valueRun = paragraph.createRun();
+        valueRun.setText(line.value());
+        valueRun.setFontSize(11);
+    }
+
+    private void addQuestionParagraphs(
+        XWPFDocument document,
+        ClarificationDocxTemplate.QuestionLine line
+    ) {
+        XWPFParagraph questionParagraph = document.createParagraph();
+        questionParagraph.setAlignment(org.apache.poi.xwpf.usermodel.ParagraphAlignment.LEFT);
+
+        XWPFRun labelRun = questionParagraph.createRun();
+        labelRun.setText(String.format("%s: ", line.label()));
+        labelRun.setFontSize(11);
+        labelRun.setBold(true);
+
+        XWPFRun textRun = questionParagraph.createRun();
+        textRun.setText(line.text());
+        textRun.setFontSize(11);
+
+        XWPFParagraph sourceParagraph = document.createParagraph();
+        sourceParagraph.setAlignment(org.apache.poi.xwpf.usermodel.ParagraphAlignment.LEFT);
+
+        XWPFRun sourceRun = sourceParagraph.createRun();
+        sourceRun.setText(String.format(
+            "%s: %s",
+            line.sourceLabel(),
+            line.sourceText()
+        ));
+        sourceRun.setFontSize(11);
+        sourceRun.setItalic(true);
+    }
+
+    private void addClosingParagraph(
+        XWPFDocument document,
+        String closingInstruction
+    ) {
+        XWPFParagraph paragraph = document.createParagraph();
+        paragraph.setAlignment(org.apache.poi.xwpf.usermodel.ParagraphAlignment.LEFT);
+
+        XWPFRun run = paragraph.createRun();
+        run.setText(closingInstruction);
+        run.setFontSize(11);
+        run.setItalic(true);
     }
 
     private byte[] toBytes(XWPFDocument document) throws IOException {

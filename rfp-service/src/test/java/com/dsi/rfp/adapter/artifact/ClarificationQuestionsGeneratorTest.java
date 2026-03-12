@@ -45,12 +45,26 @@ class ClarificationQuestionsGeneratorTest {
         );
 
         when(llmAdapter.extractStructured(any(), any(), any()))
-            .thenReturn(Optional.of(
-                new ClarificationQuestionsGenerator.LlmQuestionResponse(
-                    "Test question?",
-                    2
+            .thenReturn(
+                Optional.of(
+                    new ClarificationQuestionsGenerator.LlmQuestionResponse(
+                        "Please confirm the submission deadline.",
+                        2
+                    )
+                ),
+                Optional.of(
+                    new ClarificationQuestionsGenerator.LlmQuestionResponse(
+                        "Please clarify the evaluation methodology.",
+                        2
+                    )
+                ),
+                Optional.of(
+                    new ClarificationQuestionsGenerator.LlmQuestionResponse(
+                        "Please provide the expected project duration.",
+                        2
+                    )
                 )
-            ));
+            );
 
         List<ClarificationQuestion> questions = generator.generate(
             triggers,
@@ -95,6 +109,39 @@ class ClarificationQuestionsGeneratorTest {
         );
 
         assertThat(questions).hasSize(1);
+    }
+
+    @Test
+    void shouldKeepDistinctQuestionsWhenClauseIsMissing() {
+        ClarificationTrigger t1 = ClarificationTrigger.builder()
+                                                      .type(QuestionType.MANDATORY_CLARIFICATION)
+                                                      .ruleId("rule1")
+                                                      .context("Missing deadline")
+                                                      .build();
+        ClarificationTrigger t2 = ClarificationTrigger.builder()
+                                                      .type(QuestionType.MANDATORY_CLARIFICATION)
+                                                      .ruleId("rule2")
+                                                      .context("Missing payment terms")
+                                                      .build();
+
+        when(llmAdapter.extractStructured(any(), any(), any()))
+            .thenReturn(
+                Optional.of(new ClarificationQuestionsGenerator.LlmQuestionResponse(
+                    "Please confirm the bid submission deadline.",
+                    1
+                )),
+                Optional.of(new ClarificationQuestionsGenerator.LlmQuestionResponse(
+                    "Please clarify the payment terms and milestones.",
+                    1
+                ))
+            );
+
+        List<ClarificationQuestion> questions = generator.generate(
+            List.of(t1, t2),
+            minimalDoc()
+        );
+
+        assertThat(questions).hasSize(2);
     }
 
     @Test

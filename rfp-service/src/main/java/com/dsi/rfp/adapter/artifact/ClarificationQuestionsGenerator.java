@@ -8,15 +8,19 @@ import com.dsi.rfp.domain.model.ClarificationTrigger;
 import com.dsi.rfp.domain.model.RfpDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ClarificationQuestionsGenerator {
+
+    private static final JaroWinklerSimilarity QUESTION_SIMILARITY = new JaroWinklerSimilarity();
+    private static final double DEDUPLICATION_THRESHOLD = 0.94;
 
     private final LlmAdapter llmAdapter;
     private final ArtifactGenerationConfig config;
@@ -102,24 +106,14 @@ public class ClarificationQuestionsGenerator {
     private List<ClarificationQuestion> deduplicate(
         List<ClarificationQuestion> questions
     ) {
-        return new ArrayList<>(
-            questions.stream()
-                     .collect(Collectors.toMap(
-                         this::dedupeKey,
-                         q -> q,
-                         this::higherPriorityQuestion,
-                         LinkedHashMap::new
-                     ))
-                     .values()
-        );
-    }
+        List<ClarificationQuestion> deduplicated = new ArrayList<>();
 
-    private String dedupeKey(ClarificationQuestion q) {
-        return String.format(
-            "%s:%s",
-            Optional.ofNullable(q.getClauseId()).orElse(""),
-            q.getQuestionType()
-        );
+        questions.forEach(question -> mergeQuestion(
+            deduplicated,
+            question
+        ));
+
+        return deduplicated;
     }
 
     private ClarificationQuestion higherPriorityQuestion(
@@ -131,6 +125,71 @@ public class ClarificationQuestionsGenerator {
         }
 
         return second;
+    }
+
+    private void mergeQuestion(
+        List<ClarificationQuestion> deduplicated,
+        ClarificationQuestion question
+    ) {
+        OptionalInt duplicateIndex = duplicateIndex(
+            deduplicated,
+            question
+        );
+
+        if (duplicateIndex.isEmpty()) {
+            deduplicated.add(question);
+            return;
+        }
+
+        deduplicated.set(
+            duplicateIndex.getAsInt(),
+            higherPriorityQuestion(
+                deduplicated.get(duplicateIndex.getAsInt()),
+                question
+            )
+        );
+    }
+
+    private OptionalInt duplicateIndex(
+        List<ClarificationQuestion> deduplicated,
+        ClarificationQuestion question
+    ) {
+        return java.util.stream.IntStream.range(
+                                             0,
+                                             deduplicated.size()
+                                         )
+                                         .filter(index -> isDuplicate(
+                                             deduplicated.get(index),
+                                             question
+                                         ))
+                                         .findFirst();
+    }
+
+    private boolean isDuplicate(
+        ClarificationQuestion first,
+        ClarificationQuestion second
+    ) {
+        if (first.getQuestionType() != second.getQuestionType()) {
+            return false;
+        }
+
+        double similarity = QUESTION_SIMILARITY.apply(
+            normalizeQuestionText(first.getQuestionText()),
+            normalizeQuestionText(second.getQuestionText())
+        );
+
+        return similarity >= DEDUPLICATION_THRESHOLD;
+    }
+
+    private String normalizeQuestionText(
+        String questionText
+    ) {
+        if (questionText == null) {
+            return "";
+        }
+
+        return StringUtils.normalizeSpace(questionText)
+                          .toLowerCase(Locale.ROOT);
     }
 
     record LlmQuestionResponse(String questionText, int priority) {
