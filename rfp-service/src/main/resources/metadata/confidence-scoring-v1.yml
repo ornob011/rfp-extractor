@@ -338,6 +338,7 @@ sectionStrategyConfidence:
 # --- Table Provenance Confidence (Sprint 7) ---
 tableProvenanceConfidence:
   LATTICE: 0.85
+  VLM: 0.80
   STREAM: 0.65
   VLM_TABLE_RECONSTRUCT: 0.55
   UNKNOWN: 0.50

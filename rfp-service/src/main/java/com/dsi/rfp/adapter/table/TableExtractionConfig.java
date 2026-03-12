@@ -77,6 +77,10 @@ public class TableExtractionConfig {
         return config.continuation().footerKeywords();
     }
 
+    public String vlmMethod() {
+        return config.methods().vlm();
+    }
+
     public String latticeMethod() {
         return config.methods().lattice();
     }
@@ -182,6 +186,7 @@ public class TableExtractionConfig {
     }
 
     private record Methods(
+        String vlm,
         String lattice,
         String stream
     ) {
