@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { listArtifacts, artifactDownloadUrl } from '@/api/rfpClient';
+import { listArtifacts, downloadArtifact } from '@/api/rfpClient';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,7 +26,10 @@ function formatSize(bytes: number): string {
 
 function ArtifactCard({ artifact, jobId }: { artifact: ArtifactMetadata; jobId: string }) {
     const Icon = FILE_TYPE_ICONS[artifact.fileType];
-    const url = artifactDownloadUrl(jobId, artifact.filename);
+
+    async function handleDownload() {
+        await downloadArtifact(jobId, artifact.filename);
+    }
 
     return (
         <Card>
@@ -40,11 +43,9 @@ function ArtifactCard({ artifact, jobId }: { artifact: ArtifactMetadata; jobId: 
                 </div>
             </CardContent>
             <CardFooter>
-                <Button asChild variant="outline" size="sm">
-                    <a href={url} download>
-                        <Download className="mr-1.5 h-3.5 w-3.5" />
-                        Download
-                    </a>
+                <Button variant="outline" size="sm" onClick={handleDownload}>
+                    <Download className="mr-1.5 h-3.5 w-3.5" />
+                    Download
                 </Button>
             </CardFooter>
         </Card>
