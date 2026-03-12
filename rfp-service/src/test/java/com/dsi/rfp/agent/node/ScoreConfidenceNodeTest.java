@@ -60,9 +60,9 @@ class ScoreConfidenceNodeTest {
     }
 
     @Test
-    void shouldAddLowConfidenceFieldsToQueue() {
+    void shouldAddNullFieldsToLowConfidenceQueue() {
         RfpEntities entities = RfpEntities.builder()
-                                          .clientName("AB")
+                                          .submissionDeadline("2025-06-30")
                                           .build();
         Map<String, Object> data = ExtractionState.initial(1L, "/tmp/x.pdf");
         data.put(ExtractionState.Key.ENTITIES.value(), entities);
@@ -137,9 +137,9 @@ class ScoreConfidenceNodeTest {
     }
 
     @Test
-    void shouldPopulateRepairableComponents() {
+    void shouldPopulateRepairableComponentsForNullFields() {
         RfpEntities entities = RfpEntities.builder()
-                                          .clientName("AB")
+                                          .submissionDeadline("2025-06-30")
                                           .build();
         Map<String, Object> data = ExtractionState.initial(1L, "/tmp/x.pdf");
         data.put(ExtractionState.Key.ENTITIES.value(), entities);

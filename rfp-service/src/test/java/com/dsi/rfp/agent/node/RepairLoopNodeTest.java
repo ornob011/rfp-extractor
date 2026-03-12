@@ -81,7 +81,7 @@ class RepairLoopNodeTest {
         data.put(ExtractionState.Key.LOW_CONFIDENCE_QUEUE.value(), new ArrayList<>(List.of(componentId)));
         data.put(ExtractionState.Key.CONFIDENCE_MAP.value(), Map.of(componentId, 0.4));
         data.put(ExtractionState.Key.REPAIRABLE_COMPONENTS.value(), Map.of(componentId, repairable(componentId)));
-        data.put(ExtractionState.Key.ENTITIES.value(), RfpEntities.builder().clientName("AB").build());
+        data.put(ExtractionState.Key.ENTITIES.value(), RfpEntities.builder().build());
 
         Map<String, Object> result = node.apply(new ExtractionState(data));
 
@@ -109,9 +109,9 @@ class RepairLoopNodeTest {
         String componentId = "clientName";
         Map<String, Object> data = ExtractionState.initial(1L, "/tmp/x.pdf");
         data.put(ExtractionState.Key.LOW_CONFIDENCE_QUEUE.value(), new ArrayList<>(List.of(componentId)));
-        data.put(ExtractionState.Key.CONFIDENCE_MAP.value(), Map.of(componentId, 0.4));
+        data.put(ExtractionState.Key.CONFIDENCE_MAP.value(), Map.of(componentId, 0.0));
         data.put(ExtractionState.Key.REPAIRABLE_COMPONENTS.value(), Map.of(componentId, repairable(componentId)));
-        data.put(ExtractionState.Key.ENTITIES.value(), RfpEntities.builder().clientName("AB").build());
+        data.put(ExtractionState.Key.ENTITIES.value(), RfpEntities.builder().build());
 
         Map<String, Object> result = node.apply(new ExtractionState(data));
 
@@ -126,7 +126,7 @@ class RepairLoopNodeTest {
         Map<String, Object> data = ExtractionState.initial(1L, "/tmp/x.pdf");
         data.put(ExtractionState.Key.LOW_CONFIDENCE_QUEUE.value(), new ArrayList<>(List.of(componentId)));
         data.put(ExtractionState.Key.REPAIRABLE_COMPONENTS.value(), Map.of(componentId, repairable(componentId)));
-        data.put(ExtractionState.Key.ENTITIES.value(), RfpEntities.builder().clientName("AB").build());
+        data.put(ExtractionState.Key.ENTITIES.value(), RfpEntities.builder().build());
 
         Map<String, Object> result = node.apply(new ExtractionState(data));
 
