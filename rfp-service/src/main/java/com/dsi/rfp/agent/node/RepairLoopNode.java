@@ -371,12 +371,12 @@ public class RepairLoopNode implements NodeAction<ExtractionState> {
             return;
         }
 
-        if (attemptNumber >= scoringConfig.maxRetriesPerItem()) {
-            manualReview.add(componentId);
+        if (attemptNumber < scoringConfig.maxRetriesPerItem()) {
+            queue.add(componentId);
             return;
         }
 
-        queue.add(componentId);
+        manualReview.add(componentId);
     }
 
     private Map<RepairStrategy, RepairHandler> indexHandlers(List<RepairHandler> repairHandlers) {

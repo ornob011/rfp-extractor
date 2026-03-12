@@ -74,7 +74,7 @@ class RepairLoopNodeTest {
     }
 
     @Test
-    void shouldLeaveComponentInQueueWhenStillBelowThreshold() throws Exception {
+    void shouldAddComponentToManualReviewWhenStillBelowThreshold() throws Exception {
         RepairLoopNode node = createNode(List.of(noOpHandler()));
         String componentId = "clientName";
         Map<String, Object> data = ExtractionState.initial(1L, "/tmp/x.pdf");
@@ -85,7 +85,8 @@ class RepairLoopNodeTest {
 
         Map<String, Object> result = node.apply(new ExtractionState(data));
 
-        assertThat(readStringList(result, ExtractionState.Key.LOW_CONFIDENCE_QUEUE)).contains(componentId);
+        assertThat(readStringList(result, ExtractionState.Key.LOW_CONFIDENCE_QUEUE)).doesNotContain(componentId);
+        assertThat(readStringList(result, ExtractionState.Key.MANUAL_REVIEW_REQUIRED)).contains(componentId);
     }
 
     @Test
