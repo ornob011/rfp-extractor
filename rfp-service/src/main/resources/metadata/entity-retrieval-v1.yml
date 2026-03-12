@@ -28,6 +28,9 @@ domains:
       - 'contact person'
       - 'project duration'
       - 'completion period'
+      - 'ITC 33'
+      - 'ITC 34'
+      - 'proposal data sheet'
   SUBMISSION:
     alwaysRun: true
     topK: 3
@@ -66,6 +69,9 @@ domains:
       - 'final payment'
       - 'contract price'
       - 'remuneration'
+      - 'ITC 45'
+      - 'technical financial weight'
+      - 'proposal data sheet'
   EVALUATION:
     alwaysRun: true
     topK: 4
@@ -114,6 +120,11 @@ domains:
       - 'user acceptance test'
       - 'reporting dashboard'
       - 'analytics'
+      - 'general specifications'
+      - 'e-governance'
+      - 'SQTC'
+      - 'CIRT'
+      - 'proposal data sheet'
   STAFFING:
     alwaysRun: false
     topK: 3

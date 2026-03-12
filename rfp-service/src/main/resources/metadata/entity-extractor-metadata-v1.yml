@@ -1,7 +1,7 @@
-systemPromptResourcePath: prompts/entity-extraction-system-v1.md
+systemPromptResourcePath: prompts/entity-extraction-system-v2.md
 extractors:
   GENERAL:
-    promptResourcePath: prompts/entity-general-v1.md
+    promptResourcePath: prompts/entity-general-v2.md
     requiredFields:
       - rfp_title
       - procurement_reference
@@ -15,14 +15,14 @@ extractors:
       - contact
       - other_information
   SUBMISSION:
-    promptResourcePath: prompts/entity-submission-v1.md
+    promptResourcePath: prompts/entity-submission-v2.md
     requiredFields:
       - guidelines_summary
       - number_of_copies
       - soft_submission_required
       - submission_address
   FINANCIAL:
-    promptResourcePath: prompts/entity-financial-v1.md
+    promptResourcePath: prompts/entity-financial-v2.md
     requiredFields:
       - technical_financial_split
       - performance_security
@@ -31,7 +31,7 @@ extractors:
       - reimbursable_expenses
       - bid_validity_period
   ICT:
-    promptResourcePath: prompts/entity-ict-v1.md
+    promptResourcePath: prompts/entity-ict-v2.md
     requiredFields:
       - total_users
       - concurrent_users
@@ -52,7 +52,7 @@ extractors:
       - gantt_chart_required
       - e_governance_compliance
   STAFFING:
-    promptResourcePath: prompts/entity-staffing-v1.md
+    promptResourcePath: prompts/entity-staffing-v2.md
     requiredFields:
       - staff_months
       - onsite_resource_requirements
@@ -60,7 +60,7 @@ extractors:
       - key_personnel
       - cv_requirements
   SUPPORT:
-    promptResourcePath: prompts/entity-support-v1.md
+    promptResourcePath: prompts/entity-support-v2.md
     requiredFields:
       - training
       - support_maintenance
@@ -68,7 +68,7 @@ extractors:
       - pricing_factors
       - rfp_form_changes
   EVALUATION:
-    promptResourcePath: prompts/entity-evaluation-v1.md
+    promptResourcePath: prompts/entity-evaluation-v2.md
     requiredFields:
       - criteria
       - criteria_total_weight
