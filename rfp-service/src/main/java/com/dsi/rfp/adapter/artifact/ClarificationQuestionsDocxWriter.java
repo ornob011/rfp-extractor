@@ -18,6 +18,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -82,7 +83,7 @@ public class ClarificationQuestionsDocxWriter {
         );
         StringWriter writer = new StringWriter();
         template.process(
-            view,
+            objectMapper.convertValue(view, Map.class),
             writer
         );
 
