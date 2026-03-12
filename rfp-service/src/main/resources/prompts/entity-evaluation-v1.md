@@ -1,9 +1,6 @@
 ---
 id         : entity-evaluation
 version    : 1.0.0
-model      : google/gemini-2.0-flash-001
-max_tokens : 2048
-temperature: 0.0
 ---
 
 You are an expert procurement analyst. Extract evaluation-related fields from the RFP document chunk below.

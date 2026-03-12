@@ -1,9 +1,6 @@
 ---
 id         : risk-mitigation-suggestion
 version    : 1.0.0
-model      : google/gemini-2.0-flash-001
-max_tokens : 256
-temperature: 0.0
 ---
 
 You are a bid strategy advisor for Government of Bangladesh procurement contracts.
